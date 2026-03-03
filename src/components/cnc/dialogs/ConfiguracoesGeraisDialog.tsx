@@ -17,6 +17,22 @@ interface Props {
 export function ConfiguracoesGeraisDialog({ open, onOpenChange, config, onSave }: Props) {
   const [form, setForm] = useState<GeneralConfig>(config);
   const [novoMaterial, setNovoMaterial] = useState("");
+  const logoInputRef = useRef<HTMLInputElement>(null);
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Logo deve ter no máximo 2MB");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      update("companyLogo", ev.target?.result as string);
+      toast.success("Logo carregado!");
+    };
+    reader.readAsDataURL(file);
+  };
 
   const update = <K extends keyof GeneralConfig>(key: K, value: GeneralConfig[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
