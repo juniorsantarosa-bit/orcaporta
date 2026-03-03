@@ -5,7 +5,7 @@ import { PartsTable } from "@/components/cnc/PartsTable";
 import { NestingPreview } from "@/components/cnc/NestingPreview";
 import { mockPieces, mockSheetLayouts } from "@/data/mockPieces";
 import { CuttingConfig, CuttingPiece, NestingConfig, GeneralConfig, MachineConfig, BitmapConfig, SobraMaterial } from "@/types/cutting";
-import { NestingSheet } from "@/types/promob";
+import { NestingSheet, PlacedNestingPiece } from "@/types/promob";
 import { EditarPecasDialog } from "@/components/cnc/dialogs/EditarPecasDialog";
 import { ConfiguracaoCorteDialog } from "@/components/cnc/dialogs/ConfiguracaoCorteDialog";
 import { ConfiguracoesGeraisDialog } from "@/components/cnc/dialogs/ConfiguracoesGeraisDialog";
@@ -27,6 +27,7 @@ export default function Index() {
   const [activeTab, setActiveTab] = useState("otimizacao");
   const [selectedPieceId, setSelectedPieceId] = useState<number | null>(1);
   const [pieces, setPieces] = useState<CuttingPiece[]>(mockPieces);
+  const [layouts, setLayouts] = useState<NestingSheet[]>(mockSheetLayouts);
   const [sobras, setSobras] = useState<SobraMaterial[]>([]);
 
   const [config, setConfig] = useState<CuttingConfig>({
@@ -84,6 +85,21 @@ export default function Index() {
     toast.info("Otimizando corte...");
   };
 
+  const handleLayoutUpdate = (sheetIdx: number, newPieces: PlacedNestingPiece[]) => {
+    setLayouts(prev => {
+      const updated = [...prev];
+      const totalArea = updated[sheetIdx].sheetWidth * updated[sheetIdx].sheetHeight;
+      const usedArea = newPieces.reduce((a, p) => a + p.width * p.height, 0);
+      updated[sheetIdx] = {
+        ...updated[sheetIdx],
+        pieces: newPieces,
+        efficiency: (usedArea / totalArea) * 100,
+      };
+      return updated;
+    });
+    toast.success("Plano de corte atualizado!");
+  };
+
   const handleExportReport = () => {
     // Generate printable report by switching to report view and triggering print
     toast.success("Preparando relatório para impressão...");
@@ -108,7 +124,7 @@ export default function Index() {
           const ppType = machineConfig.posProcessador.includes("Aspire") ? "aspire" as const
             : machineConfig.posProcessador.includes("Mach3D") ? "mach_cnc" as const
             : "smartcut" as const;
-          mockSheetLayouts.forEach((sheet, idx) => {
+          layouts.forEach((sheet, idx) => {
             const gcode = generateGCode(sheet, { postProcessor: ppType });
             const filename = generateGCodeFilename(idx, sheet.material, ppType);
             const blob = new Blob([gcode], { type: "text/plain" });
@@ -117,7 +133,7 @@ export default function Index() {
             a.href = url; a.download = filename; a.click();
             URL.revokeObjectURL(url);
           });
-          toast.success(`${mockSheetLayouts.length} arquivos G-code gerados (${ppType})!`);
+          toast.success(`${layouts.length} arquivos G-code gerados (${ppType})!`);
         });
         break;
       }
@@ -142,7 +158,7 @@ export default function Index() {
           </ResizablePanel>
           <ResizableHandle withHandle />
           <ResizablePanel defaultSize={70} minSize={40}>
-            <NestingPreview layouts={mockSheetLayouts} selectedPieceId={selectedPieceId} />
+            <NestingPreview layouts={layouts} selectedPieceId={selectedPieceId} onLayoutUpdate={handleLayoutUpdate} />
           </ResizablePanel>
         </ResizablePanelGroup>
       </div>
