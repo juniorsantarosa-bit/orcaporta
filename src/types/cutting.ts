@@ -1,3 +1,5 @@
+import { PromobHole } from "./promob";
+
 export interface CuttingPiece {
   id: number;
   projeto: string;
