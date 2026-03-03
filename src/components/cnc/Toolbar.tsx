@@ -135,6 +135,7 @@ export function Toolbar({ config, onConfigChange, onOptimize, onAction, isOptimi
       <ToolbarGroup label="Exportar">
         <ToolbarButton icon={FileDown} label="Gerar" onClick={() => act("gerarTudo")} />
         <ToolbarButton icon={FileText} label="Relatório" onClick={() => act("exportarRelatorio")} />
+        <ToolbarButton icon={Calculator} label="Orçamento" onClick={() => act("orcamento")} accent />
       </ToolbarGroup>
 
       <Separator orientation="vertical" className="h-10 mx-0.5" />
