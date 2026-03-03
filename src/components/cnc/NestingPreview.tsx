@@ -19,6 +19,7 @@ interface NestingPreviewProps {
   selectedPieceId: number | null;
   onLayoutUpdate?: (sheetIdx: number, pieces: PlacedNestingPiece[]) => void;
   onReoptimize?: () => void;
+  companyLogo?: string;
 }
 
 type ViewMode = "2d" | "3d" | "report" | "labels";
