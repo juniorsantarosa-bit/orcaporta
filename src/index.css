@@ -113,35 +113,41 @@
 
 /* Print styles */
 @media print {
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
   body {
     background: white !important;
     color: black !important;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
   }
 
   .print\:hidden,
-  nav, header, footer {
+  nav, header, footer,
+  .print-hide {
     display: none !important;
   }
 
-  .print\:p-0 {
+  .print-report {
+    background: white !important;
+    color: black !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
     padding: 0 !important;
-  }
-
-  .print\:shadow-none {
+    border: none !important;
     box-shadow: none !important;
+    border-radius: 0 !important;
+    page-break-after: always;
   }
 
-  .print\:border-black {
-    border-color: black !important;
-  }
-
-  .print\:gap-1 {
-    gap: 4px !important;
+  .print-report svg {
+    max-height: 70vh !important;
   }
 
   @page {
     margin: 5mm;
+    size: A4 portrait;
   }
 }
