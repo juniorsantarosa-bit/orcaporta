@@ -57,43 +57,47 @@ export function parsePromobCSV(csvText: string): PromobPiece[] {
       } catch {}
     }
 
-    // Build contour from rows that have COLUMN_POINT_X/Y
+    // Build ordered contour with border info for edge detection
     const contorno: PromobContourPoint[] = [];
     const seenPoints = new Set<string>();
+    
+    interface ContourRow { x: number; y: number; hasBorder: boolean; }
+    const contourRows: ContourRow[] = [];
     
     for (const row of rows) {
       const px = parseFloat(row[colIdx("COLUMN_POINT_X_ITEM")]);
       const py = parseFloat(row[colIdx("COLUMN_POINT_Y_ITEM")]);
       if (!isNaN(px) && !isNaN(py)) {
         const key = `${px},${py}`;
+        const borderDesc = (row[colIdx("COLUMN_BORDER_DESCRIPTION")] || "").trim();
         if (!seenPoints.has(key)) {
           seenPoints.add(key);
-          contorno.push({
-            X: px,
-            Y: py,
-            ANG: row[colIdx("COLUMN_POINTS_ANGLE")] || "NAO",
-          });
+          contorno.push({ X: px, Y: py, ANG: row[colIdx("COLUMN_POINTS_ANGLE")] || "NAO" });
+          contourRows.push({ x: px, y: py, hasBorder: borderDesc.length > 0 });
+        } else if (borderDesc.length > 0) {
+          const existing = contourRows.find(c => c.x === px && c.y === py);
+          if (existing) existing.hasBorder = true;
         }
       }
     }
 
-    // Parse edge bands from rows that have COLUMN_BORDER_FINISHING
+    // Determine edge bands from contour segments
     let bordaSup = false, bordaInf = false, bordaEsq = false, bordaDir = false;
-    for (const row of rows) {
-      const borderDesc = row[colIdx("COLUMN_BORDER_DESCRIPTION")] || "";
-      if (borderDesc.trim()) {
-        // Determine edge position from contour vertex position
-        const px = parseFloat(row[colIdx("COLUMN_POINT_X_ITEM")]);
-        const py = parseFloat(row[colIdx("COLUMN_POINT_Y_ITEM")]);
-        const comp = parseFloat(firstRow[colIdx("COMPRIMENTO")]) || 0;
-        const prof = parseFloat(firstRow[colIdx("PROFUNDIDADE")]) || 0;
-        
-        // Edge detection by vertex position
-        if (py === prof && px > 0) bordaSup = true;
-        if (py === 0 && px === 0) bordaInf = true;
-        if (px === 0 && py > 0) bordaEsq = true;
-        if (px === comp && py === 0) bordaDir = true;
-      }
+    const comp = parseFloat(firstRow[colIdx("COMPRIMENTO")]) || 0;
+    const prof = parseFloat(firstRow[colIdx("PROFUNDIDADE")]) || 0;
+    const tol = 1.0;
+    
+    for (let ci = 0; ci < contourRows.length; ci++) {
+      if (!contourRows[ci].hasBorder) continue;
+      const curr = contourRows[ci];
+      const next = contourRows[(ci + 1) % contourRows.length];
+      const midX = (curr.x + next.x) / 2;
+      const midY = (curr.y + next.y) / 2;
+      
+      if (Math.abs(midY - prof) < tol && Math.abs(curr.y - next.y) < tol) bordaSup = true;
+      else if (Math.abs(midY) < tol && Math.abs(curr.y - next.y) < tol) bordaInf = true;
+      else if (Math.abs(midX) < tol && Math.abs(curr.x - next.x) < tol) bordaEsq = true;
+      else if (Math.abs(midX - comp) < tol && Math.abs(curr.x - next.x) < tol) bordaDir = true;
     }
 
     const al = firstRow[colIdx("ALINHAMENTO")] || "NORMAL";
@@ -135,6 +139,10 @@ export function parsePromobCSV(csvText: string): PromobPiece[] {
       HAS_FUROS_SUP: furos.some(f => f.FACE === "SUP"),
       HAS_FUROS_INF: furos.some(f => f.FACE === "INF"),
       HAS_FUROS_TOPOS: false,
+      bordaSup,
+      bordaInf,
+      bordaEsq,
+      bordaDir,
     });
   }
 
@@ -164,10 +172,10 @@ export function promobToCuttingPieces(promobPieces: PromobPiece[]): CuttingPiece
     espessura: p.ESP_CHAPA,
     material: p.CHAPA,
     quantidade: p.QUANTIDADE,
-    bordaInf: false, // TODO: parse from CSV edges
-    bordaSup: false,
-    bordaEsq: false,
-    bordaDir: false,
+    bordaInf: p.bordaInf,
+    bordaSup: p.bordaSup,
+    bordaEsq: p.bordaEsq,
+    bordaDir: p.bordaDir,
     veio: p.VEIO === 1,
     observacao: p.OBS || "",
   }));
@@ -192,10 +200,10 @@ export function promobToNestingPieces(promobPieces: PromobPiece[]): NestingPiece
     moduloDesc: p.MODULO_DESC,
     codCorte: p.COD_CORTE,
     estrutura: p.ESTRUTURA,
-    bordaSup: false,
-    bordaInf: false,
-    bordaEsq: false,
-    bordaDir: false,
+    bordaSup: p.bordaSup,
+    bordaInf: p.bordaInf,
+    bordaEsq: p.bordaEsq,
+    bordaDir: p.bordaDir,
     furos: p.FUROS,
     fresas: p.FRESAS,
     contorno: p.CONTORNO,

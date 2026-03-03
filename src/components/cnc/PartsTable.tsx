@@ -1,13 +1,23 @@
 import { CuttingPiece } from "@/types/cutting";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface PartsTableProps {
   pieces: CuttingPiece[];
   selectedId: number | null;
   onSelect: (id: number) => void;
+  onPiecesChange?: (pieces: CuttingPiece[]) => void;
 }
 
-export function PartsTable({ pieces, selectedId, onSelect }: PartsTableProps) {
+export function PartsTable({ pieces, selectedId, onSelect, onPiecesChange }: PartsTableProps) {
+  const toggleEdge = (pieceId: number, field: "bordaSup" | "bordaInf" | "bordaEsq" | "bordaDir") => {
+    if (!onPiecesChange) return;
+    const updated = pieces.map(p =>
+      p.id === pieceId ? { ...p, [field]: !p[field] } : p
+    );
+    onPiecesChange(updated);
+  };
+
   return (
     <div className="flex flex-col h-full bg-card">
       <div className="px-3 py-1.5 bg-muted/30 border-b border-border flex items-center justify-between">
@@ -25,7 +35,10 @@ export function PartsTable({ pieces, selectedId, onSelect }: PartsTableProps) {
               <th className="text-right px-2 py-1.5 w-10">Esp.</th>
               <th className="text-left px-2 py-1.5 w-24">Material</th>
               <th className="text-center px-2 py-1.5 w-6">V</th>
-              <th className="text-center px-2 py-1.5 w-14">Fitas</th>
+              <th className="text-center px-1 py-1.5 w-6" title="Fita Superior">S</th>
+              <th className="text-center px-1 py-1.5 w-6" title="Fita Inferior">I</th>
+              <th className="text-center px-1 py-1.5 w-6" title="Fita Esquerda">E</th>
+              <th className="text-center px-1 py-1.5 w-6" title="Fita Direita">D</th>
               <th className="text-right px-2 py-1.5 w-8">Qt</th>
             </tr>
           </thead>
@@ -51,8 +64,33 @@ export function PartsTable({ pieces, selectedId, onSelect }: PartsTableProps) {
                 <td className="px-2 py-1 text-center">
                   {piece.veio && <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary" />}
                 </td>
-                <td className="px-2 py-1 text-center text-[9px] text-muted-foreground">
-                  {[piece.bordaSup && "S", piece.bordaInf && "I", piece.bordaEsq && "E", piece.bordaDir && "D"].filter(Boolean).join("") || "—"}
+                <td className="px-1 py-1 text-center" onClick={e => e.stopPropagation()}>
+                  <Checkbox
+                    checked={piece.bordaSup}
+                    onCheckedChange={() => toggleEdge(piece.id, "bordaSup")}
+                    className="h-3 w-3"
+                  />
+                </td>
+                <td className="px-1 py-1 text-center" onClick={e => e.stopPropagation()}>
+                  <Checkbox
+                    checked={piece.bordaInf}
+                    onCheckedChange={() => toggleEdge(piece.id, "bordaInf")}
+                    className="h-3 w-3"
+                  />
+                </td>
+                <td className="px-1 py-1 text-center" onClick={e => e.stopPropagation()}>
+                  <Checkbox
+                    checked={piece.bordaEsq}
+                    onCheckedChange={() => toggleEdge(piece.id, "bordaEsq")}
+                    className="h-3 w-3"
+                  />
+                </td>
+                <td className="px-1 py-1 text-center" onClick={e => e.stopPropagation()}>
+                  <Checkbox
+                    checked={piece.bordaDir}
+                    onCheckedChange={() => toggleEdge(piece.id, "bordaDir")}
+                    className="h-3 w-3"
+                  />
                 </td>
                 <td className="px-2 py-1 text-right font-medium">{piece.quantidade}</td>
               </tr>
