@@ -63,7 +63,6 @@ export default function Index() {
     exibirFaceAlinhamento: false, exibirLegendaFace: false,
   });
 
-  // Dialog states
   const [dialogs, setDialogs] = useState({
     editarPecas: false, importarPecas: false, importarDXF: false,
     importarChapa: false, materiais: false, configuracaoCorte: false,
@@ -80,7 +79,6 @@ export default function Index() {
 
   const handleOptimize = () => {
     toast.info("Otimizando corte...");
-    console.log("Otimizando...", config, nestingConfig);
   };
 
   const handleToolbarAction = (action: string) => {
@@ -103,7 +101,7 @@ export default function Index() {
   };
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden">
+    <div className="h-screen flex flex-col overflow-hidden bg-background">
       <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
       <Toolbar
         config={config}
@@ -113,17 +111,16 @@ export default function Index() {
       />
       <div className="flex-1 min-h-0">
         <ResizablePanelGroup direction="horizontal">
-          <ResizablePanel defaultSize={35} minSize={25}>
+          <ResizablePanel defaultSize={30} minSize={20}>
             <PartsTable pieces={pieces} selectedId={selectedPieceId} onSelect={setSelectedPieceId} />
           </ResizablePanel>
           <ResizableHandle withHandle />
-          <ResizablePanel defaultSize={65} minSize={40}>
+          <ResizablePanel defaultSize={70} minSize={40}>
             <NestingPreview layouts={mockSheetLayouts} selectedPieceId={selectedPieceId} />
           </ResizablePanel>
         </ResizablePanelGroup>
       </div>
 
-      {/* Dialogs */}
       <EditarPecasDialog open={dialogs.editarPecas} onOpenChange={(v) => v ? openDialog("editarPecas") : closeDialog("editarPecas")} pieces={pieces} onSave={setPieces} />
       <ConfiguracaoCorteDialog open={dialogs.configuracaoCorte} onOpenChange={(v) => v ? openDialog("configuracaoCorte") : closeDialog("configuracaoCorte")} config={nestingConfig} onSave={setNestingConfig} />
       <ConfiguracoesGeraisDialog open={dialogs.configGerais} onOpenChange={(v) => v ? openDialog("configGerais") : closeDialog("configGerais")} config={generalConfig} onSave={setGeneralConfig} />
