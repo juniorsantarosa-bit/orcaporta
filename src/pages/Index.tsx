@@ -85,6 +85,21 @@ export default function Index() {
     toast.info("Otimizando corte...");
   };
 
+  const handleLayoutUpdate = (sheetIdx: number, newPieces: PlacedNestingPiece[]) => {
+    setLayouts(prev => {
+      const updated = [...prev];
+      const totalArea = updated[sheetIdx].sheetWidth * updated[sheetIdx].sheetHeight;
+      const usedArea = newPieces.reduce((a, p) => a + p.width * p.height, 0);
+      updated[sheetIdx] = {
+        ...updated[sheetIdx],
+        pieces: newPieces,
+        efficiency: (usedArea / totalArea) * 100,
+      };
+      return updated;
+    });
+    toast.success("Plano de corte atualizado!");
+  };
+
   const handleExportReport = () => {
     // Generate printable report by switching to report view and triggering print
     toast.success("Preparando relatório para impressão...");
