@@ -1,68 +1,105 @@
 import { CuttingPiece, SheetLayout } from "@/types/cutting";
+import { PlacedNestingPiece, NestingSheet, PromobHole } from "@/types/promob";
 
-export const mockPieces: CuttingPiece[] = [
-  { id: 1, projeto: "1_gourmet", cliente: "area gourmet", descricao: "LAT_ESQ", largura: 760, altura: 770, espessura: 15, material: "Branco TX 15mm - Multimarcas", quantidade: 1, bordaInf: false, bordaSup: false, bordaEsq: true, bordaDir: false, veio: true, observacao: "" },
-  { id: 2, projeto: "1_gourmet", cliente: "area gourmet", descricao: "PRAT", largura: 739, altura: 369, espessura: 15, material: "Branco TX 15mm - Multimarcas", quantidade: 1, bordaInf: false, bordaSup: false, bordaEsq: false, bordaDir: false, veio: true, observacao: "" },
-  { id: 3, projeto: "1_gourmet", cliente: "area gourmet", descricao: "FUNDO", largura: 754.5, altura: 369, espessura: 15, material: "Branco TX 15mm - Multimarcas", quantidade: 1, bordaInf: false, bordaSup: false, bordaEsq: false, bordaDir: false, veio: true, observacao: "" },
-  { id: 4, projeto: "1_gourmet", cliente: "area gourmet", descricao: "LAT_ESQ", largura: 760, altura: 770, espessura: 15, material: "Branco TX 15mm - Multimarcas", quantidade: 1, bordaInf: false, bordaSup: false, bordaEsq: true, bordaDir: false, veio: true, observacao: "" },
-  { id: 5, projeto: "1_gourmet", cliente: "area gourmet", descricao: "PRAT", largura: 739, altura: 619, espessura: 15, material: "Branco TX 15mm - Multimarcas", quantidade: 1, bordaInf: false, bordaSup: false, bordaEsq: false, bordaDir: false, veio: true, observacao: "" },
-  { id: 6, projeto: "1_gourmet", cliente: "area gourmet", descricao: "FUNDO", largura: 754.5, altura: 369, espessura: 15, material: "Branco TX 15mm - Multimarcas", quantidade: 1, bordaInf: false, bordaSup: false, bordaEsq: false, bordaDir: false, veio: true, observacao: "" },
-  { id: 7, projeto: "1_gourmet", cliente: "area gourmet", descricao: "BASE_INF", largura: 760, altura: 369, espessura: 15, material: "Branco TX 15mm - Multimarcas", quantidade: 1, bordaInf: true, bordaSup: false, bordaEsq: false, bordaDir: false, veio: true, observacao: "" },
-  { id: 8, projeto: "1_gourmet", cliente: "area gourmet", descricao: "FUNDO", largura: 754.5, altura: 589, espessura: 15, material: "Branco TX 15mm - Multimarcas", quantidade: 1, bordaInf: false, bordaSup: false, bordaEsq: false, bordaDir: false, veio: true, observacao: "" },
-  { id: 9, projeto: "1_gourmet", cliente: "area gourmet", descricao: "BASE_INF", largura: 457, altura: 589, espessura: 15, material: "Branco TX 15mm - Multimarcas", quantidade: 1, bordaInf: true, bordaSup: false, bordaEsq: false, bordaDir: false, veio: true, observacao: "" },
-  { id: 10, projeto: "1_gourmet", cliente: "area gourmet", descricao: "LAT_DIR", largura: 457, altura: 770, espessura: 15, material: "Branco TX 15mm - Multimarcas", quantidade: 1, bordaInf: false, bordaSup: false, bordaEsq: false, bordaDir: true, veio: true, observacao: "" },
-  { id: 11, projeto: "1_gourmet", cliente: "area gourmet", descricao: "BASE_INF", largura: 760, altura: 829, espessura: 15, material: "Branco TX 15mm - Multimarcas", quantidade: 1, bordaInf: true, bordaSup: false, bordaEsq: false, bordaDir: false, veio: true, observacao: "" },
-  { id: 12, projeto: "1_gourmet", cliente: "area gourmet", descricao: "FRT_FECH", largura: 50, altura: 2310, espessura: 18, material: "Areia 18mm - Guararapes", quantidade: 1, bordaInf: false, bordaSup: false, bordaEsq: false, bordaDir: false, veio: false, observacao: "" },
-  { id: 13, projeto: "1_gourmet", cliente: "area gourmet", descricao: "LAT_GAV_ESQ", largura: 104, altura: 450, espessura: 15, material: "Branco TX 15mm - Multimarcas", quantidade: 1, bordaInf: false, bordaSup: false, bordaEsq: false, bordaDir: false, veio: true, observacao: "" },
-  { id: 14, projeto: "1_gourmet", cliente: "area gourmet", descricao: "LAT_GAV_DIR", largura: 104, altura: 450, espessura: 15, material: "Branco TX 15mm - Multimarcas", quantidade: 1, bordaInf: false, bordaSup: false, bordaEsq: false, bordaDir: false, veio: true, observacao: "" },
-  { id: 15, projeto: "1_gourmet", cliente: "area gourmet", descricao: "TRAV_GAV_TRZ", largura: 91, altura: 326.5, espessura: 15, material: "Branco TX 15mm - Multimarcas", quantidade: 1, bordaInf: false, bordaSup: false, bordaEsq: false, bordaDir: false, veio: true, observacao: "" },
-  { id: 16, projeto: "1_gourmet", cliente: "area gourmet", descricao: "FUNDO_GAV", largura: 434.5, altura: 326.5, espessura: 15, material: "Branco TX 15mm - Multimarcas", quantidade: 1, bordaInf: false, bordaSup: false, bordaEsq: false, bordaDir: false, veio: true, observacao: "" },
-  { id: 17, projeto: "1_gourmet", cliente: "area gourmet", descricao: "LAT_GAV_ESQ", largura: 104, altura: 450, espessura: 15, material: "Branco TX 15mm - Multimarcas", quantidade: 1, bordaInf: false, bordaSup: false, bordaEsq: false, bordaDir: false, veio: true, observacao: "" },
-  { id: 18, projeto: "1_gourmet", cliente: "area gourmet", descricao: "LAT_GAV_DIR", largura: 104, altura: 450, espessura: 15, material: "Branco TX 15mm - Multimarcas", quantidade: 1, bordaInf: false, bordaSup: false, bordaEsq: false, bordaDir: false, veio: true, observacao: "" },
-  { id: 19, projeto: "1_gourmet", cliente: "area gourmet", descricao: "TRAV_GAV_TRZ", largura: 91, altura: 326.5, espessura: 15, material: "Branco TX 15mm - Multimarcas", quantidade: 1, bordaInf: false, bordaSup: false, bordaEsq: false, bordaDir: false, veio: true, observacao: "" },
-  { id: 20, projeto: "1_gourmet", cliente: "area gourmet", descricao: "LAT_DIR", largura: 760, altura: 770, espessura: 15, material: "Branco TX 15mm - Multimarcas", quantidade: 1, bordaInf: false, bordaSup: false, bordaEsq: false, bordaDir: true, veio: true, observacao: "" },
-  { id: 21, projeto: "1_gourmet", cliente: "area gourmet", descricao: "LAT_ESQ", largura: 760, altura: 770, espessura: 15, material: "Branco TX 15mm - Multimarcas", quantidade: 1, bordaInf: false, bordaSup: false, bordaEsq: true, bordaDir: false, veio: true, observacao: "" },
-  { id: 22, projeto: "1_gourmet", cliente: "area gourmet", descricao: "PRAT", largura: 739, altura: 829, espessura: 15, material: "Branco TX 15mm - Multimarcas", quantidade: 1, bordaInf: false, bordaSup: false, bordaEsq: false, bordaDir: false, veio: true, observacao: "" },
-  { id: 23, projeto: "1_gourmet", cliente: "area gourmet", descricao: "LAT_DIR", largura: 760, altura: 770, espessura: 15, material: "Branco TX 15mm - Multimarcas", quantidade: 1, bordaInf: false, bordaSup: false, bordaEsq: false, bordaDir: true, veio: true, observacao: "" },
+// Holes data based on real Promob JSON (Julia project)
+const holesLATESQ: PromobHole[] = [
+  { FACE: "SUP", X: 526.6, Y: 514.0, DIAM: 5.0, Z: 12.0 },
+  { FACE: "SUP", X: 526.6, Y: 55.0, DIAM: 5.0, Z: 12.0 },
+  { FACE: "SUP", X: 916.6, Y: 514.0, DIAM: 5.0, Z: 12.0 },
+  { FACE: "SUP", X: 916.6, Y: 55.0, DIAM: 5.0, Z: 12.0 },
+  { FACE: "SUP", X: 7.7, Y: 280.0, DIAM: 3.0, Z: 15.5 },
+  { FACE: "SUP", X: 7.7, Y: 530.0, DIAM: 3.0, Z: 15.5 },
+  { FACE: "SUP", X: 7.7, Y: 30.0, DIAM: 3.0, Z: 15.5 },
+  { FACE: "SUP", X: 65.4, Y: 571.7, DIAM: 3.0, Z: 15.5 },
 ];
 
-export const mockSheetLayouts: SheetLayout[] = [
+const holesDIVINT: PromobHole[] = [
+  { FACE: "SUP", X: 511.2, Y: 50.0, DIAM: 5.0, Z: 12.0 },
+  { FACE: "SUP", X: 511.2, Y: 509.0, DIAM: 5.0, Z: 12.0 },
+  { FACE: "SUP", X: 901.2, Y: 50.0, DIAM: 5.0, Z: 12.0 },
+  { FACE: "SUP", X: 901.2, Y: 509.0, DIAM: 5.0, Z: 12.0 },
+  { FACE: "INF", X: 717.5, Y: 292.0, DIAM: 3.0, Z: 15.5 },
+  { FACE: "INF", X: 717.5, Y: 50.0, DIAM: 3.0, Z: 15.5 },
+  { FACE: "INF", X: 717.5, Y: 534.0, DIAM: 3.0, Z: 15.5 },
+];
+
+const holesBASESUP: PromobHole[] = [
+  { FACE: "SUP", X: 983.0, Y: 280.0, DIAM: 3.0, Z: 15.5 },
+  { FACE: "SUP", X: 983.0, Y: 530.0, DIAM: 3.0, Z: 15.5 },
+  { FACE: "SUP", X: 150.0, Y: 571.7, DIAM: 3.0, Z: 15.5 },
+  { FACE: "SUP", X: 734.6, Y: 571.7, DIAM: 3.0, Z: 15.5 },
+];
+
+const holesLATDIR: PromobHole[] = [
+  { FACE: "SUP", X: 77.7, Y: 280.0, DIAM: 3.0, Z: 15.5 },
+  { FACE: "SUP", X: 77.7, Y: 530.0, DIAM: 3.0, Z: 15.5 },
+  { FACE: "SUP", X: 2450.0, Y: 7.7, DIAM: 3.0, Z: 15.5 },
+  { FACE: "SUP", X: 2480.0, Y: 7.7, DIAM: 3.0, Z: 15.5 },
+  { FACE: "SUP", X: 2450.0, Y: 556.3, DIAM: 3.0, Z: 15.5 },
+  { FACE: "SUP", X: 2480.0, Y: 556.3, DIAM: 3.0, Z: 15.5 },
+  { FACE: "SUP", X: 925.4, Y: 571.7, DIAM: 3.0, Z: 15.5 },
+  { FACE: "SUP", X: 1785.4, Y: 571.7, DIAM: 3.0, Z: 15.5 },
+  { FACE: "SUP", X: 526.6, Y: 514.0, DIAM: 5.0, Z: 12.0 },
+  { FACE: "SUP", X: 526.6, Y: 55.0, DIAM: 5.0, Z: 12.0 },
+  { FACE: "SUP", X: 1696.6, Y: 514.0, DIAM: 5.0, Z: 12.0 },
+  { FACE: "SUP", X: 1696.6, Y: 55.0, DIAM: 5.0, Z: 12.0 },
+];
+
+const holesDobradica: PromobHole[] = [
+  { FACE: "SUP", X: 100.0, Y: 290.0, DIAM: 15.0, Z: 12.0 },
+  { FACE: "SUP", X: 660.0, Y: 290.0, DIAM: 15.0, Z: 12.0 },
+];
+
+const noHoles: PromobHole[] = [];
+
+export const mockPieces: CuttingPiece[] = [
+  { id: 1, projeto: "1_PROJETO", cliente: "Julia", descricao: "!DIV_INT", largura: 2399, altura: 564, espessura: 15, material: "Branco TX 15mm", quantidade: 1, bordaInf: false, bordaSup: false, bordaEsq: false, bordaDir: false, veio: false, observacao: "" },
+  { id: 2, projeto: "1_PROJETO", cliente: "Julia", descricao: "!BASE_SUP", largura: 1469, altura: 580, espessura: 15, material: "Branco TX 15mm", quantidade: 1, bordaInf: false, bordaSup: false, bordaEsq: false, bordaDir: false, veio: false, observacao: "" },
+  { id: 3, projeto: "1_PROJETO", cliente: "Julia", descricao: "!LAT_ESQ", largura: 2500, altura: 580, espessura: 15, material: "Branco TX 15mm", quantidade: 1, bordaInf: false, bordaSup: true, bordaEsq: false, bordaDir: false, veio: false, observacao: "" },
+  { id: 4, projeto: "1_PROJETO", cliente: "Julia", descricao: "!LAT_DIR", largura: 2500, altura: 580, espessura: 15, material: "Branco TX 15mm", quantidade: 1, bordaInf: false, bordaSup: true, bordaEsq: false, bordaDir: false, veio: false, observacao: "" },
+  { id: 5, projeto: "1_PROJETO", cliente: "Julia", descricao: "!PRAT_INF", largura: 1469, altura: 564, espessura: 15, material: "Branco TX 15mm", quantidade: 1, bordaInf: true, bordaSup: false, bordaEsq: false, bordaDir: false, veio: false, observacao: "" },
+  { id: 6, projeto: "1_PROJETO", cliente: "Julia", descricao: "!BASE_INF", largura: 1469, altura: 580, espessura: 15, material: "Branco TX 15mm", quantidade: 1, bordaInf: true, bordaSup: false, bordaEsq: false, bordaDir: false, veio: false, observacao: "" },
+  { id: 7, projeto: "1_PROJETO", cliente: "Julia", descricao: "!PRAT_01", largura: 717.5, altura: 564, espessura: 15, material: "Branco TX 15mm", quantidade: 2, bordaInf: true, bordaSup: false, bordaEsq: false, bordaDir: false, veio: false, observacao: "" },
+  { id: 8, projeto: "1_PROJETO", cliente: "Julia", descricao: "!PORTA_ESQ", largura: 760, altura: 497, espessura: 15, material: "Branco TX 15mm", quantidade: 1, bordaInf: true, bordaSup: true, bordaEsq: true, bordaDir: true, veio: false, observacao: "" },
+  { id: 9, projeto: "1_PROJETO", cliente: "Julia", descricao: "!PORTA_DIR", largura: 760, altura: 497, espessura: 15, material: "Branco TX 15mm", quantidade: 1, bordaInf: true, bordaSup: true, bordaEsq: true, bordaDir: true, veio: false, observacao: "" },
+  { id: 10, projeto: "1_PROJETO", cliente: "Julia", descricao: "!FUNDO", largura: 1437, altura: 735, espessura: 15, material: "Branco TX 15mm", quantidade: 1, bordaInf: false, bordaSup: false, bordaEsq: false, bordaDir: false, veio: false, observacao: "" },
+  { id: 11, projeto: "1_PROJETO", cliente: "Julia", descricao: "!DIV_INT_2", largura: 717.5, altura: 564, espessura: 15, material: "Branco TX 15mm", quantidade: 1, bordaInf: false, bordaSup: false, bordaEsq: false, bordaDir: false, veio: false, observacao: "" },
+  { id: 12, projeto: "1_PROJETO", cliente: "Julia", descricao: "!TAMP_SUP", largura: 1500, altura: 580, espessura: 15, material: "Branco TX 15mm", quantidade: 1, bordaInf: false, bordaSup: true, bordaEsq: false, bordaDir: false, veio: false, observacao: "" },
+];
+
+export const mockSheetLayouts: NestingSheet[] = [
   {
     id: 1,
     sheetWidth: 2750,
-    sheetHeight: 1830,
+    sheetHeight: 1840,
+    espessura: 15,
+    material: "Branco TX 15mm",
+    codCorte: 7002,
     efficiency: 87.3,
     pieces: [
-      { pieceId: 1, x: 4, y: 4, width: 760, height: 770, rotated: false, label: "LAT_ESQ" },
-      { pieceId: 4, x: 768, y: 4, width: 760, height: 770, rotated: false, label: "LAT_ESQ" },
-      { pieceId: 10, x: 1532, y: 4, width: 457, height: 770, rotated: false, label: "LAT_DIR" },
-      { pieceId: 20, x: 1993, y: 4, width: 760, height: 770, rotated: false, label: "LAT_DIR" },
-      { pieceId: 2, x: 4, y: 778, width: 739, height: 369, rotated: false, label: "PRAT" },
-      { pieceId: 3, x: 747, y: 778, width: 754.5, height: 369, rotated: false, label: "FUNDO" },
-      { pieceId: 6, x: 1505, y: 778, width: 754.5, height: 369, rotated: false, label: "FUNDO" },
-      { pieceId: 5, x: 4, y: 1151, width: 739, height: 619, rotated: false, label: "PRAT" },
-      { pieceId: 7, x: 747, y: 1151, width: 760, height: 369, rotated: false, label: "BASE_INF" },
-      { pieceId: 9, x: 1511, y: 1151, width: 457, height: 589, rotated: false, label: "BASE_INF" },
+      { pieceId: 1, x: 5, y: 5, width: 2399, height: 564, rotated: false, label: "0", descricao: "!DIV_INT", furos: holesDIVINT, bordaSup: false, bordaInf: false, bordaEsq: false, bordaDir: false, cliente: "Julia", moduloDesc: "ARM_01", espessura: 15 },
+      { pieceId: 3, x: 5, y: 573, width: 2500, height: 580, rotated: false, label: "1", descricao: "!LAT_ESQ", furos: holesLATESQ, bordaSup: true, bordaInf: false, bordaEsq: false, bordaDir: false, cliente: "Julia", moduloDesc: "ARM_01", espessura: 15 },
+      { pieceId: 4, x: 5, y: 1157, width: 2500, height: 580, rotated: false, label: "2", descricao: "!LAT_DIR", furos: holesLATDIR, bordaSup: true, bordaInf: false, bordaEsq: false, bordaDir: false, cliente: "Julia", moduloDesc: "ARM_01", espessura: 15 },
+      { pieceId: 10, x: 2509, y: 5, width: 235, height: 735, rotated: true, label: "3", descricao: "!FUNDO", furos: noHoles, bordaSup: false, bordaInf: false, bordaEsq: false, bordaDir: false, cliente: "Julia", moduloDesc: "ARM_01", espessura: 15 },
     ],
   },
   {
     id: 2,
     sheetWidth: 2750,
-    sheetHeight: 1830,
+    sheetHeight: 1840,
+    espessura: 15,
+    material: "Branco TX 15mm",
+    codCorte: 7002,
     efficiency: 72.1,
     pieces: [
-      { pieceId: 21, x: 4, y: 4, width: 760, height: 770, rotated: false, label: "LAT_ESQ" },
-      { pieceId: 23, x: 768, y: 4, width: 760, height: 770, rotated: false, label: "LAT_DIR" },
-      { pieceId: 11, x: 1532, y: 4, width: 760, height: 829, rotated: false, label: "BASE_INF" },
-      { pieceId: 22, x: 4, y: 778, width: 739, height: 829, rotated: false, label: "PRAT" },
-      { pieceId: 8, x: 747, y: 778, width: 754.5, height: 589, rotated: false, label: "FUNDO" },
-      { pieceId: 16, x: 1505, y: 837, width: 434.5, height: 326.5, rotated: false, label: "FUNDO_GAV" },
-      { pieceId: 13, x: 1943, y: 837, width: 104, height: 450, rotated: false, label: "LAT_GAV" },
-      { pieceId: 14, x: 2051, y: 837, width: 104, height: 450, rotated: false, label: "LAT_GAV" },
-      { pieceId: 17, x: 2159, y: 837, width: 104, height: 450, rotated: false, label: "LAT_GAV" },
-      { pieceId: 18, x: 2267, y: 837, width: 104, height: 450, rotated: false, label: "LAT_GAV" },
-      { pieceId: 15, x: 1505, y: 1167, width: 91, height: 326.5, rotated: false, label: "TRAV_GAV" },
-      { pieceId: 19, x: 1600, y: 1167, width: 91, height: 326.5, rotated: false, label: "TRAV_GAV" },
+      { pieceId: 2, x: 5, y: 5, width: 1469, height: 580, rotated: false, label: "4", descricao: "!BASE_SUP", furos: holesBASESUP, bordaSup: false, bordaInf: false, bordaEsq: false, bordaDir: false, cliente: "Julia", moduloDesc: "ARM_01", espessura: 15 },
+      { pieceId: 5, x: 1478, y: 5, width: 1269, height: 564, rotated: true, label: "5", descricao: "!PRAT_INF", furos: noHoles, bordaSup: false, bordaInf: true, bordaEsq: false, bordaDir: false, cliente: "Julia", moduloDesc: "ARM_01", espessura: 15 },
+      { pieceId: 6, x: 5, y: 589, width: 1469, height: 580, rotated: false, label: "6", descricao: "!BASE_INF", furos: noHoles, bordaSup: false, bordaInf: true, bordaEsq: false, bordaDir: false, cliente: "Julia", moduloDesc: "ARM_01", espessura: 15 },
+      { pieceId: 7, x: 1478, y: 589, width: 717.5, height: 564, rotated: false, label: "7", descricao: "!PRAT_01", furos: noHoles, bordaSup: false, bordaInf: true, bordaEsq: false, bordaDir: false, cliente: "Julia", moduloDesc: "ARM_01", espessura: 15 },
+      { pieceId: 8, x: 5, y: 1173, width: 760, height: 497, rotated: false, label: "8", descricao: "!PORTA_ESQ", furos: holesDobradica, bordaSup: true, bordaInf: true, bordaEsq: true, bordaDir: true, cliente: "Julia", moduloDesc: "ARM_01", espessura: 15 },
+      { pieceId: 9, x: 769, y: 1173, width: 760, height: 497, rotated: false, label: "9", descricao: "!PORTA_DIR", furos: holesDobradica, bordaSup: true, bordaInf: true, bordaEsq: true, bordaDir: true, cliente: "Julia", moduloDesc: "ARM_01", espessura: 15 },
+      { pieceId: 11, x: 1533, y: 1173, width: 717.5, height: 564, rotated: false, label: "10", descricao: "!DIV_INT_2", furos: holesDIVINT.slice(0, 4), bordaSup: false, bordaInf: false, bordaEsq: false, bordaDir: false, cliente: "Julia", moduloDesc: "ARM_01", espessura: 15 },
+      { pieceId: 12, x: 2254, y: 589, width: 490, height: 580, rotated: true, label: "11", descricao: "!TAMP_SUP", furos: noHoles, bordaSup: false, bordaInf: false, bordaEsq: false, bordaDir: false, cliente: "Julia", moduloDesc: "ARM_01", espessura: 15 },
     ],
   },
 ];
