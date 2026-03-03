@@ -168,21 +168,27 @@ export function NestingPreview({ layouts, selectedPieceId, onLayoutUpdate }: Nes
 
         {/* View */}
         <div className="flex-1 overflow-auto p-4 flex items-center justify-center print:p-0">
-          {viewMode === "2d" && (
-            <SheetView2D
-              ref={view2DRef}
-              layout={layouts[selectedSheetIdx]}
-              selectedPieceId={selectedPieceId}
-              dragMode={dragMode}
-              onPiecesReorder={handlePiecesReorder}
-            />
-          )}
-          {viewMode === "3d" && (
-            <Nesting3DView ref={view3DRef} layout={layouts[selectedSheetIdx]} selectedPieceId={selectedPieceId} />
-          )}
-          {viewMode === "report" && (
-            <CuttingPlanReport layout={layouts[selectedSheetIdx]} />
-          )}
+          {layouts.length === 0 ? (
+            <p className="text-muted-foreground text-sm">Importe peças e clique em Otimizar para gerar o plano de corte.</p>
+          ) : layouts[selectedSheetIdx] ? (
+            <>
+              {viewMode === "2d" && (
+                <SheetView2D
+                  ref={view2DRef}
+                  layout={layouts[selectedSheetIdx]}
+                  selectedPieceId={selectedPieceId}
+                  dragMode={dragMode}
+                  onPiecesReorder={handlePiecesReorder}
+                />
+              )}
+              {viewMode === "3d" && (
+                <Nesting3DView ref={view3DRef} layout={layouts[selectedSheetIdx]} selectedPieceId={selectedPieceId} />
+              )}
+              {viewMode === "report" && (
+                <CuttingPlanReport layout={layouts[selectedSheetIdx]} />
+              )}
+            </>
+          ) : null}
           {viewMode === "labels" && (
             <LabelPreview layout={layouts[selectedSheetIdx]} />
           )}
