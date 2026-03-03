@@ -16,6 +16,7 @@ import { LayersDialog } from "@/components/cnc/dialogs/LayersDialog";
 import { ImportarPecasDialog } from "@/components/cnc/dialogs/ImportarPecasDialog";
 import { ImportarDXFDialog } from "@/components/cnc/dialogs/ImportarDXFDialog";
 import { SobrasDialog } from "@/components/cnc/dialogs/SobrasDialog";
+import { OrcamentoDialog } from "@/components/cnc/dialogs/OrcamentoDialog";
 import { OptimizationResultDialog } from "@/components/cnc/dialogs/OptimizationResultDialog";
 import {
   ResizableHandle,
@@ -66,7 +67,7 @@ export default function Index() {
     distanciaX: 2000, distanciaY: 3000, usarDisponiveis: false,
     cadastrarNovas: true, removerUsadas: false, exibirDinabox: false,
     exibirSeletorSobras: false, fresaDiametroMaior: 42, fresaAngulo: 45,
-    fresaDiametroMenor: 18, ignorarMateriais: [],
+    fresaDiametroMenor: 18, ignorarMateriais: [], companyLogo: "",
   });
 
   const [machineConfig, setMachineConfig] = useState<MachineConfig>({
@@ -93,7 +94,7 @@ export default function Index() {
     importarChapa: false, materiais: false, configuracaoCorte: false,
     configGerais: false, layers: false, estrategias: false,
     configMaquinas: false, configBitmap: false, sobras: false,
-    optimizationResult: false,
+    optimizationResult: false, orcamento: false,
   });
 
   const openDialog = (key: keyof typeof dialogs) => setDialogs((prev) => ({ ...prev, [key]: true }));
@@ -269,6 +270,7 @@ export default function Index() {
         break;
       }
       case "exportarRelatorio": handleExportReport(); break;
+      case "orcamento": openDialog("orcamento"); break;
       default: break;
     }
   };
@@ -290,7 +292,7 @@ export default function Index() {
           </ResizablePanel>
           <ResizableHandle withHandle />
           <ResizablePanel defaultSize={70} minSize={40}>
-            <NestingPreview layouts={layouts} selectedPieceId={selectedPieceId} onLayoutUpdate={handleLayoutUpdate} onReoptimize={handleOptimize} />
+            <NestingPreview layouts={layouts} selectedPieceId={selectedPieceId} onLayoutUpdate={handleLayoutUpdate} onReoptimize={handleOptimize} companyLogo={generalConfig.companyLogo} />
           </ResizablePanel>
         </ResizablePanelGroup>
       </div>
@@ -328,6 +330,7 @@ export default function Index() {
       <ImportarPecasDialog open={dialogs.importarPecas} onOpenChange={(v) => v ? openDialog("importarPecas") : closeDialog("importarPecas")} onImport={handleImportPieces} />
       <ImportarDXFDialog open={dialogs.importarDXF || dialogs.importarChapa} onOpenChange={(v) => { closeDialog("importarDXF"); closeDialog("importarChapa"); if (v) openDialog("importarDXF"); }} onImport={() => {}} />
       <SobrasDialog open={dialogs.sobras} onOpenChange={(v) => v ? openDialog("sobras") : closeDialog("sobras")} sobras={sobras} onSave={setSobras} />
+      <OrcamentoDialog open={dialogs.orcamento} onOpenChange={(v) => v ? openDialog("orcamento") : closeDialog("orcamento")} layouts={layouts} />
       {optimizationResult && (
         <OptimizationResultDialog
           open={dialogs.optimizationResult}

@@ -263,6 +263,7 @@ export function optimizeNesting(
             bordaEsq: p.ep.piece.bordaEsq,
             bordaDir: p.ep.piece.bordaDir,
             cliente: p.ep.piece.cliente,
+            ambiente: p.ep.piece.observacao || '',
             moduloDesc: p.ep.piece.projeto,
             espessura,
           };

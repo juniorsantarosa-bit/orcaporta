@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { GeneralConfig } from "@/types/cutting";
-import { Plus, X } from "lucide-react";
+import { Plus, X, Upload, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface Props {
@@ -17,6 +17,22 @@ interface Props {
 export function ConfiguracoesGeraisDialog({ open, onOpenChange, config, onSave }: Props) {
   const [form, setForm] = useState<GeneralConfig>(config);
   const [novoMaterial, setNovoMaterial] = useState("");
+  const logoInputRef = useRef<HTMLInputElement>(null);
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Logo deve ter no máximo 2MB");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      update("companyLogo", ev.target?.result as string);
+      toast.success("Logo carregado!");
+    };
+    reader.readAsDataURL(file);
+  };
 
   const update = <K extends keyof GeneralConfig>(key: K, value: GeneralConfig[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -159,6 +175,32 @@ export function ConfiguracoesGeraisDialog({ open, onOpenChange, config, onSave }
                     </Button>
                   </div>
                 ))}
+              </div>
+            </fieldset>
+
+            <fieldset className="border border-border rounded p-3">
+              <legend className="text-xs font-medium px-1">Logo da Empresa</legend>
+              <div className="flex items-center gap-3">
+                {form.companyLogo ? (
+                  <div className="relative">
+                    <img src={form.companyLogo} alt="Logo" className="h-12 max-w-[120px] object-contain rounded border border-border" />
+                    <Button variant="ghost" size="sm" className="absolute -top-1 -right-1 h-5 w-5 p-0 bg-destructive text-destructive-foreground rounded-full"
+                      onClick={() => update("companyLogo", "")}>
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="h-12 w-24 border-2 border-dashed border-border rounded flex items-center justify-center text-muted-foreground text-[10px]">
+                    Sem logo
+                  </div>
+                )}
+                <div>
+                  <input ref={logoInputRef} type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
+                  <Button size="sm" variant="outline" className="text-xs" onClick={() => logoInputRef.current?.click()}>
+                    <Upload className="h-3 w-3 mr-1" /> Carregar Logo
+                  </Button>
+                  <p className="text-[9px] text-muted-foreground mt-1">Aparecerá na impressão do plano de corte</p>
+                </div>
               </div>
             </fieldset>
 

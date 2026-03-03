@@ -19,6 +19,7 @@ interface NestingPreviewProps {
   selectedPieceId: number | null;
   onLayoutUpdate?: (sheetIdx: number, pieces: PlacedNestingPiece[]) => void;
   onReoptimize?: () => void;
+  companyLogo?: string;
 }
 
 type ViewMode = "2d" | "3d" | "report" | "labels";
@@ -45,7 +46,7 @@ function ViewToolButton({ icon: Icon, label, onClick, active, accent }: { icon: 
   );
 }
 
-export function NestingPreview({ layouts, selectedPieceId, onLayoutUpdate, onReoptimize }: NestingPreviewProps) {
+export function NestingPreview({ layouts, selectedPieceId, onLayoutUpdate, onReoptimize, companyLogo }: NestingPreviewProps) {
   const [viewMode, setViewMode] = useState<ViewMode>("2d");
   const [selectedSheetIdx, setSelectedSheetIdx] = useState(0);
   const [wireframe, setWireframe] = useState(false);
@@ -112,21 +113,28 @@ export function NestingPreview({ layouts, selectedPieceId, onLayoutUpdate, onReo
       const COLORS = ["#A8DADC","#F4A261","#C9B1FF","#8FBC8F","#F28B82","#FFD166","#7EC8E3","#B5D99C","#E0A8D0","#FFB385","#80CBC4","#B0A0E8"];
       const doc = printWindow.document;
 
+      const today = new Date().toLocaleDateString("pt-BR");
+      const clientes = [...new Set(currentLayout.pieces.map(p => p.cliente).filter(Boolean))].join(", ") || "—";
+      const ambientes = [...new Set(currentLayout.pieces.map(p => p.ambiente).filter(Boolean))].join(", ") || "—";
+
       const css = [
         "@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@300;400;500;600;700;800&display=swap');",
         "* { margin:0; padding:0; box-sizing:border-box; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; }",
         "body { font-family:'Inter',sans-serif; background:#fff; color:#000; }",
         "@page { margin:5mm; size:A4 portrait; }",
         ".page { width:100%; height:100vh; display:flex; flex-direction:column; page-break-after:always; padding:8px; }",
-        ".header { height:8%; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #ccc; padding:0 8px; }",
-        ".logo { font-size:14px; font-weight:800; }",
+        ".header { height:10%; display:flex; align-items:center; justify-content:space-between; border-bottom:2px solid #ddd; padding:4px 8px; }",
+        ".logo { display:flex; align-items:center; gap:8px; }",
+        ".logo img { max-height:36px; max-width:120px; object-fit:contain; }",
+        ".logo-text { font-size:14px; font-weight:800; }",
         ".green { color:#059669; }",
-        ".meta { display:flex; gap:16px; font-size:10px; color:#444; }",
+        ".meta { display:flex; flex-wrap:wrap; gap:12px; font-size:9px; color:#444; }",
+        ".meta-item { display:flex; gap:3px; }",
         ".lbl { color:#888; }",
         ".bld { font-weight:600; }",
         ".diagram { flex:1; display:flex; align-items:center; justify-content:center; padding:4px; min-height:0; }",
         ".diagram svg { width:100%; height:100%; }",
-        ".ptable { height:22%; border-top:1px solid #ccc; padding:4px 8px; overflow:hidden; }",
+        ".ptable { height:20%; border-top:1px solid #ccc; padding:4px 8px; overflow:hidden; }",
         "table { width:100%; border-collapse:collapse; font-size:9px; }",
         "thead tr { background:#f0f0f0; }",
         "th,td { padding:1px 4px; text-align:left; }",
@@ -182,15 +190,22 @@ export function NestingPreview({ layouts, selectedPieceId, onLayoutUpdate, onReo
 
       const vb = "-20 -20 " + (sheet.sheetWidth + 40) + " " + (sheet.sheetHeight + 40);
 
+      const logoHtml = companyLogo
+        ? '<div class="logo"><img src="' + companyLogo + '" alt="Logo"/></div>'
+        : '<div class="logo"><span class="logo-text">⚡ MAX<span class="green">CUT</span></span></div>';
+
       doc.write(
         '<div class="page">' +
         '<div class="header">' +
-        '<div class="logo">⚡ MAX<span class="green">CUT</span></div>' +
+        logoHtml +
         '<div class="meta">' +
-        '<div><span class="lbl">Material: </span><span class="bld">' + sheet.material + "</span></div>" +
-        '<div><span class="lbl">Chapa: </span><span class="m bld">' + sheet.sheetWidth + "×" + sheet.sheetHeight + "×" + sheet.espessura + "mm</span></div>" +
-        '<div><span class="lbl">Aproveit.: </span><span class="bld" style="color:' + effColor + '">' + sheet.efficiency.toFixed(1) + "%</span></div>" +
-        '<div class="bld">Chapa ' + sheet.id + "</div>" +
+        '<div class="meta-item"><span class="lbl">Cliente: </span><span class="bld">' + clientes + "</span></div>" +
+        '<div class="meta-item"><span class="lbl">Data: </span><span class="bld">' + today + "</span></div>" +
+        '<div class="meta-item"><span class="lbl">Material: </span><span class="bld">' + sheet.material + "</span></div>" +
+        '<div class="meta-item"><span class="lbl">Chapa Nº: </span><span class="bld m">' + sheet.id + "</span></div>" +
+        '<div class="meta-item"><span class="lbl">Peças: </span><span class="bld m">' + sheet.pieces.length + "</span></div>" +
+        '<div class="meta-item"><span class="lbl">Ambiente: </span><span class="bld">' + ambientes + "</span></div>" +
+        '<div class="meta-item"><span class="lbl">Aproveit.: </span><span class="bld" style="color:' + effColor + '">' + sheet.efficiency.toFixed(1) + "%</span></div>" +
         "</div></div>" +
         '<div class="diagram">' +
         '<svg viewBox="' + vb + '" preserveAspectRatio="xMidYMid meet">' +

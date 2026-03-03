@@ -70,6 +70,7 @@ export interface GeneralConfig {
   fresaAngulo: number;
   fresaDiametroMenor: number;
   ignorarMateriais: string[];
+  companyLogo: string;
 }
 
 export interface MachineConfig {
