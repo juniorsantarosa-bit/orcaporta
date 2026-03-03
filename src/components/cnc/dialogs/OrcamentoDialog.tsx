@@ -12,6 +12,7 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   layouts: NestingSheet[];
+  companyLogo?: string;
 }
 
 interface PricingConfig {
