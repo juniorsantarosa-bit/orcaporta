@@ -16,12 +16,14 @@ import { LayersDialog } from "@/components/cnc/dialogs/LayersDialog";
 import { ImportarPecasDialog } from "@/components/cnc/dialogs/ImportarPecasDialog";
 import { ImportarDXFDialog } from "@/components/cnc/dialogs/ImportarDXFDialog";
 import { SobrasDialog } from "@/components/cnc/dialogs/SobrasDialog";
+import { OptimizationResultDialog } from "@/components/cnc/dialogs/OptimizationResultDialog";
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
 import { toast } from "sonner";
+import { optimizeNesting, calculateNestingStats, NestingOptions } from "@/lib/nestingOptimizer";
 
 export default function Index() {
   const [activeTab, setActiveTab] = useState("otimizacao");
@@ -29,6 +31,12 @@ export default function Index() {
   const [pieces, setPieces] = useState<CuttingPiece[]>(mockPieces);
   const [layouts, setLayouts] = useState<NestingSheet[]>(mockSheetLayouts);
   const [sobras, setSobras] = useState<SobraMaterial[]>([]);
+  const [isOptimizing, setIsOptimizing] = useState(false);
+  const [optimizationResult, setOptimizationResult] = useState<{
+    sheets: NestingSheet[];
+    stats: ReturnType<typeof calculateNestingStats>;
+    elapsed: number;
+  } | null>(null);
 
   const [config, setConfig] = useState<CuttingConfig>({
     serraSerpentina: 4, margemChapa: 0, espacamentoEntreCortes: 4,
@@ -72,6 +80,7 @@ export default function Index() {
     importarChapa: false, materiais: false, configuracaoCorte: false,
     configGerais: false, layers: false, estrategias: false,
     configMaquinas: false, configBitmap: false, sobras: false,
+    optimizationResult: false,
   });
 
   const openDialog = (key: keyof typeof dialogs) => setDialogs((prev) => ({ ...prev, [key]: true }));
@@ -82,7 +91,49 @@ export default function Index() {
   };
 
   const handleOptimize = () => {
-    toast.info("Otimizando corte...");
+    if (pieces.length === 0) {
+      toast.error("Adicione peças antes de otimizar.");
+      return;
+    }
+
+    setIsOptimizing(true);
+    toast.loading("Otimizando nesting...", { id: "optimize" });
+
+    // Use setTimeout to allow UI to update
+    setTimeout(() => {
+      const start = performance.now();
+
+      const opts: Partial<NestingOptions> = {
+        sheetWidth: generalConfig.chapaY,  // chapaY = comprimento
+        sheetHeight: generalConfig.chapaX, // chapaX = largura
+        gap: nestingConfig.espessuraCorte,
+        refiloX: nestingConfig.refiloX,
+        refiloY: nestingConfig.refiloY,
+        allowRotation: config.permitirRotacao,
+        direction: nestingConfig.direcaoNesting,
+        optimizationLevel: nestingConfig.otimizacao,
+      };
+
+      // Get material/espessura from first piece if not set
+      if (pieces.length > 0) {
+        opts.material = pieces[0].material;
+        opts.espessura = pieces[0].espessura;
+      }
+
+      const sheets = optimizeNesting(pieces, opts);
+      const elapsed = performance.now() - start;
+      const stats = calculateNestingStats(sheets);
+
+      setLayouts(sheets);
+      setIsOptimizing(false);
+      setOptimizationResult({ sheets, stats, elapsed });
+      openDialog("optimizationResult");
+
+      toast.success(
+        `Otimizado! ${stats.totalSheets} chapas, ${stats.avgEfficiency.toFixed(1)}% aproveitamento`,
+        { id: "optimize" }
+      );
+    }, 100);
   };
 
   const handleLayoutUpdate = (sheetIdx: number, newPieces: PlacedNestingPiece[]) => {
@@ -101,7 +152,6 @@ export default function Index() {
   };
 
   const handleExportReport = () => {
-    // Generate printable report by switching to report view and triggering print
     toast.success("Preparando relatório para impressão...");
     setTimeout(() => window.print(), 500);
   };
@@ -150,6 +200,7 @@ export default function Index() {
         onConfigChange={handleConfigChange}
         onOptimize={handleOptimize}
         onAction={handleToolbarAction}
+        isOptimizing={isOptimizing}
       />
       <div className="flex-1 min-h-0">
         <ResizablePanelGroup direction="horizontal">
@@ -173,6 +224,13 @@ export default function Index() {
       <ImportarPecasDialog open={dialogs.importarPecas} onOpenChange={(v) => v ? openDialog("importarPecas") : closeDialog("importarPecas")} onImport={setPieces} />
       <ImportarDXFDialog open={dialogs.importarDXF || dialogs.importarChapa} onOpenChange={(v) => { closeDialog("importarDXF"); closeDialog("importarChapa"); if (v) openDialog("importarDXF"); }} onImport={() => {}} />
       <SobrasDialog open={dialogs.sobras} onOpenChange={(v) => v ? openDialog("sobras") : closeDialog("sobras")} sobras={sobras} onSave={setSobras} />
+      {optimizationResult && (
+        <OptimizationResultDialog
+          open={dialogs.optimizationResult}
+          onOpenChange={(v) => v ? openDialog("optimizationResult") : closeDialog("optimizationResult")}
+          result={optimizationResult}
+        />
+      )}
     </div>
   );
 }
