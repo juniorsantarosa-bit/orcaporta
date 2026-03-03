@@ -47,6 +47,27 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        toolbar: {
+          DEFAULT: "hsl(var(--toolbar-bg))",
+          border: "hsl(var(--toolbar-border))",
+        },
+        "table-header": "hsl(var(--table-header))",
+        "table-row-selected": "hsl(var(--table-row-selected))",
+        "table-row-hover": "hsl(var(--table-row-hover))",
+        nesting: {
+          DEFAULT: "hsl(var(--nesting-bg))",
+          sheet: "hsl(var(--nesting-sheet))",
+          piece: "hsl(var(--nesting-piece))",
+          stroke: "hsl(var(--nesting-piece-stroke))",
+        },
+        success: {
+          DEFAULT: "hsl(var(--success))",
+          foreground: "hsl(var(--success-foreground))",
+        },
+        warning: {
+          DEFAULT: "hsl(var(--warning))",
+          foreground: "hsl(var(--warning-foreground))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
@@ -65,20 +86,12 @@ export default {
       },
       keyframes: {
         "accordion-down": {
-          from: {
-            height: "0",
-          },
-          to: {
-            height: "var(--radix-accordion-content-height)",
-          },
+          from: { height: "0" },
+          to: { height: "var(--radix-accordion-content-height)" },
         },
         "accordion-up": {
-          from: {
-            height: "var(--radix-accordion-content-height)",
-          },
-          to: {
-            height: "0",
-          },
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: "0" },
         },
       },
       animation: {
