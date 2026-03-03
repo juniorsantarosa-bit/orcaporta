@@ -190,15 +190,22 @@ export function NestingPreview({ layouts, selectedPieceId, onLayoutUpdate, onReo
 
       const vb = "-20 -20 " + (sheet.sheetWidth + 40) + " " + (sheet.sheetHeight + 40);
 
+      const logoHtml = companyLogo
+        ? '<div class="logo"><img src="' + companyLogo + '" alt="Logo"/></div>'
+        : '<div class="logo"><span class="logo-text">⚡ MAX<span class="green">CUT</span></span></div>';
+
       doc.write(
         '<div class="page">' +
         '<div class="header">' +
-        '<div class="logo">⚡ MAX<span class="green">CUT</span></div>' +
+        logoHtml +
         '<div class="meta">' +
-        '<div><span class="lbl">Material: </span><span class="bld">' + sheet.material + "</span></div>" +
-        '<div><span class="lbl">Chapa: </span><span class="m bld">' + sheet.sheetWidth + "×" + sheet.sheetHeight + "×" + sheet.espessura + "mm</span></div>" +
-        '<div><span class="lbl">Aproveit.: </span><span class="bld" style="color:' + effColor + '">' + sheet.efficiency.toFixed(1) + "%</span></div>" +
-        '<div class="bld">Chapa ' + sheet.id + "</div>" +
+        '<div class="meta-item"><span class="lbl">Cliente: </span><span class="bld">' + clientes + "</span></div>" +
+        '<div class="meta-item"><span class="lbl">Data: </span><span class="bld">' + today + "</span></div>" +
+        '<div class="meta-item"><span class="lbl">Material: </span><span class="bld">' + sheet.material + "</span></div>" +
+        '<div class="meta-item"><span class="lbl">Chapa Nº: </span><span class="bld m">' + sheet.id + "</span></div>" +
+        '<div class="meta-item"><span class="lbl">Peças: </span><span class="bld m">' + sheet.pieces.length + "</span></div>" +
+        '<div class="meta-item"><span class="lbl">Ambiente: </span><span class="bld">' + ambientes + "</span></div>" +
+        '<div class="meta-item"><span class="lbl">Aproveit.: </span><span class="bld" style="color:' + effColor + '">' + sheet.efficiency.toFixed(1) + "%</span></div>" +
         "</div></div>" +
         '<div class="diagram">' +
         '<svg viewBox="' + vb + '" preserveAspectRatio="xMidYMid meet">' +
