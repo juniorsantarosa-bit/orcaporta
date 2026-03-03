@@ -1,15 +1,79 @@
 /**
  * G-code contour cutting operations generator.
  * Supports SmartCut diagonal ramp, Mach CNC two-pass, and Aspire helical ramp.
+ * Optimized: detects shared edges between adjacent pieces to avoid double cuts.
  */
 import { PlacedNestingPiece } from "@/types/promob";
 import { ToolSlot } from "@/types/toolMagazine";
 import { PostProcessorConfig } from "@/types/postProcessor";
+import { NestingSheet } from "@/types/promob";
 
 /**
- * Generate helical ramp entry (Aspire pattern).
- * 30 micro-steps descending in a circle of radius 3mm while plunging to cut depth.
+ * Detect shared edges between pieces on the same sheet.
+ * Two pieces share an edge when they are separated by exactly the gap distance
+ * and their edges overlap along the shared dimension.
+ * Returns a set of edge keys that should be skipped (already cut by neighbor).
  */
+export function findSharedEdges(
+  pieces: PlacedNestingPiece[],
+  gap: number,
+  toolDiameter: number,
+): Set<string> {
+  const skippable = new Set<string>();
+  const tolerance = toolDiameter + 2; // pieces within tool diameter + small tolerance share a cut
+
+  for (let i = 0; i < pieces.length; i++) {
+    for (let j = i + 1; j < pieces.length; j++) {
+      const a = pieces[i];
+      const b = pieces[j];
+
+      // Check if A's right edge aligns with B's left edge
+      const rightLeftDist = Math.abs((a.x + a.width) - b.x);
+      if (rightLeftDist <= tolerance) {
+        // Check vertical overlap
+        const overlapTop = Math.max(a.y, b.y);
+        const overlapBot = Math.min(a.y + a.height, b.y + b.height);
+        if (overlapBot - overlapTop > 10) {
+          // A's right and B's left share a cut — mark B's left as skippable
+          skippable.add(`${j}-left`);
+        }
+      }
+
+      // Check if A's bottom edge aligns with B's top edge
+      const bottomTopDist = Math.abs((a.y + a.height) - b.y);
+      if (bottomTopDist <= tolerance) {
+        const overlapLeft = Math.max(a.x, b.x);
+        const overlapRight = Math.min(a.x + a.width, b.x + b.width);
+        if (overlapRight - overlapLeft > 10) {
+          skippable.add(`${j}-top`);
+        }
+      }
+
+      // Check if B's right edge aligns with A's left edge
+      const bRightALeft = Math.abs((b.x + b.width) - a.x);
+      if (bRightALeft <= tolerance) {
+        const overlapTop = Math.max(a.y, b.y);
+        const overlapBot = Math.min(a.y + a.height, b.y + b.height);
+        if (overlapBot - overlapTop > 10) {
+          skippable.add(`${i}-left`);
+        }
+      }
+
+      // Check if B's bottom edge aligns with A's top edge
+      const bBottomATop = Math.abs((b.y + b.height) - a.y);
+      if (bBottomATop <= tolerance) {
+        const overlapLeft = Math.max(a.x, b.x);
+        const overlapRight = Math.min(a.x + a.width, b.x + b.width);
+        if (overlapRight - overlapLeft > 10) {
+          skippable.add(`${i}-top`);
+        }
+      }
+    }
+  }
+
+  return skippable;
+}
+
 function generateHelicalRamp(
   lines: string[],
   startX: number,
@@ -21,7 +85,7 @@ function generateHelicalRamp(
   f4: (n: number) => string,
 ) {
   const steps = pp.rampSteps || 30;
-  const radius = 3.0; // ramp radius
+  const radius = 3.0;
 
   for (let i = 0; i < steps; i++) {
     const t = (i + 1) / steps;
@@ -38,11 +102,6 @@ function generateHelicalRamp(
   }
 }
 
-/**
- * Generate arc command based on post-processor format.
- * R-format: G2 X... Y... R3.000
- * IJ-format: G2 X... Y... I0.0000 J3.0000
- */
 function arcCmd(
   gCode: "G2" | "G3",
   targetX: number | null,
@@ -69,7 +128,6 @@ function arcCmd(
 
 /**
  * Generate contour cut for a single piece.
- * Follows the exact patterns found in production files.
  */
 export function generatePieceContour(
   lines: string[],
@@ -86,11 +144,10 @@ export function generatePieceContour(
   const R = pp.raioContorno;
   const halfFresa = tool.diametro / 2;
 
-  // Piece rectangle in machine coordinates (X negative, offset by fresa radius)
-  const x1 = -(piece.x + piece.width) - halfFresa; // left
-  const x2 = -piece.x + halfFresa;                  // right  
-  const y1 = piece.y - halfFresa;                    // bottom
-  const y2 = piece.y + piece.height + halfFresa;     // top
+  const x1 = -(piece.x + piece.width) - halfFresa;
+  const x2 = -piece.x + halfFresa;
+  const y1 = piece.y - halfFresa;
+  const y2 = piece.y + piece.height + halfFresa;
 
   const zSeguro = pp.zSeguroAutoCalc ? espessura + pp.zSeguroOffset : pp.zSeguro;
   const zRapido = pp.zSeguroAutoCalc ? espessura : pp.zRapido;
@@ -99,33 +156,26 @@ export function generatePieceContour(
   const feedCut = pp.avancoCorteOverride || tool.avancoCorte;
   const feedLeadOut = pp.avancoLeadOut || feedEntry;
 
-  // Lead-in point: middle of top edge
   const leadInX = (x1 + x2) / 2;
   const leadInY = y2;
 
   if (pp.tipo === "mach_cnc") {
-    // === Mach CNC pattern: metadata comment, Step labels ===
     const dimW = piece.rotated ? piece.height : piece.width;
     const dimH = piece.rotated ? piece.width : piece.height;
     lines.push(`(${passLabel} - ${dimW} x ${dimH})`);
     lines.push(`G0 X${f4(leadInX)}Y${f4(leadInY - 14.7)}Z${f4(zSeguro)}`);
     lines.push(`G0 X${f4(leadInX)}Y${f4(leadInY - 14.7)}Z${f4(zRapido)}`);
 
-    // Entry ramp: diagonal
     if (zDepth > 0) {
-      // Pre-cut pass (Step 1/2): Z above surface  
       lines.push(`(Step:1/2)`);
       lines.push(`G1 X${f4(leadInX)}Y${f4(leadInY)}Z${f4(zDepth)}F${f4(feedEntry)}`);
     } else {
-      // Final pass or single pass
       lines.push(`(Step:${pp.usarDoisPasses ? "2/2" : "1/1"})`);
       lines.push(`G1 X${f4(leadInX)}Y${f4(leadInY)}Z${f4(zDepth)}F${f4(pp.usarDoisPasses ? feedEntry * 0.7 : feedEntry)}`);
     }
 
-    // Contour: rectangle with R3 corners
     lines.push(`G1 X${f4(leadInX)}Y${f4(leadInY)}Z${f4(zDepth)}F${f4(feedCut)}`);
     
-    // Clockwise rectangle: top-right -> right -> bottom-right -> bottom -> bottom-left -> left -> top-left -> back
     lines.push(`G1 X${f4(x2 - R)}Y${f4(y2)}Z${f4(zDepth)}`);
     lines.push(arcCmd("G2", x2, y2 - R, x2 - R, y2, x2 - R, y2 - R, R, pp, f4));
     lines.push(`G1 Y${f4(y1 + R)}`);
@@ -136,23 +186,18 @@ export function generatePieceContour(
     lines.push(arcCmd("G2", x1 + R, y2, x1, y2 - R, x1 + R, y2 - R, R, pp, f4));
     lines.push(`G1 X${f4(leadInX)}`);
 
-    // Lead-out with reduced feed
     lines.push(`G1 X${f4(leadInX)}Y${f4(leadInY)}Z${f4(zDepth)}F${f4(feedLeadOut)}`);
     lines.push(`G0 X${f4(leadInX)}Y${f4(leadInY)}Z${f4(zSeguro)}`);
 
   } else if (pp.tipo === "aspire") {
-    // === Aspire pattern: helical ramp, I/J arcs ===
     lines.push(`G0 X${f4(leadInX)} Y${f4(leadInY)} `);
     lines.push(`G0   Z${f4(zSeguro)}`);
 
-    // Helical ramp entry
     lines.push(`G1   Z${f4(zRapido)} F${f4(feedEntry)}`);
     generateHelicalRamp(lines, leadInX, leadInY, zRapido, zDepth, pp, feedEntry, f4);
 
-    // Move to the start of the lead-in
     lines.push(`G1 X${f4(leadInX)} Z${f4(zDepth)} `);
 
-    // Contour with I/J arcs
     lines.push(`G1 X${f4(x2 - R)}  Z${f4(zDepth)} F${f4(feedCut)}`);
     lines.push(arcCmd("G2", x2, y2 - R, x2 - R, y2, x2 - R, y2 - R, R, pp, f4));
     lines.push(`G1  Y${f4(y1 + R)}  `);
@@ -163,18 +208,14 @@ export function generatePieceContour(
     lines.push(arcCmd("G2", x1 + R, y2, x1, y2 - R, x1 + R, y2 - R, R, pp, f4));
     lines.push(`G1 X${f4(leadInX)}   `);
 
-    // Lead-out
     lines.push(`G0   Z${f4(zSeguro)}`);
 
   } else {
-    // === SmartCut pattern: diagonal ramp, R arcs ===
     lines.push(`G0 X${f(leadInX)} Y${f1(leadInY)}`);
     lines.push(`G0 Z${f1(zRapido)}`);
 
-    // Diagonal ramp entry
     lines.push(`G1 X${f(leadInX + pp.leadOutDistance)} Z${f(zDepth)} F${f(feedEntry)}`);
 
-    // Contour with R-format arcs
     lines.push(`G1 X${f(x2 - R)} F${f(feedCut)}`);
     lines.push(`G2 X${f(x2)} Y${f1(y2 - R)} R${f(R)}`);
     lines.push(`G1 Y${f1(y1 + R)}`);
@@ -185,7 +226,6 @@ export function generatePieceContour(
     lines.push(`G2 X${f(x1 + R)} Y${f1(y2)} R${f(R)}`);
     lines.push(`G1 X${f(leadInX)}`);
 
-    // Lead-out
     lines.push(`G1 X${f(leadInX - pp.leadOutDistance)} F${f(feedLeadOut)}`);
     lines.push(`G0 Z${f1(zSeguro)}`);
   }

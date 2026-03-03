@@ -1,11 +1,24 @@
 import { NestingSheet, PlacedNestingPiece, PromobHole } from "@/types/promob";
 import { useState, forwardRef, useImperativeHandle, useCallback, useRef, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { RefreshCw } from "lucide-react";
 
 export interface SheetView2DHandle {
   zoomIn: () => void;
   zoomOut: () => void;
   zoomFit: () => void;
   toggleDragMode: () => boolean;
+}
+
+/** 12 distinct light colors for pieces */
+const PIECE_COLORS = [
+  "180 55% 72%", "30 80% 72%", "270 55% 75%", "120 50% 68%",
+  "340 60% 72%", "50 75% 70%", "200 65% 70%", "90 50% 65%",
+  "310 55% 72%", "15 70% 70%", "160 50% 68%", "240 55% 75%",
+];
+
+function getPieceColor(idx: number): string {
+  return PIECE_COLORS[idx % PIECE_COLORS.length];
 }
 
 function DrillHoleSVG({ hole, pieceX, pieceY }: { hole: PromobHole; pieceX: number; pieceY: number }) {
@@ -40,7 +53,7 @@ function EdgeBandIndicator({ piece, side }: { piece: PlacedNestingPiece; side: "
     case "left": w = thickness; h = piece.height; break;
     case "right": x = piece.x + piece.width - thickness; w = thickness; h = piece.height; break;
   }
-  return <rect x={x} y={y} width={w} height={h} fill="hsl(var(--warning))" opacity={0.7} rx={1} />;
+  return <rect x={x} y={y} width={w} height={h} fill="hsl(var(--warning))" opacity={0.85} rx={1} />;
 }
 
 interface SheetView2DProps {
@@ -48,9 +61,10 @@ interface SheetView2DProps {
   selectedPieceId: number | null;
   dragMode?: boolean;
   onPiecesReorder?: (pieces: PlacedNestingPiece[]) => void;
+  onReoptimize?: () => void;
 }
 
-export const SheetView2D = forwardRef<SheetView2DHandle, SheetView2DProps>(({ layout, selectedPieceId, dragMode = false, onPiecesReorder }, ref) => {
+export const SheetView2D = forwardRef<SheetView2DHandle, SheetView2DProps>(({ layout, selectedPieceId, dragMode = false, onPiecesReorder, onReoptimize }, ref) => {
   const [hoveredPiece, setHoveredPiece] = useState<number | null>(null);
   const [zoom, setZoom] = useState(1);
   const [internalDragMode, setInternalDragMode] = useState(false);
@@ -70,7 +84,6 @@ export const SheetView2D = forwardRef<SheetView2DHandle, SheetView2DProps>(({ la
       const next = !internalDragMode;
       setInternalDragMode(next);
       if (!next) {
-        // Exiting drag mode — commit
         if (tempPieces) {
           onPiecesReorder?.(tempPieces);
           setTempPieces(null);
@@ -82,7 +95,6 @@ export const SheetView2D = forwardRef<SheetView2DHandle, SheetView2DProps>(({ la
     },
   }));
 
-  // Sync tempPieces when entering drag mode externally
   useEffect(() => {
     if (dragMode && !tempPieces) {
       setTempPieces([...layout.pieces]);
@@ -139,21 +151,19 @@ export const SheetView2D = forwardRef<SheetView2DHandle, SheetView2DProps>(({ la
   const handleMouseUp = useCallback(() => {
     if (draggingIdx === null || !tempPieces) return;
     
-    // Auto-regroup: pack pieces using simple left-top gravity
     const sorted = [...tempPieces].sort((a, b) => {
       const distA = a.x + a.y;
       const distB = b.x + b.y;
       return distA - distB;
     });
 
-    const gap = 4; // spacing between pieces
+    const gap = 4;
     const packed = regroupPieces(sorted, layout.sheetWidth, layout.sheetHeight, gap);
     
     setTempPieces(packed);
     setDraggingIdx(null);
   }, [draggingIdx, tempPieces, layout.sheetWidth, layout.sheetHeight]);
 
-  // Calculate efficiency for display
   const displayEfficiency = (() => {
     const totalArea = layout.sheetWidth * layout.sheetHeight;
     const usedArea = pieces.reduce((a, p) => a + p.width * p.height, 0);
@@ -180,6 +190,15 @@ export const SheetView2D = forwardRef<SheetView2DHandle, SheetView2DProps>(({ la
             ✋ Modo arrastar — solte para reagrupar
           </span>
         )}
+        {/* OTIMIZAR button */}
+        <Button
+          size="sm"
+          onClick={onReoptimize}
+          className="h-6 px-3 text-[10px] font-bold bg-primary text-primary-foreground hover:bg-primary/90 gap-1"
+        >
+          <RefreshCw className="h-3 w-3" />
+          OTIMIZAR
+        </Button>
       </div>
 
       <div
@@ -220,6 +239,7 @@ export const SheetView2D = forwardRef<SheetView2DHandle, SheetView2DProps>(({ la
             const isDragging = draggingIdx === idx;
             const showDetail = piece.width > 80 && piece.height > 40;
             const showFullDetail = piece.width > 200 && piece.height > 100;
+            const pieceColor = getPieceColor(idx);
 
             return (
               <g
@@ -231,7 +251,6 @@ export const SheetView2D = forwardRef<SheetView2DHandle, SheetView2DProps>(({ la
                 filter={isDragging ? "url(#dragShadow)" : isSelected || isHovered ? "url(#pieceShadow)" : undefined}
                 style={{ transition: isDragging ? 'none' : 'transform 0.3s ease' }}
               >
-                {/* Drop shadow placeholder when dragging */}
                 {isDragActive && !isDragging && (
                   <rect
                     x={piece.x} y={piece.y}
@@ -248,12 +267,31 @@ export const SheetView2D = forwardRef<SheetView2DHandle, SheetView2DProps>(({ la
                 <rect
                   x={piece.x} y={piece.y}
                   width={piece.width} height={piece.height}
-                  fill={isDragging ? "hsl(var(--primary) / 0.3)" : isSelected ? "hsl(var(--primary) / 0.2)" : isHovered ? "hsl(var(--nesting-piece) / 0.95)" : "hsl(var(--nesting-piece))"}
-                  stroke={isDragging ? "hsl(var(--primary))" : isSelected ? "hsl(var(--primary))" : "hsl(var(--nesting-piece-stroke))"}
-                  strokeWidth={isDragging ? 3 : isSelected ? 2.5 : 0.8}
+                  fill={isDragging ? `hsl(${pieceColor} / 0.5)` : `hsl(${pieceColor} / 0.85)`}
+                  stroke={
+                    isDragging ? "hsl(var(--primary))"
+                    : isSelected ? "hsl(var(--selected-stroke))"
+                    : isHovered ? `hsl(${pieceColor})`
+                    : `hsl(${pieceColor} / 0.5)`
+                  }
+                  strokeWidth={isDragging ? 3 : isSelected ? 3.5 : isHovered ? 2 : 0.8}
                   rx={1.5}
                   opacity={isDragging ? 0.9 : 1}
                 />
+
+                {/* Red selection glow */}
+                {isSelected && !isDragging && (
+                  <rect
+                    x={piece.x - 2} y={piece.y - 2}
+                    width={piece.width + 4} height={piece.height + 4}
+                    fill="none"
+                    stroke="hsl(var(--selected-stroke))"
+                    strokeWidth={2}
+                    rx={3}
+                    opacity={0.6}
+                    strokeDasharray="8,4"
+                  />
+                )}
 
                 {piece.bordaSup && <EdgeBandIndicator piece={piece} side="top" />}
                 {piece.bordaInf && <EdgeBandIndicator piece={piece} side="bottom" />}
@@ -269,7 +307,7 @@ export const SheetView2D = forwardRef<SheetView2DHandle, SheetView2DProps>(({ la
                     x={piece.x + piece.width / 2}
                     y={piece.y + (showFullDetail ? piece.height * 0.35 : piece.height / 2)}
                     textAnchor="middle" dominantBaseline="central"
-                    fill={isSelected || isDragging ? "hsl(var(--primary))" : "hsl(var(--foreground))"}
+                    fill="hsl(225 20% 10%)"
                     fontSize={Math.min(piece.width / 6, piece.height / 3, 40)}
                     fontWeight={700} fontFamily="Inter"
                   >
@@ -281,7 +319,7 @@ export const SheetView2D = forwardRef<SheetView2DHandle, SheetView2DProps>(({ la
                   <text
                     x={piece.x + piece.width / 2} y={piece.y + piece.height * 0.55}
                     textAnchor="middle" dominantBaseline="central"
-                    fill="hsl(var(--foreground))" fontSize={Math.min(piece.width / 12, 18)}
+                    fill="hsl(225 20% 15%)" fontSize={Math.min(piece.width / 12, 18)}
                     fontWeight={500} fontFamily="Inter" opacity={0.8}
                   >
                     {piece.descricao}
@@ -292,7 +330,7 @@ export const SheetView2D = forwardRef<SheetView2DHandle, SheetView2DProps>(({ la
                   <text
                     x={piece.x + piece.width / 2} y={piece.y + piece.height * 0.72}
                     textAnchor="middle" dominantBaseline="central"
-                    fill="hsl(var(--muted-foreground))" fontSize={Math.min(piece.width / 14, 14)}
+                    fill="hsl(225 15% 30%)" fontSize={Math.min(piece.width / 14, 14)}
                     fontFamily="JetBrains Mono"
                   >
                     {piece.width}×{piece.height}
@@ -345,6 +383,9 @@ export const SheetView2D = forwardRef<SheetView2DHandle, SheetView2DProps>(({ la
         <span className="flex items-center gap-1">
           <span className="w-4 h-1 rounded-sm inline-block" style={{ background: "hsl(var(--warning))", opacity: 0.7 }} /> Fita de borda
         </span>
+        <span className="flex items-center gap-1">
+          <span className="w-3 h-3 rounded-sm inline-block border-2" style={{ borderColor: "hsl(var(--selected-stroke))" }} /> Selecionada
+        </span>
       </div>
     </div>
   );
@@ -352,9 +393,6 @@ export const SheetView2D = forwardRef<SheetView2DHandle, SheetView2DProps>(({ la
 
 SheetView2D.displayName = "SheetView2D";
 
-/**
- * Simple gravity-based packing: place pieces one by one finding first available position
- */
 function regroupPieces(
   pieces: PlacedNestingPiece[],
   sheetW: number,
@@ -367,7 +405,6 @@ function regroupPieces(
     let bestX = 0, bestY = 0;
     let found = false;
 
-    // Scan Y then X for first fit
     for (let y = gap; y <= sheetH - piece.height; y += 5) {
       for (let x = gap; x <= sheetW - piece.width; x += 5) {
         const overlaps = placed.some(p =>

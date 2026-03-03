@@ -6,113 +6,75 @@
 
 @layer base {
   :root {
-    --background: 220 14% 96%;
-    --foreground: 222 47% 11%;
+    --background: 225 20% 7%;
+    --foreground: 210 20% 92%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card: 225 18% 10%;
+    --card-foreground: 210 20% 92%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover: 225 18% 12%;
+    --popover-foreground: 210 20% 92%;
 
-    --primary: 217 91% 60%;
+    --primary: 160 84% 39%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222 47% 11%;
+    --secondary: 225 18% 16%;
+    --secondary-foreground: 210 20% 90%;
 
-    --muted: 210 40% 93%;
-    --muted-foreground: 215 16% 47%;
+    --muted: 225 15% 15%;
+    --muted-foreground: 215 12% 55%;
 
-    --accent: 210 40% 96%;
-    --accent-foreground: 222 47% 11%;
+    --accent: 225 18% 18%;
+    --accent-foreground: 210 20% 92%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 217 91% 60%;
+    --border: 225 15% 18%;
+    --input: 225 15% 18%;
+    --ring: 160 84% 39%;
 
     --radius: 0.5rem;
 
-    --toolbar-bg: 0 0% 100%;
-    --toolbar-border: 214 32% 91%;
-    --table-header: 217 33% 97%;
-    --table-row-selected: 217 91% 95%;
-    --table-row-hover: 210 40% 97%;
-    --nesting-bg: 220 14% 96%;
-    --nesting-sheet: 210 20% 98%;
-    --nesting-piece: 217 60% 88%;
-    --nesting-piece-stroke: 217 70% 50%;
-    --success: 142 71% 45%;
+    --toolbar-bg: 225 18% 10%;
+    --toolbar-border: 225 15% 18%;
+    --table-header: 225 18% 12%;
+    --table-row-selected: 160 40% 14%;
+    --table-row-hover: 225 15% 13%;
+    --nesting-bg: 225 20% 7%;
+    --nesting-sheet: 225 15% 12%;
+    --nesting-piece: 200 30% 25%;
+    --nesting-piece-stroke: 200 50% 45%;
+    --success: 160 84% 39%;
     --success-foreground: 0 0% 100%;
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-
-    --brand-gradient: linear-gradient(135deg, hsl(217 91% 60%), hsl(199 89% 48%));
-  }
-
-  .dark {
-    --background: 224 71% 4%;
-    --foreground: 210 20% 98%;
-
-    --card: 224 71% 6%;
-    --card-foreground: 210 20% 98%;
-
-    --popover: 224 71% 6%;
-    --popover-foreground: 210 20% 98%;
-
-    --primary: 217 91% 60%;
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 215 28% 17%;
-    --secondary-foreground: 210 20% 98%;
-
-    --muted: 215 28% 17%;
-    --muted-foreground: 217 10% 55%;
-
-    --accent: 215 28% 17%;
-    --accent-foreground: 210 20% 98%;
-
-    --destructive: 0 62% 30%;
-    --destructive-foreground: 0 0% 100%;
-
-    --border: 215 28% 17%;
-    --input: 215 28% 17%;
-    --ring: 217 91% 60%;
-
-    --toolbar-bg: 224 71% 6%;
-    --toolbar-border: 215 28% 17%;
-    --table-header: 217 30% 12%;
-    --table-row-selected: 217 40% 16%;
-    --table-row-hover: 215 28% 10%;
-    --nesting-bg: 224 71% 4%;
-    --nesting-sheet: 215 28% 10%;
-    --nesting-piece: 217 30% 25%;
-    --nesting-piece-stroke: 217 60% 55%;
-    --success: 142 71% 35%;
-    --success-foreground: 0 0% 100%;
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
-
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-background: 225 18% 8%;
+    --sidebar-foreground: 210 20% 85%;
+    --sidebar-primary: 160 84% 39%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-accent: 225 15% 14%;
+    --sidebar-accent-foreground: 210 20% 90%;
+    --sidebar-border: 225 15% 16%;
+    --sidebar-ring: 160 84% 39%;
+
+    --brand-gradient: linear-gradient(135deg, hsl(160 84% 39%), hsl(190 80% 45%));
+
+    --piece-1: 180 55% 72%;
+    --piece-2: 30 80% 72%;
+    --piece-3: 270 55% 75%;
+    --piece-4: 120 50% 68%;
+    --piece-5: 340 60% 72%;
+    --piece-6: 50 75% 70%;
+    --piece-7: 200 65% 70%;
+    --piece-8: 90 50% 65%;
+    --piece-9: 310 55% 72%;
+    --piece-10: 15 70% 70%;
+    --piece-11: 160 50% 68%;
+    --piece-12: 240 55% 75%;
+
+    --selected-stroke: 0 85% 55%;
   }
 }
 
@@ -158,31 +120,27 @@
     print-color-adjust: exact;
   }
 
-  /* Hide everything except the main content area */
-  .print\\:hidden,
+  .print\:hidden,
   nav, header, footer {
     display: none !important;
   }
 
-  .print\\:p-0 {
+  .print\:p-0 {
     padding: 0 !important;
   }
 
-  /* Cutting plan report print layout */
-  .print\\:shadow-none {
+  .print\:shadow-none {
     box-shadow: none !important;
   }
 
-  .print\\:border-black {
+  .print\:border-black {
     border-color: black !important;
   }
 
-  /* Labels: tile them for thermal printer or standard */
-  .print\\:gap-1 {
+  .print\:gap-1 {
     gap: 4px !important;
   }
 
-  /* Force page breaks between labels */
   @page {
     margin: 5mm;
   }
