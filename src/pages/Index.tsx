@@ -96,19 +96,20 @@ export default function Index() {
       case "configBitmap": openDialog("configBitmap"); break;
       case "sobras": openDialog("sobras"); break;
       case "gerarTudo": {
-        import("@/lib/gcodeGenerator").then(({ generateGCode, generateGCodeFilename }) => {
-          import("@/types/promob").then(({ DEFAULT_GCODE_CONFIG }) => {
-            mockSheetLayouts.forEach((sheet, idx) => {
-              const gcode = generateGCode(sheet, DEFAULT_GCODE_CONFIG);
-              const filename = generateGCodeFilename(idx, sheet.material);
-              const blob = new Blob([gcode], { type: "text/plain" });
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement("a");
-              a.href = url; a.download = filename; a.click();
-              URL.revokeObjectURL(url);
-            });
-            toast.success(`${mockSheetLayouts.length} arquivos G-code gerados!`);
+        import("@/lib/gcode/index").then(({ generateGCode, generateGCodeFilename }) => {
+          const ppType = machineConfig.posProcessador.includes("Aspire") ? "aspire" as const
+            : machineConfig.posProcessador.includes("Mach3D") ? "mach_cnc" as const
+            : "smartcut" as const;
+          mockSheetLayouts.forEach((sheet, idx) => {
+            const gcode = generateGCode(sheet, { postProcessor: ppType });
+            const filename = generateGCodeFilename(idx, sheet.material, ppType);
+            const blob = new Blob([gcode], { type: "text/plain" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url; a.download = filename; a.click();
+            URL.revokeObjectURL(url);
           });
+          toast.success(`${mockSheetLayouts.length} arquivos G-code gerados (${ppType})!`);
         });
         break;
       }
