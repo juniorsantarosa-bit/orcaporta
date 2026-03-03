@@ -1,3 +1,5 @@
+import { PromobHole } from "./promob";
+
 export interface CuttingPiece {
   id: number;
   projeto: string;
@@ -14,6 +16,7 @@ export interface CuttingPiece {
   bordaDir: boolean;
   veio: boolean;
   observacao: string;
+  furos?: PromobHole[];
 }
 
 export interface SheetLayout {
