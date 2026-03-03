@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { Zap } from "lucide-react";
 
 interface TabBarProps {
   activeTab: string;
@@ -6,30 +7,44 @@ interface TabBarProps {
 }
 
 const tabs = [
-  { id: "smartcut", label: "Smart CUT" },
   { id: "otimizacao", label: "Otimização" },
   { id: "visualizacao", label: "Visualização" },
+  { id: "relatorios", label: "Relatórios" },
 ];
 
 export function TabBar({ activeTab, onTabChange }: TabBarProps) {
   return (
-    <div className="flex items-center bg-card border-b border-border">
+    <div className="flex items-center bg-card border-b border-border h-10">
+      {/* Brand */}
+      <div className="flex items-center gap-2 px-4 border-r border-border h-full">
+        <Zap className="h-4 w-4 text-primary" />
+        <span className="text-sm font-extrabold tracking-tight text-foreground">
+          MAX<span className="text-primary">CUT</span>
+        </span>
+      </div>
+
+      {/* Tabs */}
       {tabs.map((tab) => (
         <button
           key={tab.id}
           onClick={() => onTabChange(tab.id)}
           className={cn(
-            "px-4 py-2 text-xs font-semibold border-r border-border transition-colors",
+            "px-5 h-full text-xs font-medium transition-all relative",
             activeTab === tab.id
-              ? "bg-primary text-primary-foreground"
-              : "text-foreground/70 hover:bg-accent hover:text-accent-foreground"
+              ? "text-primary"
+              : "text-muted-foreground hover:text-foreground"
           )}
         >
           {tab.label}
+          {activeTab === tab.id && (
+            <div className="absolute bottom-0 left-2 right-2 h-0.5 bg-primary rounded-t-full" />
+          )}
         </button>
       ))}
-      <div className="flex-1 px-4 py-2 text-center">
-        <span className="text-xs font-semibold text-foreground/60">Smart CUT - Otimizador CNC</span>
+
+      <div className="flex-1" />
+      <div className="px-4 text-[10px] text-muted-foreground">
+        v1.0
       </div>
     </div>
   );
