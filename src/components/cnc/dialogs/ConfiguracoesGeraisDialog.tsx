@@ -179,6 +179,32 @@ export function ConfiguracoesGeraisDialog({ open, onOpenChange, config, onSave }
             </fieldset>
 
             <fieldset className="border border-border rounded p-3">
+              <legend className="text-xs font-medium px-1">Logo da Empresa</legend>
+              <div className="flex items-center gap-3">
+                {form.companyLogo ? (
+                  <div className="relative">
+                    <img src={form.companyLogo} alt="Logo" className="h-12 max-w-[120px] object-contain rounded border border-border" />
+                    <Button variant="ghost" size="sm" className="absolute -top-1 -right-1 h-5 w-5 p-0 bg-destructive text-destructive-foreground rounded-full"
+                      onClick={() => update("companyLogo", "")}>
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="h-12 w-24 border-2 border-dashed border-border rounded flex items-center justify-center text-muted-foreground text-[10px]">
+                    Sem logo
+                  </div>
+                )}
+                <div>
+                  <input ref={logoInputRef} type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
+                  <Button size="sm" variant="outline" className="text-xs" onClick={() => logoInputRef.current?.click()}>
+                    <Upload className="h-3 w-3 mr-1" /> Carregar Logo
+                  </Button>
+                  <p className="text-[9px] text-muted-foreground mt-1">Aparecerá na impressão do plano de corte</p>
+                </div>
+              </div>
+            </fieldset>
+
+            <fieldset className="border border-border rounded p-3">
               <legend className="text-xs font-medium px-1">Importar/Exportar Materiais</legend>
               <div className="flex flex-wrap gap-2">
                 <Button size="sm" className="text-xs bg-primary text-primary-foreground hover:bg-primary/90">Importar Materiais</Button>
