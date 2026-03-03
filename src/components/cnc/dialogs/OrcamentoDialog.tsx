@@ -82,7 +82,7 @@ function calcCuttingPerimeter(sheet: NestingSheet): number {
   return totalPerimeter;
 }
 
-export function OrcamentoDialog({ open, onOpenChange, layouts }: Props) {
+export function OrcamentoDialog({ open, onOpenChange, layouts, companyLogo }: Props) {
   const [pricing, setPricing] = useState<PricingConfig>({
     corteModo: "metro",
     corteValorMetro: 2.50,
