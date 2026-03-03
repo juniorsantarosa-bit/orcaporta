@@ -308,7 +308,7 @@ export default function Index() {
             <AlertDialogCancel onClick={() => { setShowSavePrompt(false); setPendingAction(null); }}>
               Cancelar
             </AlertDialogCancel>
-            <AlertDialogAction variant="outline" onClick={() => handleSavePromptResponse(false)}>
+            <AlertDialogAction className="bg-secondary text-secondary-foreground hover:bg-secondary/80" onClick={() => handleSavePromptResponse(false)}>
               Não salvar
             </AlertDialogAction>
             <AlertDialogAction onClick={() => handleSavePromptResponse(true)}>
