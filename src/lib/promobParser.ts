@@ -178,6 +178,7 @@ export function promobToCuttingPieces(promobPieces: PromobPiece[]): CuttingPiece
     bordaDir: p.bordaDir,
     veio: p.VEIO === 1,
     observacao: p.OBS || "",
+    furos: p.FUROS,
   }));
 }
 

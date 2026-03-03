@@ -246,7 +246,7 @@ export function optimizeNesting(
         codCorte: 7000 + sheetIdCounter,
         efficiency,
         pieces: packedSheet.map((p) => {
-          const holes = existingHoles?.get(p.ep.piece.id) || [];
+          const holes = existingHoles?.get(p.ep.piece.id) || p.ep.piece.furos || [];
           const label = String(globalLabelCounter++);
           return {
             pieceId: p.ep.piece.id,

@@ -16,6 +16,7 @@ export interface CuttingPiece {
   bordaDir: boolean;
   veio: boolean;
   observacao: string;
+  furos?: PromobHole[];
 }
 
 export interface SheetLayout {
