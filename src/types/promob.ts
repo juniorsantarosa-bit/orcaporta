@@ -101,6 +101,7 @@ export interface PlacedNestingPiece {
   bordaEsq: boolean;
   bordaDir: boolean;
   cliente: string;
+  ambiente: string;
   moduloDesc: string;
   espessura: number;
 }
