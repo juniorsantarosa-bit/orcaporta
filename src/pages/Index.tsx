@@ -27,6 +27,7 @@ export default function Index() {
   const [activeTab, setActiveTab] = useState("otimizacao");
   const [selectedPieceId, setSelectedPieceId] = useState<number | null>(1);
   const [pieces, setPieces] = useState<CuttingPiece[]>(mockPieces);
+  const [layouts, setLayouts] = useState<NestingSheet[]>(mockSheetLayouts);
   const [sobras, setSobras] = useState<SobraMaterial[]>([]);
 
   const [config, setConfig] = useState<CuttingConfig>({
