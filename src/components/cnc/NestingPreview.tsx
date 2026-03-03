@@ -18,6 +18,7 @@ interface NestingPreviewProps {
   layouts: NestingSheet[];
   selectedPieceId: number | null;
   onLayoutUpdate?: (sheetIdx: number, pieces: PlacedNestingPiece[]) => void;
+  onReoptimize?: () => void;
 }
 
 type ViewMode = "2d" | "3d" | "report" | "labels";
