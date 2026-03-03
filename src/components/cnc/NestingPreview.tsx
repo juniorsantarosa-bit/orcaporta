@@ -180,6 +180,7 @@ export function NestingPreview({ layouts, selectedPieceId, onLayoutUpdate, onReo
                   selectedPieceId={selectedPieceId}
                   dragMode={dragMode}
                   onPiecesReorder={handlePiecesReorder}
+                  onReoptimize={onReoptimize}
                 />
               )}
               {viewMode === "3d" && (
