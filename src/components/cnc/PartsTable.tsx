@@ -25,7 +25,11 @@ export function PartsTable({ pieces, selectedId, onSelect }: PartsTableProps) {
               <th className="text-left px-2 py-1.5">Descrição</th>
               <th className="text-right px-2 py-1.5 w-16">Larg.</th>
               <th className="text-right px-2 py-1.5 w-16">Altura</th>
+              <th className="text-right px-2 py-1.5 w-12">Esp.</th>
               <th className="text-left px-2 py-1.5">Material</th>
+              <th className="text-center px-2 py-1.5 w-8">V</th>
+              <th className="text-center px-2 py-1.5 w-16">Fitas</th>
+              <th className="text-right px-2 py-1.5 w-10">Qtd</th>
             </tr>
           </thead>
           <tbody>
@@ -45,7 +49,13 @@ export function PartsTable({ pieces, selectedId, onSelect }: PartsTableProps) {
                 <td className="px-2 py-1 font-medium text-primary">{piece.descricao}</td>
                 <td className="px-2 py-1 text-right font-mono">{piece.largura}</td>
                 <td className="px-2 py-1 text-right font-mono">{piece.altura}</td>
+                <td className="px-2 py-1 text-right font-mono">{piece.espessura}</td>
                 <td className="px-2 py-1 truncate max-w-[130px]">{piece.material}</td>
+                <td className="px-2 py-1 text-center">{piece.veio ? "+" : ""}</td>
+                <td className="px-2 py-1 text-center text-[9px]">
+                  {[piece.bordaSup && "S", piece.bordaInf && "I", piece.bordaEsq && "E", piece.bordaDir && "D"].filter(Boolean).join("") || "-"}
+                </td>
+                <td className="px-2 py-1 text-right">{piece.quantidade}</td>
               </tr>
             ))}
           </tbody>
