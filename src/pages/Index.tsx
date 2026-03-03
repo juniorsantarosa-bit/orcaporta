@@ -4,32 +4,102 @@ import { Toolbar } from "@/components/cnc/Toolbar";
 import { PartsTable } from "@/components/cnc/PartsTable";
 import { NestingPreview } from "@/components/cnc/NestingPreview";
 import { mockPieces, mockSheetLayouts } from "@/data/mockPieces";
-import { CuttingConfig } from "@/types/cutting";
+import { CuttingConfig, CuttingPiece, NestingConfig, GeneralConfig, MachineConfig, BitmapConfig } from "@/types/cutting";
+import { EditarPecasDialog } from "@/components/cnc/dialogs/EditarPecasDialog";
+import { ConfiguracaoCorteDialog } from "@/components/cnc/dialogs/ConfiguracaoCorteDialog";
+import { ConfiguracoesGeraisDialog } from "@/components/cnc/dialogs/ConfiguracoesGeraisDialog";
+import { BibliotecaMateriaisDialog } from "@/components/cnc/dialogs/BibliotecaMateriaisDialog";
+import { ConfigMaquinasDialog } from "@/components/cnc/dialogs/ConfigMaquinasDialog";
+import { ConfigBitmapDialog } from "@/components/cnc/dialogs/ConfigBitmapDialog";
+import { LayersDialog } from "@/components/cnc/dialogs/LayersDialog";
+import { ImportarPecasDialog } from "@/components/cnc/dialogs/ImportarPecasDialog";
+import { ImportarDXFDialog } from "@/components/cnc/dialogs/ImportarDXFDialog";
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
+import { toast } from "sonner";
 
 export default function Index() {
   const [activeTab, setActiveTab] = useState("otimizacao");
   const [selectedPieceId, setSelectedPieceId] = useState<number | null>(1);
+  const [pieces, setPieces] = useState<CuttingPiece[]>(mockPieces);
+
   const [config, setConfig] = useState<CuttingConfig>({
-    serraSerpentina: 4,
-    margemChapa: 0,
-    espacamentoEntreCortes: 4,
-    permitirRotacao: true,
-    usarDisponiveis: false,
-    cadastrarNovas: true,
-    removerUsadas: false,
+    serraSerpentina: 4, margemChapa: 0, espacamentoEntreCortes: 4,
+    permitirRotacao: true, usarDisponiveis: false, cadastrarNovas: true, removerUsadas: false,
   });
+
+  const [nestingConfig, setNestingConfig] = useState<NestingConfig>({
+    espessuraCorte: 6, considerarRetangulares: false, pontoInicial: "frente-direita",
+    refiloX: 8, refiloY: 8, direcaoNesting: "vertical", otimizacao: 80,
+  });
+
+  const [generalConfig, setGeneralConfig] = useState<GeneralConfig>({
+    chapaX: 1840, chapaY: 2750, sobraX: 500, sobraY: 500,
+    distanciaX: 2000, distanciaY: 3000, usarDisponiveis: false,
+    cadastrarNovas: true, removerUsadas: false, exibirDinabox: false,
+    exibirSeletorSobras: false, fresaDiametroMaior: 42, fresaAngulo: 45,
+    fresaDiametroMenor: 18, ignorarMateriais: [],
+  });
+
+  const [machineConfig, setMachineConfig] = useState<MachineConfig>({
+    nome: "CNC", descricao: "", posProcessador: "Mach_Turbo_ATC16",
+    tipoOtimizacao: "Nesting", pastaExportacao: "",
+    salvarEtiqueta: true, salvarLista: true, etiquetaModelo: "Modelo 3",
+    zSeguro: 50, zRapido: 1, maxZMenos: -1, deslocamentoX: 0, deslocamentoY: 0,
+    usarLargura: true, larguraPequena: 150, usarArea: true, areaPequena: 90,
+    pontoZeramento: "Frente-Dir", rotacaoPeloMaterial: false,
+    offsetChanfros: true, prioridadeFaceSuperior: false,
+    ignorarLayers: ["Usinagem_Linha_18.5_VBit90"],
+  });
+
+  const [bitmapConfig, setBitmapConfig] = useState<BitmapConfig>({
+    prevLargura: 400, prevAltura: 800, materialVeio: false,
+    fitaSuperior: false, fitaInferior: false, fitaEsquerda: false, fitaDireita: false,
+    largura: 800, altura: 583, margem: 10, espessuraLinha: 4,
+    tamanhoTexto: 60, tamanhoLegenda: 50, rotacao: 0,
+    exibirFaceAlinhamento: false, exibirLegendaFace: false,
+  });
+
+  // Dialog states
+  const [dialogs, setDialogs] = useState({
+    editarPecas: false, importarPecas: false, importarDXF: false,
+    importarChapa: false, materiais: false, configuracaoCorte: false,
+    configGerais: false, layers: false, estrategias: false,
+    configMaquinas: false, configBitmap: false, sobras: false,
+  });
+
+  const openDialog = (key: keyof typeof dialogs) => setDialogs((prev) => ({ ...prev, [key]: true }));
+  const closeDialog = (key: keyof typeof dialogs) => setDialogs((prev) => ({ ...prev, [key]: false }));
 
   const handleConfigChange = (key: string, value: boolean) => {
     setConfig((prev) => ({ ...prev, [key]: value }));
   };
 
   const handleOptimize = () => {
-    console.log("Otimizando...", config);
+    toast.info("Otimizando corte...");
+    console.log("Otimizando...", config, nestingConfig);
+  };
+
+  const handleToolbarAction = (action: string) => {
+    switch (action) {
+      case "editarPecas": openDialog("editarPecas"); break;
+      case "importarPecas": openDialog("importarPecas"); break;
+      case "importarDXF": openDialog("importarDXF"); break;
+      case "importarChapa": openDialog("importarDXF"); break;
+      case "materiais": openDialog("materiais"); break;
+      case "configuracaoCorte": openDialog("configuracaoCorte"); break;
+      case "configGerais": openDialog("configGerais"); break;
+      case "layers": openDialog("layers"); break;
+      case "estrategias": openDialog("configMaquinas"); break;
+      case "configBitmap": openDialog("configBitmap"); break;
+      case "sobras": openDialog("sobras"); break;
+      case "gerarTudo": toast.success("Gerando arquivos..."); break;
+      case "exportarRelatorio": toast.success("Exportando relatório..."); break;
+      default: break;
+    }
   };
 
   return (
@@ -39,25 +109,30 @@ export default function Index() {
         config={config}
         onConfigChange={handleConfigChange}
         onOptimize={handleOptimize}
+        onAction={handleToolbarAction}
       />
       <div className="flex-1 min-h-0">
         <ResizablePanelGroup direction="horizontal">
           <ResizablePanel defaultSize={35} minSize={25}>
-            <PartsTable
-              pieces={mockPieces}
-              selectedId={selectedPieceId}
-              onSelect={setSelectedPieceId}
-            />
+            <PartsTable pieces={pieces} selectedId={selectedPieceId} onSelect={setSelectedPieceId} />
           </ResizablePanel>
           <ResizableHandle withHandle />
           <ResizablePanel defaultSize={65} minSize={40}>
-            <NestingPreview
-              layouts={mockSheetLayouts}
-              selectedPieceId={selectedPieceId}
-            />
+            <NestingPreview layouts={mockSheetLayouts} selectedPieceId={selectedPieceId} />
           </ResizablePanel>
         </ResizablePanelGroup>
       </div>
+
+      {/* Dialogs */}
+      <EditarPecasDialog open={dialogs.editarPecas} onOpenChange={(v) => v ? openDialog("editarPecas") : closeDialog("editarPecas")} pieces={pieces} onSave={setPieces} />
+      <ConfiguracaoCorteDialog open={dialogs.configuracaoCorte} onOpenChange={(v) => v ? openDialog("configuracaoCorte") : closeDialog("configuracaoCorte")} config={nestingConfig} onSave={setNestingConfig} />
+      <ConfiguracoesGeraisDialog open={dialogs.configGerais} onOpenChange={(v) => v ? openDialog("configGerais") : closeDialog("configGerais")} config={generalConfig} onSave={setGeneralConfig} />
+      <BibliotecaMateriaisDialog open={dialogs.materiais} onOpenChange={(v) => v ? openDialog("materiais") : closeDialog("materiais")} />
+      <ConfigMaquinasDialog open={dialogs.configMaquinas || dialogs.estrategias} onOpenChange={(v) => { closeDialog("configMaquinas"); closeDialog("estrategias"); if (v) openDialog("configMaquinas"); }} config={machineConfig} onSave={setMachineConfig} />
+      <ConfigBitmapDialog open={dialogs.configBitmap} onOpenChange={(v) => v ? openDialog("configBitmap") : closeDialog("configBitmap")} config={bitmapConfig} onSave={setBitmapConfig} />
+      <LayersDialog open={dialogs.layers} onOpenChange={(v) => v ? openDialog("layers") : closeDialog("layers")} />
+      <ImportarPecasDialog open={dialogs.importarPecas} onOpenChange={(v) => v ? openDialog("importarPecas") : closeDialog("importarPecas")} onImport={setPieces} />
+      <ImportarDXFDialog open={dialogs.importarDXF || dialogs.importarChapa} onOpenChange={(v) => { closeDialog("importarDXF"); closeDialog("importarChapa"); if (v) openDialog("importarDXF"); }} onImport={() => {}} />
     </div>
   );
 }
