@@ -1,17 +1,6 @@
 import {
-  FileUp,
-  FilePlus,
-  FileCode,
-  Layers,
-  Box,
-  Settings,
-  Scissors,
-  BarChart3,
-  Grid3X3,
-  FileDown,
-  FileText,
-  Cog,
-  Image,
+  FileUp, FilePlus, FileCode, Layers, Box, Settings, Scissors,
+  BarChart3, Grid3X3, FileDown, FileText, Cog, Image,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -26,6 +15,7 @@ interface ToolbarProps {
   };
   onConfigChange: (key: string, value: boolean) => void;
   onOptimize: () => void;
+  onAction?: (action: string) => void;
 }
 
 function ToolbarButton({ icon: Icon, label, onClick }: { icon: React.ElementType; label: string; onClick?: () => void }) {
@@ -47,17 +37,19 @@ function ToolbarButton({ icon: Icon, label, onClick }: { icon: React.ElementType
   );
 }
 
-export function Toolbar({ config, onConfigChange, onOptimize }: ToolbarProps) {
+export function Toolbar({ config, onConfigChange, onOptimize, onAction }: ToolbarProps) {
+  const act = (action: string) => onAction?.(action);
+
   return (
     <div className="flex items-end gap-1 px-3 py-2 bg-toolbar border-b border-toolbar-border">
       {/* Editar/Importar */}
       <div className="flex flex-col items-center">
         <div className="flex items-end gap-0.5">
-          <ToolbarButton icon={FilePlus} label="Editar Peças" />
-          <ToolbarButton icon={FileUp} label="Importar Peças" />
-          <ToolbarButton icon={FileCode} label="Importar DXF" />
-          <ToolbarButton icon={FileCode} label="Importar Chapa" />
-          <ToolbarButton icon={Box} label="Materiais" />
+          <ToolbarButton icon={FilePlus} label="Editar Peças" onClick={() => act("editarPecas")} />
+          <ToolbarButton icon={FileUp} label="Importar Peças" onClick={() => act("importarPecas")} />
+          <ToolbarButton icon={FileCode} label="Importar DXF" onClick={() => act("importarDXF")} />
+          <ToolbarButton icon={FileCode} label="Importar Chapa" onClick={() => act("importarChapa")} />
+          <ToolbarButton icon={Box} label="Materiais" onClick={() => act("materiais")} />
         </div>
         <span className="text-[9px] text-muted-foreground mt-0.5">Editar/Importar</span>
       </div>
@@ -68,34 +60,22 @@ export function Toolbar({ config, onConfigChange, onOptimize }: ToolbarProps) {
       <div className="flex flex-col items-center">
         <div className="flex items-end gap-0.5">
           <ToolbarButton icon={Scissors} label="Otimizar" onClick={onOptimize} />
-          <ToolbarButton icon={Settings} label="Configurações" />
+          <ToolbarButton icon={Settings} label="Configurações" onClick={() => act("configuracaoCorte")} />
           <div className="flex flex-col gap-1 px-2 py-1">
             <label className="flex items-center gap-1.5 text-[10px] text-foreground/80 cursor-pointer">
-              <Checkbox
-                checked={config.usarDisponiveis}
-                onCheckedChange={(v) => onConfigChange("usarDisponiveis", !!v)}
-                className="h-3 w-3"
-              />
+              <Checkbox checked={config.usarDisponiveis} onCheckedChange={(v) => onConfigChange("usarDisponiveis", !!v)} className="h-3 w-3" />
               Usar Disponíveis
             </label>
             <label className="flex items-center gap-1.5 text-[10px] text-foreground/80 cursor-pointer">
-              <Checkbox
-                checked={config.cadastrarNovas}
-                onCheckedChange={(v) => onConfigChange("cadastrarNovas", !!v)}
-                className="h-3 w-3"
-              />
+              <Checkbox checked={config.cadastrarNovas} onCheckedChange={(v) => onConfigChange("cadastrarNovas", !!v)} className="h-3 w-3" />
               Cadastrar Novas
             </label>
             <label className="flex items-center gap-1.5 text-[10px] text-foreground/80 cursor-pointer">
-              <Checkbox
-                checked={config.removerUsadas}
-                onCheckedChange={(v) => onConfigChange("removerUsadas", !!v)}
-                className="h-3 w-3"
-              />
+              <Checkbox checked={config.removerUsadas} onCheckedChange={(v) => onConfigChange("removerUsadas", !!v)} className="h-3 w-3" />
               Remover Usadas
             </label>
           </div>
-          <ToolbarButton icon={Layers} label="Sobras" />
+          <ToolbarButton icon={Layers} label="Sobras" onClick={() => act("sobras")} />
         </div>
         <span className="text-[9px] text-muted-foreground mt-0.5">Otimização</span>
       </div>
@@ -105,8 +85,8 @@ export function Toolbar({ config, onConfigChange, onOptimize }: ToolbarProps) {
       {/* Máquinas */}
       <div className="flex flex-col items-center">
         <div className="flex items-end gap-0.5">
-          <ToolbarButton icon={BarChart3} label="Estratégias" />
-          <ToolbarButton icon={Grid3X3} label="Layers" />
+          <ToolbarButton icon={BarChart3} label="Estratégias" onClick={() => act("estrategias")} />
+          <ToolbarButton icon={Grid3X3} label="Layers" onClick={() => act("layers")} />
         </div>
         <span className="text-[9px] text-muted-foreground mt-0.5">Máquinas</span>
       </div>
@@ -116,8 +96,8 @@ export function Toolbar({ config, onConfigChange, onOptimize }: ToolbarProps) {
       {/* Exportar */}
       <div className="flex flex-col items-center">
         <div className="flex items-end gap-0.5">
-          <ToolbarButton icon={FileDown} label="Gerar Tudo" />
-          <ToolbarButton icon={FileText} label="Exportar Relatório" />
+          <ToolbarButton icon={FileDown} label="Gerar Tudo" onClick={() => act("gerarTudo")} />
+          <ToolbarButton icon={FileText} label="Exportar Relatório" onClick={() => act("exportarRelatorio")} />
         </div>
         <span className="text-[9px] text-muted-foreground mt-0.5">Exportar</span>
       </div>
@@ -127,8 +107,8 @@ export function Toolbar({ config, onConfigChange, onOptimize }: ToolbarProps) {
       {/* Geral */}
       <div className="flex flex-col items-center">
         <div className="flex items-end gap-0.5">
-          <ToolbarButton icon={Cog} label="Configurações" />
-          <ToolbarButton icon={Image} label="Config. Bitmap" />
+          <ToolbarButton icon={Cog} label="Configurações" onClick={() => act("configGerais")} />
+          <ToolbarButton icon={Image} label="Config. Bitmap" onClick={() => act("configBitmap")} />
         </div>
         <span className="text-[9px] text-muted-foreground mt-0.5">Geral</span>
       </div>
