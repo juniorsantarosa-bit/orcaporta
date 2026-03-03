@@ -95,7 +95,23 @@ export default function Index() {
       case "estrategias": openDialog("configMaquinas"); break;
       case "configBitmap": openDialog("configBitmap"); break;
       case "sobras": openDialog("sobras"); break;
-      case "gerarTudo": toast.success("Gerando arquivos..."); break;
+      case "gerarTudo": {
+        import("@/lib/gcodeGenerator").then(({ generateGCode, generateGCodeFilename }) => {
+          import("@/types/promob").then(({ DEFAULT_GCODE_CONFIG }) => {
+            mockSheetLayouts.forEach((sheet, idx) => {
+              const gcode = generateGCode(sheet, DEFAULT_GCODE_CONFIG);
+              const filename = generateGCodeFilename(idx, sheet.material);
+              const blob = new Blob([gcode], { type: "text/plain" });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url; a.download = filename; a.click();
+              URL.revokeObjectURL(url);
+            });
+            toast.success(`${mockSheetLayouts.length} arquivos G-code gerados!`);
+          });
+        });
+        break;
+      }
       case "exportarRelatorio": toast.success("Exportando relatório..."); break;
       default: break;
     }
