@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { CuttingPiece } from "@/types/cutting";
 import { FileUp, File } from "lucide-react";
 import { toast } from "sonner";
+import { parsePromobCSV, parsePromobJSON, promobToCuttingPieces } from "@/lib/promobParser";
 
 interface Props {
   open: boolean;
@@ -15,11 +16,16 @@ interface Props {
 export function ImportarPecasDialog({ open, onOpenChange, onImport }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [formato, setFormato] = useState("CorteCloud");
+  const [formato, setFormato] = useState("PromobCSV");
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) setSelectedFile(file);
+    if (file) {
+      setSelectedFile(file);
+      // Auto-detect format
+      if (file.name.endsWith(".json")) setFormato("PromobJSON");
+      else if (file.name.endsWith(".csv")) setFormato("PromobCSV");
+    }
   };
 
   const handleImport = async () => {
@@ -31,15 +37,19 @@ export function ImportarPecasDialog({ open, onOpenChange, onImport }: Props) {
     try {
       const text = await selectedFile.text();
 
-      if (selectedFile.name.endsWith(".json")) {
-        const data = JSON.parse(text);
-        if (Array.isArray(data)) {
-          onImport(data);
-          toast.success(`${data.length} peças importadas com sucesso!`);
-        }
-      } else if (selectedFile.name.endsWith(".csv") || selectedFile.name.endsWith(".txt")) {
+      if (formato === "PromobJSON" || selectedFile.name.endsWith(".json")) {
+        const promobPieces = parsePromobJSON(text);
+        const pieces = promobToCuttingPieces(promobPieces);
+        onImport(pieces);
+        toast.success(`${pieces.length} peças importadas do Promob JSON!`);
+      } else if (formato === "PromobCSV" || selectedFile.name.endsWith(".csv")) {
+        const promobPieces = parsePromobCSV(text);
+        const pieces = promobToCuttingPieces(promobPieces);
+        onImport(pieces);
+        toast.success(`${pieces.length} peças importadas do Promob CSV!`);
+      } else {
+        // Generic CSV/TXT fallback
         const lines = text.split("\n").filter((l) => l.trim());
-        const header = lines[0].split(";");
         const pieces: CuttingPiece[] = lines.slice(1).map((line, i) => {
           const cols = line.split(";");
           return {
@@ -57,14 +67,11 @@ export function ImportarPecasDialog({ open, onOpenChange, onImport }: Props) {
           };
         });
         onImport(pieces);
-        toast.success(`${pieces.length} peças importadas com sucesso!`);
-      } else {
-        toast.error("Formato não suportado. Use JSON, CSV ou TXT.");
-        return;
+        toast.success(`${pieces.length} peças importadas!`);
       }
       onOpenChange(false);
     } catch (err) {
-      toast.error("Erro ao ler o arquivo.");
+      toast.error("Erro ao ler o arquivo. Verifique o formato.");
     }
   };
 
@@ -82,12 +89,13 @@ export function ImportarPecasDialog({ open, onOpenChange, onImport }: Props) {
           <div className="flex items-center gap-2">
             <label className="text-xs w-16">Formato</label>
             <Select value={formato} onValueChange={setFormato}>
-              <SelectTrigger className="h-7 text-xs w-40"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-7 text-xs w-48"><SelectValue /></SelectTrigger>
               <SelectContent>
+                <SelectItem value="PromobCSV">Promob CSV (PromobCut)</SelectItem>
+                <SelectItem value="PromobJSON">Promob JSON (Otimizador)</SelectItem>
                 <SelectItem value="CorteCloud">CorteCloud</SelectItem>
-                <SelectItem value="Smart Cabinets">Smart Cabinets</SelectItem>
-                <SelectItem value="CSV">CSV / TXT</SelectItem>
-                <SelectItem value="JSON">JSON</SelectItem>
+                <SelectItem value="SmartCabinets">Smart Cabinets</SelectItem>
+                <SelectItem value="CSV">CSV / TXT Genérico</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -107,7 +115,7 @@ export function ImportarPecasDialog({ open, onOpenChange, onImport }: Props) {
               <div>
                 <FileUp className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
                 <p className="text-sm text-muted-foreground">Clique para selecionar ou arraste um arquivo</p>
-                <p className="text-[10px] text-muted-foreground mt-1">JSON, CSV, TXT, XML</p>
+                <p className="text-[10px] text-muted-foreground mt-1">Suporta: Promob CSV, Promob JSON, CorteCloud, Smart Cabinets</p>
               </div>
             )}
           </div>
@@ -115,7 +123,7 @@ export function ImportarPecasDialog({ open, onOpenChange, onImport }: Props) {
 
         <DialogFooter className="mt-4">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={handleImport} className="bg-primary text-primary-foreground hover:bg-primary/90">Abrir</Button>
+          <Button onClick={handleImport}>Importar</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
