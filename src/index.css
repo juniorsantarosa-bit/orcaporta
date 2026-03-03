@@ -148,3 +148,42 @@
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--muted-foreground) / 0.5);
 }
+
+/* Print styles */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Hide everything except the main content area */
+  .print\\:hidden,
+  nav, header, footer {
+    display: none !important;
+  }
+
+  .print\\:p-0 {
+    padding: 0 !important;
+  }
+
+  /* Cutting plan report print layout */
+  .print\\:shadow-none {
+    box-shadow: none !important;
+  }
+
+  .print\\:border-black {
+    border-color: black !important;
+  }
+
+  /* Labels: tile them for thermal printer or standard */
+  .print\\:gap-1 {
+    gap: 4px !important;
+  }
+
+  /* Force page breaks between labels */
+  @page {
+    margin: 5mm;
+  }
+}
