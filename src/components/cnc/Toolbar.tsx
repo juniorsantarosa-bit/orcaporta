@@ -1,6 +1,7 @@
 import {
   FileUp, FilePlus, FileCode, Layers, Box, Settings, Scissors,
   BarChart3, Grid3X3, FileDown, FileText, Cog, Image, ChevronDown,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -21,15 +22,17 @@ interface ToolbarProps {
   onConfigChange: (key: string, value: boolean) => void;
   onOptimize: () => void;
   onAction?: (action: string) => void;
+  isOptimizing?: boolean;
 }
 
-function ToolbarButton({ icon: Icon, label, onClick, accent }: { icon: React.ElementType; label: string; onClick?: () => void; accent?: boolean }) {
+function ToolbarButton({ icon: Icon, label, onClick, accent, disabled }: { icon: React.ElementType; label: string; onClick?: () => void; accent?: boolean; disabled?: boolean }) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
         <Button
           variant="ghost"
           size="sm"
+          disabled={disabled}
           className={`flex flex-col items-center gap-0.5 h-auto py-1 px-2 rounded-md transition-all ${
             accent 
               ? "text-primary hover:bg-primary/10" 
@@ -55,11 +58,11 @@ function ToolbarGroup({ label, children }: { label: string; children: React.Reac
   );
 }
 
-export function Toolbar({ config, onConfigChange, onOptimize, onAction }: ToolbarProps) {
+export function Toolbar({ config, onConfigChange, onOptimize, onAction, isOptimizing }: ToolbarProps) {
   const act = (action: string) => onAction?.(action);
 
   return (
-    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-card border-b border-border">
+    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-card border-b border-border print:hidden">
       <ToolbarGroup label="Editar">
         <ToolbarButton icon={FilePlus} label="Peças" onClick={() => act("editarPecas")} />
         <ToolbarButton icon={FileUp} label="Importar" onClick={() => act("importarPecas")} />
@@ -70,10 +73,15 @@ export function Toolbar({ config, onConfigChange, onOptimize, onAction }: Toolba
       <Separator orientation="vertical" className="h-10 mx-0.5" />
 
       <ToolbarGroup label="Otimização">
-        <ToolbarButton icon={Scissors} label="Otimizar" onClick={onOptimize} accent />
+        <ToolbarButton
+          icon={isOptimizing ? Loader2 : Scissors}
+          label={isOptimizing ? "Calculando..." : "Otimizar"}
+          onClick={onOptimize}
+          accent
+          disabled={isOptimizing}
+        />
         <ToolbarButton icon={Settings} label="Config." onClick={() => act("configuracaoCorte")} />
         
-        {/* Compact dropdown for options */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="h-7 px-2 text-[9px] gap-1 text-muted-foreground">
