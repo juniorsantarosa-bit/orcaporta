@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { GeneralConfig } from "@/types/cutting";
-import { Plus, X } from "lucide-react";
+import { Plus, X, Upload, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface Props {
