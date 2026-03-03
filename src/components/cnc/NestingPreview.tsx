@@ -45,7 +45,7 @@ function ViewToolButton({ icon: Icon, label, onClick, active, accent }: { icon: 
   );
 }
 
-export function NestingPreview({ layouts, selectedPieceId, onLayoutUpdate }: NestingPreviewProps) {
+export function NestingPreview({ layouts, selectedPieceId, onLayoutUpdate, onReoptimize }: NestingPreviewProps) {
   const [viewMode, setViewMode] = useState<ViewMode>("2d");
   const [selectedSheetIdx, setSelectedSheetIdx] = useState(0);
   const [wireframe, setWireframe] = useState(false);
