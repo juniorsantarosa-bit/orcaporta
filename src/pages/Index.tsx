@@ -4,7 +4,7 @@ import { Toolbar } from "@/components/cnc/Toolbar";
 import { PartsTable } from "@/components/cnc/PartsTable";
 import { NestingPreview } from "@/components/cnc/NestingPreview";
 import { mockPieces, mockSheetLayouts } from "@/data/mockPieces";
-import { CuttingConfig, CuttingPiece, NestingConfig, GeneralConfig, MachineConfig, BitmapConfig } from "@/types/cutting";
+import { CuttingConfig, CuttingPiece, NestingConfig, GeneralConfig, MachineConfig, BitmapConfig, SobraMaterial } from "@/types/cutting";
 import { NestingSheet } from "@/types/promob";
 import { EditarPecasDialog } from "@/components/cnc/dialogs/EditarPecasDialog";
 import { ConfiguracaoCorteDialog } from "@/components/cnc/dialogs/ConfiguracaoCorteDialog";
@@ -15,6 +15,7 @@ import { ConfigBitmapDialog } from "@/components/cnc/dialogs/ConfigBitmapDialog"
 import { LayersDialog } from "@/components/cnc/dialogs/LayersDialog";
 import { ImportarPecasDialog } from "@/components/cnc/dialogs/ImportarPecasDialog";
 import { ImportarDXFDialog } from "@/components/cnc/dialogs/ImportarDXFDialog";
+import { SobrasDialog } from "@/components/cnc/dialogs/SobrasDialog";
 import {
   ResizableHandle,
   ResizablePanel,
@@ -26,6 +27,7 @@ export default function Index() {
   const [activeTab, setActiveTab] = useState("otimizacao");
   const [selectedPieceId, setSelectedPieceId] = useState<number | null>(1);
   const [pieces, setPieces] = useState<CuttingPiece[]>(mockPieces);
+  const [sobras, setSobras] = useState<SobraMaterial[]>([]);
 
   const [config, setConfig] = useState<CuttingConfig>({
     serraSerpentina: 4, margemChapa: 0, espacamentoEntreCortes: 4,
@@ -82,6 +84,12 @@ export default function Index() {
     toast.info("Otimizando corte...");
   };
 
+  const handleExportReport = () => {
+    // Generate printable report by switching to report view and triggering print
+    toast.success("Preparando relatório para impressão...");
+    setTimeout(() => window.print(), 500);
+  };
+
   const handleToolbarAction = (action: string) => {
     switch (action) {
       case "editarPecas": openDialog("editarPecas"); break;
@@ -113,7 +121,7 @@ export default function Index() {
         });
         break;
       }
-      case "exportarRelatorio": toast.success("Exportando relatório..."); break;
+      case "exportarRelatorio": handleExportReport(); break;
       default: break;
     }
   };
@@ -148,6 +156,7 @@ export default function Index() {
       <LayersDialog open={dialogs.layers} onOpenChange={(v) => v ? openDialog("layers") : closeDialog("layers")} />
       <ImportarPecasDialog open={dialogs.importarPecas} onOpenChange={(v) => v ? openDialog("importarPecas") : closeDialog("importarPecas")} onImport={setPieces} />
       <ImportarDXFDialog open={dialogs.importarDXF || dialogs.importarChapa} onOpenChange={(v) => { closeDialog("importarDXF"); closeDialog("importarChapa"); if (v) openDialog("importarDXF"); }} onImport={() => {}} />
+      <SobrasDialog open={dialogs.sobras} onOpenChange={(v) => v ? openDialog("sobras") : closeDialog("sobras")} sobras={sobras} onSave={setSobras} />
     </div>
   );
 }
