@@ -51,6 +51,10 @@ export interface PromobPiece {
   HAS_FUROS_SUP: boolean;
   HAS_FUROS_INF: boolean;
   HAS_FUROS_TOPOS: boolean;
+  bordaSup: boolean;
+  bordaInf: boolean;
+  bordaEsq: boolean;
+  bordaDir: boolean;
 }
 
 // Extended piece for nesting with drill info
