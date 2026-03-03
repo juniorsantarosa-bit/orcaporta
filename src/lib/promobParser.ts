@@ -135,6 +135,10 @@ export function parsePromobCSV(csvText: string): PromobPiece[] {
       HAS_FUROS_SUP: furos.some(f => f.FACE === "SUP"),
       HAS_FUROS_INF: furos.some(f => f.FACE === "INF"),
       HAS_FUROS_TOPOS: false,
+      bordaSup,
+      bordaInf,
+      bordaEsq,
+      bordaDir,
     });
   }
 
