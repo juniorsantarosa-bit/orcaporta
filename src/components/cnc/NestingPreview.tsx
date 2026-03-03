@@ -93,17 +93,126 @@ export function NestingPreview({ layouts, selectedPieceId, onLayoutUpdate, onReo
     }
   }, [viewMode, dragMode]);
 
+  const printContainerRef = useRef<HTMLDivElement>(null);
+
   const handlePrint = useCallback(() => {
     const currentLayout = layouts[selectedSheetIdx];
     
     if (viewMode === "labels") {
-      // Zebra GT800 ZPL printing
       const zpl = generateAllLabelsZPL(currentLayout.pieces, currentLayout.id, currentLayout.material);
       printZPL(zpl);
-      toast.success(`${currentLayout.pieces.length} etiquetas ZPL geradas para Zebra GT800`);
+      toast.success(currentLayout.pieces.length + " etiquetas ZPL geradas para Zebra GT800");
     } else {
-      // Standard print dialog for cutting plan / other views
-      window.print();
+      const printWindow = window.open("", "_blank", "width=800,height=1100");
+      if (!printWindow) {
+        toast.error("Popup bloqueado. Permita popups para imprimir.");
+        return;
+      }
+
+      const COLORS = ["#A8DADC","#F4A261","#C9B1FF","#8FBC8F","#F28B82","#FFD166","#7EC8E3","#B5D99C","#E0A8D0","#FFB385","#80CBC4","#B0A0E8"];
+      const doc = printWindow.document;
+
+      const css = [
+        "@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@300;400;500;600;700;800&display=swap');",
+        "* { margin:0; padding:0; box-sizing:border-box; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; }",
+        "body { font-family:'Inter',sans-serif; background:#fff; color:#000; }",
+        "@page { margin:5mm; size:A4 portrait; }",
+        ".page { width:100%; height:100vh; display:flex; flex-direction:column; page-break-after:always; padding:8px; }",
+        ".header { height:8%; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #ccc; padding:0 8px; }",
+        ".logo { font-size:14px; font-weight:800; }",
+        ".green { color:#059669; }",
+        ".meta { display:flex; gap:16px; font-size:10px; color:#444; }",
+        ".lbl { color:#888; }",
+        ".bld { font-weight:600; }",
+        ".diagram { flex:1; display:flex; align-items:center; justify-content:center; padding:4px; min-height:0; }",
+        ".diagram svg { width:100%; height:100%; }",
+        ".ptable { height:22%; border-top:1px solid #ccc; padding:4px 8px; overflow:hidden; }",
+        "table { width:100%; border-collapse:collapse; font-size:9px; }",
+        "thead tr { background:#f0f0f0; }",
+        "th,td { padding:1px 4px; text-align:left; }",
+        "th { font-weight:600; color:#555; font-size:8px; }",
+        "td { border-top:1px solid #eee; }",
+        ".r { text-align:right; }",
+        ".c { text-align:center; }",
+        ".m { font-family:'JetBrains Mono',monospace; }",
+        ".t { max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }",
+        ".ft { display:flex; justify-content:space-between; font-size:8px; color:#888; margin-top:2px; }",
+      ].join("\n");
+
+      doc.open();
+      doc.write("<!DOCTYPE html><html><head><meta charset='utf-8'><title>Plano de Corte</title><style>" + css + "</style></head><body>");
+
+      const sheet = currentLayout;
+      const totalArea = sheet.sheetWidth * sheet.sheetHeight;
+      const usedArea = sheet.pieces.reduce((a, p) => a + p.width * p.height, 0);
+      const wasteArea = totalArea - usedArea;
+      const effColor = sheet.efficiency > 80 ? "#059669" : sheet.efficiency > 60 ? "#D97706" : "#DC2626";
+
+      // Build pieces rows
+      let rows = "";
+      sheet.pieces.forEach((p, idx) => {
+        const fitas = [p.bordaSup && "S", p.bordaInf && "I", p.bordaEsq && "E", p.bordaDir && "D"].filter(Boolean).join("") || "—";
+        rows += "<tr>" +
+          '<td style="font-weight:700;color:' + COLORS[idx % COLORS.length] + '">' + p.label + "</td>" +
+          '<td class="t">' + (p.descricao || "") + "</td>" +
+          '<td class="r m">' + p.width + "</td>" +
+          '<td class="r m">' + p.height + "</td>" +
+          '<td class="c" style="font-size:8px">' + fitas + "</td>" +
+          '<td class="c m">' + (p.furos?.length || 0) + "</td>" +
+          '<td class="t" style="color:#777">' + (p.cliente || "") + "</td>" +
+          "</tr>";
+      });
+
+      // Build SVG pieces
+      let svgPieces = "";
+      sheet.pieces.forEach((piece, idx) => {
+        const c = COLORS[idx % COLORS.length];
+        svgPieces += '<rect x="' + piece.x + '" y="' + piece.y + '" width="' + piece.width + '" height="' + piece.height + '" fill="' + c + '" stroke="#444" stroke-width="1" rx="1"/>';
+        if (piece.bordaSup) svgPieces += '<line x1="' + piece.x + '" y1="' + piece.y + '" x2="' + (piece.x + piece.width) + '" y2="' + piece.y + '" stroke="#D97706" stroke-width="3"/>';
+        if (piece.bordaInf) svgPieces += '<line x1="' + piece.x + '" y1="' + (piece.y + piece.height) + '" x2="' + (piece.x + piece.width) + '" y2="' + (piece.y + piece.height) + '" stroke="#D97706" stroke-width="3"/>';
+        if (piece.bordaEsq) svgPieces += '<line x1="' + piece.x + '" y1="' + piece.y + '" x2="' + piece.x + '" y2="' + (piece.y + piece.height) + '" stroke="#D97706" stroke-width="3"/>';
+        if (piece.bordaDir) svgPieces += '<line x1="' + (piece.x + piece.width) + '" y1="' + piece.y + '" x2="' + (piece.x + piece.width) + '" y2="' + (piece.y + piece.height) + '" stroke="#D97706" stroke-width="3"/>';
+        if (piece.width > 50 && piece.height > 25) {
+          const fs = Math.min(piece.width / 5, piece.height / 4, 28);
+          const fs2 = Math.min(piece.width / 8, piece.height / 5, 11);
+          svgPieces += '<text x="' + (piece.x + piece.width / 2) + '" y="' + (piece.y + piece.height / 2 - 6) + '" text-anchor="middle" dominant-baseline="central" font-size="' + fs + '" font-weight="700" fill="#1a1a1a" font-family="Inter">' + piece.label + "</text>";
+          svgPieces += '<text x="' + (piece.x + piece.width / 2) + '" y="' + (piece.y + piece.height / 2 + 10) + '" text-anchor="middle" dominant-baseline="central" font-size="' + fs2 + '" fill="#555" font-family="JetBrains Mono, monospace">' + piece.width + "×" + piece.height + "</text>";
+        }
+      });
+
+      const vb = "-20 -20 " + (sheet.sheetWidth + 40) + " " + (sheet.sheetHeight + 40);
+
+      doc.write(
+        '<div class="page">' +
+        '<div class="header">' +
+        '<div class="logo">⚡ MAX<span class="green">CUT</span></div>' +
+        '<div class="meta">' +
+        '<div><span class="lbl">Material: </span><span class="bld">' + sheet.material + "</span></div>" +
+        '<div><span class="lbl">Chapa: </span><span class="m bld">' + sheet.sheetWidth + "×" + sheet.sheetHeight + "×" + sheet.espessura + "mm</span></div>" +
+        '<div><span class="lbl">Aproveit.: </span><span class="bld" style="color:' + effColor + '">' + sheet.efficiency.toFixed(1) + "%</span></div>" +
+        '<div class="bld">Chapa ' + sheet.id + "</div>" +
+        "</div></div>" +
+        '<div class="diagram">' +
+        '<svg viewBox="' + vb + '" preserveAspectRatio="xMidYMid meet">' +
+        '<defs><pattern id="w' + sheet.id + '" patternUnits="userSpaceOnUse" width="6" height="6"><path d="M0 6L6 0" stroke="#999" stroke-width="0.3" opacity="0.15"/></pattern></defs>' +
+        '<rect x="0" y="0" width="' + sheet.sheetWidth + '" height="' + sheet.sheetHeight + '" fill="#f5f5f0" stroke="#333" stroke-width="2" rx="2"/>' +
+        '<rect x="0" y="0" width="' + sheet.sheetWidth + '" height="' + sheet.sheetHeight + '" fill="url(#w' + sheet.id + ')" rx="2"/>' +
+        svgPieces +
+        '<text x="' + (sheet.sheetWidth / 2) + '" y="-8" text-anchor="middle" font-size="11" fill="#555" font-family="JetBrains Mono, monospace">' + sheet.sheetWidth + "</text>" +
+        '<text x="-8" y="' + (sheet.sheetHeight / 2) + '" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#555" font-family="JetBrains Mono, monospace" transform="rotate(-90, -8, ' + (sheet.sheetHeight / 2) + ')">' + sheet.sheetHeight + "</text>" +
+        "</svg></div>" +
+        '<div class="ptable">' +
+        "<table><thead><tr><th>#</th><th>Descrição</th><th class='r'>C</th><th class='r'>L</th><th class='c'>Fitas</th><th class='c'>Furos</th><th>Cliente</th></tr></thead>" +
+        "<tbody>" + rows + "</tbody></table>" +
+        '<div class="ft"><span>' + sheet.pieces.length + " peças</span>" +
+        "<span>Útil: " + (usedArea / 1e6).toFixed(3) + "m² · Sobra: " + (wasteArea / 1e6).toFixed(3) + "m²</span></div>" +
+        "</div></div>"
+      );
+
+      doc.write("</body></html>");
+      doc.close();
+      printWindow.focus();
+      setTimeout(() => printWindow.print(), 400);
     }
   }, [viewMode, layouts, selectedSheetIdx]);
 
