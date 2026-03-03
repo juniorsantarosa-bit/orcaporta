@@ -1,9 +1,6 @@
 import { CuttingPiece } from "@/types/cutting";
 import { NestingSheet, PlacedNestingPiece, PromobHole } from "@/types/promob";
 
-/**
- * Configuration for the nesting optimizer
- */
 export interface NestingOptions {
   sheetWidth: number;
   sheetHeight: number;
@@ -30,18 +27,12 @@ const DEFAULT_OPTIONS: NestingOptions = {
   optimizationLevel: 80,
 };
 
-/**
- * Skyline node for the skyline bin-packing algorithm
- */
 interface SkylineNode {
   x: number;
   y: number;
   width: number;
 }
 
-/**
- * Expanded piece: one entry per quantity unit
- */
 interface ExpandedPiece {
   piece: CuttingPiece;
   width: number;
@@ -50,9 +41,6 @@ interface ExpandedPiece {
   index: number;
 }
 
-/**
- * Skyline Bottom-Left bin-packing with waste-aware scoring
- */
 class SkylinePacker {
   private skyline: SkylineNode[];
   private binWidth: number;
@@ -66,12 +54,6 @@ class SkylinePacker {
     this.skyline = [{ x: 0, y: 0, width: binWidth }];
   }
 
-  /**
-   * Find the best position using "min waste fit" heuristic:
-   * 1. Primary: lowest Y (bottom-left)
-   * 2. Secondary: minimize wasted space under the piece (gaps in skyline)
-   * 3. Tertiary: leftmost X
-   */
   findPosition(width: number, height: number): { x: number; y: number; score: number } | null {
     const w = width + this.gap;
     const h = height + this.gap;
@@ -85,10 +67,8 @@ class SkylinePacker {
       const result = this.fitAtSkyline(i, w, h);
       if (result !== null) {
         const topY = result.y + h;
-        // Calculate wasted area beneath the piece (gaps between skyline and piece bottom)
         const waste = this.calculateWaste(i, w, result.y);
 
-        // Primary: minimize top Y; Secondary: minimize waste; Tertiary: leftmost
         if (
           topY < bestScore ||
           (topY === bestScore && waste < bestWaste) ||
@@ -163,7 +143,6 @@ class SkylinePacker {
     while (insertIdx < newSkyline.length && newSkyline[insertIdx].x < x) insertIdx++;
     newSkyline.splice(insertIdx, 0, newNode);
 
-    // Merge adjacent nodes with same height
     this.skyline = [];
     for (const node of newSkyline) {
       if (this.skyline.length > 0) {
@@ -177,16 +156,16 @@ class SkylinePacker {
     }
   }
 
-  /** Return total used height (max Y in skyline) — useful for trimming last sheet */
   getUsedHeight(): number {
     return Math.max(...this.skyline.map((n) => n.y));
   }
 }
 
 /**
- * Multi-pass nesting optimizer with multiple sort strategies
- * Tries several orderings and picks the one with fewest sheets / best efficiency
+ * Global sequential label counter — resets per optimize call (project scope)
  */
+let globalLabelCounter = 1;
+
 export function optimizeNesting(
   pieces: CuttingPiece[],
   options?: Partial<NestingOptions>,
@@ -194,7 +173,9 @@ export function optimizeNesting(
 ): NestingSheet[] {
   const opts = { ...DEFAULT_OPTIONS, ...options };
 
-  // Group pieces by material
+  // Reset global label counter for new optimization
+  globalLabelCounter = 1;
+
   const byMaterial = new Map<string, CuttingPiece[]>();
   for (const piece of pieces) {
     const key = `${piece.material}|${piece.espessura}`;
@@ -209,7 +190,6 @@ export function optimizeNesting(
     const [material] = matKey.split("|");
     const espessura = matPieces[0].espessura;
 
-    // Expand quantities
     const expanded: ExpandedPiece[] = [];
     let labelCounter = 0;
     for (const piece of matPieces) {
@@ -227,17 +207,11 @@ export function optimizeNesting(
     const usableW = opts.sheetWidth - opts.refiloX * 2;
     const usableH = opts.sheetHeight - opts.refiloY * 2;
 
-    // Try multiple sort strategies and pick the best result
     const sortStrategies: ((a: ExpandedPiece, b: ExpandedPiece) => number)[] = [
-      // 1. Area descending (classic)
       (a, b) => (b.width * b.height) - (a.width * a.height),
-      // 2. Height descending, then width descending
       (a, b) => b.height - a.height || b.width - a.width,
-      // 3. Width descending, then height descending
       (a, b) => b.width - a.width || b.height - a.height,
-      // 4. Max dimension descending
       (a, b) => Math.max(b.width, b.height) - Math.max(a.width, a.height),
-      // 5. Perimeter descending
       (a, b) => (b.width + b.height) - (a.width + a.height),
     ];
 
@@ -258,7 +232,6 @@ export function optimizeNesting(
 
     if (!bestResult) continue;
 
-    // Build NestingSheet objects
     for (const packedSheet of bestResult.sheets) {
       const totalArea = opts.sheetWidth * opts.sheetHeight;
       const usedArea = packedSheet.reduce((a, p) => a + p.w * p.h, 0);
@@ -272,8 +245,9 @@ export function optimizeNesting(
         material,
         codCorte: 7000 + sheetIdCounter,
         efficiency,
-        pieces: packedSheet.map((p, idx) => {
+        pieces: packedSheet.map((p) => {
           const holes = existingHoles?.get(p.ep.piece.id) || [];
+          const label = String(globalLabelCounter++);
           return {
             pieceId: p.ep.piece.id,
             x: p.x,
@@ -281,7 +255,7 @@ export function optimizeNesting(
             width: p.w,
             height: p.h,
             rotated: p.rotated,
-            label: String(idx),
+            label,
             descricao: p.ep.piece.descricao,
             furos: holes,
             bordaSup: p.ep.piece.bordaSup,
@@ -311,11 +285,6 @@ interface PackedPiece {
   rotated: boolean;
 }
 
-/**
- * Pack pieces in given order across multiple sheets
- * Uses a two-pass approach: first pass packs, second pass tries to fit
- * remaining pieces into ANY previous sheet (not just the current one)
- */
 function packWithOrder(
   sorted: ExpandedPiece[],
   usableW: number,
@@ -346,7 +315,6 @@ function packWithOrder(
 
     sheets.push({ packer, pieces: placed });
 
-    // Second pass: try to fit remaining pieces into ALL previous sheets
     const stillNotPlaced: ExpandedPiece[] = [];
     for (const ep of notPlaced) {
       let fitted = false;
@@ -414,9 +382,6 @@ function tryPlace(packer: SkylinePacker, ep: ExpandedPiece, opts: NestingOptions
   };
 }
 
-/**
- * Calculate total statistics for a set of sheets
- */
 export function calculateNestingStats(sheets: NestingSheet[]) {
   const totalSheets = sheets.length;
   const totalPieces = sheets.reduce((a, s) => a + s.pieces.length, 0);

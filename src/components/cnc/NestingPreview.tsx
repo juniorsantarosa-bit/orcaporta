@@ -18,6 +18,7 @@ interface NestingPreviewProps {
   layouts: NestingSheet[];
   selectedPieceId: number | null;
   onLayoutUpdate?: (sheetIdx: number, pieces: PlacedNestingPiece[]) => void;
+  onReoptimize?: () => void;
 }
 
 type ViewMode = "2d" | "3d" | "report" | "labels";
@@ -44,7 +45,7 @@ function ViewToolButton({ icon: Icon, label, onClick, active, accent }: { icon: 
   );
 }
 
-export function NestingPreview({ layouts, selectedPieceId, onLayoutUpdate }: NestingPreviewProps) {
+export function NestingPreview({ layouts, selectedPieceId, onLayoutUpdate, onReoptimize }: NestingPreviewProps) {
   const [viewMode, setViewMode] = useState<ViewMode>("2d");
   const [selectedSheetIdx, setSelectedSheetIdx] = useState(0);
   const [wireframe, setWireframe] = useState(false);
@@ -179,6 +180,7 @@ export function NestingPreview({ layouts, selectedPieceId, onLayoutUpdate }: Nes
                   selectedPieceId={selectedPieceId}
                   dragMode={dragMode}
                   onPiecesReorder={handlePiecesReorder}
+                  onReoptimize={onReoptimize}
                 />
               )}
               {viewMode === "3d" && (
