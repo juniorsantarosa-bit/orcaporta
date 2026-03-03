@@ -5,6 +5,7 @@ import { PartsTable } from "@/components/cnc/PartsTable";
 import { NestingPreview } from "@/components/cnc/NestingPreview";
 import { mockPieces, mockSheetLayouts } from "@/data/mockPieces";
 import { CuttingConfig, CuttingPiece, NestingConfig, GeneralConfig, MachineConfig, BitmapConfig } from "@/types/cutting";
+import { NestingSheet } from "@/types/promob";
 import { EditarPecasDialog } from "@/components/cnc/dialogs/EditarPecasDialog";
 import { ConfiguracaoCorteDialog } from "@/components/cnc/dialogs/ConfiguracaoCorteDialog";
 import { ConfiguracoesGeraisDialog } from "@/components/cnc/dialogs/ConfiguracoesGeraisDialog";
