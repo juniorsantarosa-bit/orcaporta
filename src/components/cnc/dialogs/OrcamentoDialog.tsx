@@ -150,6 +150,96 @@ export function OrcamentoDialog({ open, onOpenChange, layouts, companyLogo }: Pr
 
     setCalculated(budgets);
     toast.success("Orçamento calculado!");
+
+    // Open print window with budget summary
+    printBudget(budgets);
+  };
+
+  const printBudget = (budgets: SheetBudget[]) => {
+    const totalGeral = budgets.reduce((a, b) => a + b.valorTotal, 0);
+    const totalMetros = budgets.reduce((a, b) => a + b.corteMetros, 0);
+    const totalFurosAll = budgets.reduce((a, b) => a + b.totalFuros, 0);
+    const today = new Date().toLocaleDateString("pt-BR");
+    const clientes = [...new Set(layouts.flatMap(s => s.pieces.map(p => p.cliente)))].filter(Boolean).join(", ") || "—";
+
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) { toast.error("Popup bloqueado"); return; }
+    const doc = printWindow.document;
+
+    const css = [
+      "@page { size:A4 portrait; margin:12mm; }",
+      "* { margin:0; padding:0; box-sizing:border-box; }",
+      "body { font-family:Inter,system-ui,sans-serif; color:#000; background:#fff; padding:8px; }",
+      ".header { display:flex; align-items:center; justify-content:space-between; border-bottom:2px solid #333; padding-bottom:8px; margin-bottom:16px; }",
+      ".logo img { max-height:40px; max-width:160px; object-fit:contain; }",
+      ".logo-text { font-size:16px; font-weight:800; }",
+      ".green { color:#059669; }",
+      ".title { font-size:18px; font-weight:700; text-align:center; margin-bottom:16px; }",
+      ".meta { display:flex; flex-wrap:wrap; gap:16px; font-size:11px; color:#444; margin-bottom:20px; padding:8px; background:#f8f8f8; border-radius:4px; }",
+      ".meta-item { display:flex; gap:4px; }",
+      ".lbl { color:#888; }",
+      ".bld { font-weight:600; }",
+      "table { width:100%; border-collapse:collapse; font-size:11px; margin-bottom:16px; }",
+      "thead tr { background:#f0f0f0; }",
+      "th { padding:6px 8px; text-align:left; font-weight:700; color:#333; border-bottom:2px solid #ccc; font-size:10px; text-transform:uppercase; }",
+      "td { padding:5px 8px; border-bottom:1px solid #eee; }",
+      ".r { text-align:right; }",
+      ".c { text-align:center; }",
+      ".m { font-family:'JetBrains Mono',monospace; }",
+      ".total-row { background:#f0f0f0; font-weight:700; border-top:2px solid #333; }",
+      ".total-row td { padding:8px; }",
+      ".grand-total { font-size:20px; font-weight:800; text-align:right; margin-top:20px; padding:12px; border:2px solid #333; border-radius:4px; }",
+      ".footer { margin-top:24px; font-size:9px; color:#888; text-align:center; border-top:1px solid #ddd; padding-top:8px; }",
+    ].join("\n");
+
+    const logoHtml = companyLogo
+      ? '<div class="logo"><img src="' + companyLogo + '" alt="Logo"/></div>'
+      : '<div class="logo"><span class="logo-text">⚡ MAX<span class="green">CUT</span></span></div>';
+
+    let rows = "";
+    budgets.forEach(b => {
+      const sheet = layouts.find(l => l.id === b.sheetId);
+      rows += "<tr>" +
+        '<td class="m" style="font-weight:600">#' + b.sheetId + "</td>" +
+        "<td>" + b.material + "</td>" +
+        '<td class="c m">' + (sheet ? sheet.sheetWidth + "×" + sheet.sheetHeight : "—") + "</td>" +
+        '<td class="c m">' + (sheet ? sheet.espessura + "mm" : "—") + "</td>" +
+        '<td class="c m">' + (sheet ? sheet.pieces.length : 0) + "</td>" +
+        '<td class="r m">' + b.corteMetros.toFixed(2) + "m</td>" +
+        '<td class="c m">' + b.totalFuros + "</td>" +
+        '<td class="r m" style="font-weight:600">R$ ' + b.valorTotal.toFixed(2) + "</td>" +
+        "</tr>";
+    });
+
+    doc.open();
+    doc.write(
+      "<!DOCTYPE html><html><head><meta charset='utf-8'><title>Orçamento</title>" +
+      '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">' +
+      "<style>" + css + "</style></head><body>" +
+      '<div class="header">' + logoHtml + '<div style="font-size:10px;color:#888">' + today + "</div></div>" +
+      '<div class="title">ORÇAMENTO DE CORTE CNC</div>' +
+      '<div class="meta">' +
+      '<div class="meta-item"><span class="lbl">Cliente: </span><span class="bld">' + clientes + "</span></div>" +
+      '<div class="meta-item"><span class="lbl">Data: </span><span class="bld">' + today + "</span></div>" +
+      '<div class="meta-item"><span class="lbl">Chapas: </span><span class="bld m">' + budgets.length + "</span></div>" +
+      '<div class="meta-item"><span class="lbl">Total Peças: </span><span class="bld m">' + layouts.reduce((a, s) => a + s.pieces.length, 0) + "</span></div>" +
+      "</div>" +
+      "<table><thead><tr>" +
+      "<th>Chapa</th><th>Material</th><th class='c'>Dimensão</th><th class='c'>Espessura</th><th class='c'>Peças</th><th class='r'>Corte</th><th class='c'>Furos</th><th class='r'>Valor</th>" +
+      "</tr></thead><tbody>" + rows +
+      '<tr class="total-row">' +
+      '<td colspan="5" class="r">TOTAIS</td>' +
+      '<td class="r m">' + totalMetros.toFixed(2) + "m</td>" +
+      '<td class="c m">' + totalFurosAll + "</td>" +
+      '<td class="r m">R$ ' + totalGeral.toFixed(2) + "</td>" +
+      "</tr></tbody></table>" +
+      '<div class="grand-total">VALOR TOTAL: R$ ' + totalGeral.toFixed(2) + "</div>" +
+      '<div class="footer">Orçamento gerado em ' + today + " — Válido por 30 dias</div>" +
+      "</body></html>"
+    );
+    doc.close();
+    printWindow.focus();
+    setTimeout(() => printWindow.print(), 400);
   };
 
   const totalGeral = useMemo(() => {
