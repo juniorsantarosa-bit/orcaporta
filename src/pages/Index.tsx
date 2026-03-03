@@ -270,6 +270,7 @@ export default function Index() {
         break;
       }
       case "exportarRelatorio": handleExportReport(); break;
+      case "orcamento": openDialog("orcamento"); break;
       default: break;
     }
   };
