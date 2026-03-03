@@ -93,17 +93,134 @@ export function NestingPreview({ layouts, selectedPieceId, onLayoutUpdate, onReo
     }
   }, [viewMode, dragMode]);
 
+  const printContainerRef = useRef<HTMLDivElement>(null);
+
   const handlePrint = useCallback(() => {
     const currentLayout = layouts[selectedSheetIdx];
     
     if (viewMode === "labels") {
-      // Zebra GT800 ZPL printing
       const zpl = generateAllLabelsZPL(currentLayout.pieces, currentLayout.id, currentLayout.material);
       printZPL(zpl);
       toast.success(`${currentLayout.pieces.length} etiquetas ZPL geradas para Zebra GT800`);
     } else {
-      // Standard print dialog for cutting plan / other views
-      window.print();
+      // Open a new window with only the CuttingPlanReport for printing
+      const printWindow = window.open("", "_blank", "width=800,height=1100");
+      if (!printWindow) {
+        toast.error("Popup bloqueado. Permita popups para imprimir.");
+        return;
+      }
+
+      // Render all sheets or just current one
+      const sheetsToRender = [currentLayout];
+
+      printWindow.document.write(`<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8">
+<title>Plano de Corte - MaxCut</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@300;400;500;600;700;800&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  body { font-family: 'Inter', sans-serif; background: #fff; color: #000; }
+  @page { margin: 5mm; size: A4 portrait; }
+  .page { width: 100%; height: 100vh; display: flex; flex-direction: column; page-break-after: always; padding: 8px; }
+  .header { height: 8%; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #ccc; padding: 0 8px; }
+  .header .logo { font-size: 14px; font-weight: 800; }
+  .header .logo .green { color: #059669; }
+  .header .meta { display: flex; gap: 16px; font-size: 10px; color: #444; }
+  .header .meta .label { color: #888; }
+  .header .meta .bold { font-weight: 600; }
+  .diagram { flex: 1; display: flex; align-items: center; justify-content: center; padding: 4px; min-height: 0; }
+  .diagram svg { width: 100%; height: 100%; }
+  .parts-table { height: 22%; border-top: 1px solid #ccc; padding: 4px 8px; overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; font-size: 9px; }
+  thead tr { background: #f0f0f0; }
+  th, td { padding: 1px 4px; text-align: left; }
+  th { font-weight: 600; color: #555; font-size: 8px; }
+  td { border-top: 1px solid #eee; }
+  .right { text-align: right; }
+  .center { text-align: center; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  .truncate { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .footer { display: flex; justify-content: space-between; font-size: 8px; color: #888; margin-top: 2px; }
+</style>
+</head><body>`);
+
+      const COLORS = ["#A8DADC","#F4A261","#C9B1FF","#8FBC8F","#F28B82","#FFD166","#7EC8E3","#B5D99C","#E0A8D0","#FFB385","#80CBC4","#B0A0E8"];
+
+      for (const sheet of sheetsToRender) {
+        const totalArea = sheet.sheetWidth * sheet.sheetHeight;
+        const usedArea = sheet.pieces.reduce((a, p) => a + p.width * p.height, 0);
+        const wasteArea = totalArea - usedArea;
+        const effColor = sheet.efficiency > 80 ? '#059669' : sheet.efficiency > 60 ? '#D97706' : '#DC2626';
+
+        let piecesRows = '';
+        sheet.pieces.forEach((p, idx) => {
+          const fitas = [p.bordaSup && "S", p.bordaInf && "I", p.bordaEsq && "E", p.bordaDir && "D"].filter(Boolean).join("") || "—";
+          piecesRows += \`<tr>
+            <td style="font-weight:700;color:\${COLORS[idx % COLORS.length]}">\${p.label}</td>
+            <td class="truncate">\${p.descricao || ''}</td>
+            <td class="right mono">\${p.width}</td>
+            <td class="right mono">\${p.height}</td>
+            <td class="center" style="font-size:8px">\${fitas}</td>
+            <td class="center mono">\${p.furos?.length || 0}</td>
+            <td class="truncate" style="color:#777">\${p.cliente || ''}</td>
+          </tr>\`;
+        });
+
+        let pieceSvg = '';
+        sheet.pieces.forEach((piece, idx) => {
+          const color = COLORS[idx % COLORS.length];
+          pieceSvg += \`<rect x="\${piece.x}" y="\${piece.y}" width="\${piece.width}" height="\${piece.height}" fill="\${color}" stroke="#444" stroke-width="1" rx="1"/>\`;
+          if (piece.bordaSup) pieceSvg += \`<line x1="\${piece.x}" y1="\${piece.y}" x2="\${piece.x+piece.width}" y2="\${piece.y}" stroke="#D97706" stroke-width="3"/>\`;
+          if (piece.bordaInf) pieceSvg += \`<line x1="\${piece.x}" y1="\${piece.y+piece.height}" x2="\${piece.x+piece.width}" y2="\${piece.y+piece.height}" stroke="#D97706" stroke-width="3"/>\`;
+          if (piece.bordaEsq) pieceSvg += \`<line x1="\${piece.x}" y1="\${piece.y}" x2="\${piece.x}" y2="\${piece.y+piece.height}" stroke="#D97706" stroke-width="3"/>\`;
+          if (piece.bordaDir) pieceSvg += \`<line x1="\${piece.x+piece.width}" y1="\${piece.y}" x2="\${piece.x+piece.width}" y2="\${piece.y+piece.height}" stroke="#D97706" stroke-width="3"/>\`;
+          if (piece.width > 50 && piece.height > 25) {
+            const fs = Math.min(piece.width/5, piece.height/4, 28);
+            const fs2 = Math.min(piece.width/8, piece.height/5, 11);
+            pieceSvg += \`<text x="\${piece.x+piece.width/2}" y="\${piece.y+piece.height/2-6}" text-anchor="middle" dominant-baseline="central" font-size="\${fs}" font-weight="700" fill="#1a1a1a" font-family="Inter">\${piece.label}</text>\`;
+            pieceSvg += \`<text x="\${piece.x+piece.width/2}" y="\${piece.y+piece.height/2+10}" text-anchor="middle" dominant-baseline="central" font-size="\${fs2}" fill="#555" font-family="JetBrains Mono, monospace">\${piece.width}×\${piece.height}</text>\`;
+          }
+        });
+
+        printWindow.document.write(\`
+<div class="page">
+  <div class="header">
+    <div class="logo">⚡ MAX<span class="green">CUT</span></div>
+    <div class="meta">
+      <div><span class="label">Material: </span><span class="bold">\${sheet.material}</span></div>
+      <div><span class="label">Chapa: </span><span class="mono bold">\${sheet.sheetWidth}×\${sheet.sheetHeight}×\${sheet.espessura}mm</span></div>
+      <div><span class="label">Aproveit.: </span><span class="bold" style="color:\${effColor}">\${sheet.efficiency.toFixed(1)}%</span></div>
+      <div class="bold">Chapa \${sheet.id}</div>
+    </div>
+  </div>
+  <div class="diagram">
+    <svg viewBox="-20 -20 \${sheet.sheetWidth+40} \${sheet.sheetHeight+40}" preserveAspectRatio="xMidYMid meet">
+      <defs><pattern id="w\${sheet.id}" patternUnits="userSpaceOnUse" width="6" height="6"><path d="M0 6L6 0" stroke="#999" stroke-width="0.3" opacity="0.15"/></pattern></defs>
+      <rect x="0" y="0" width="\${sheet.sheetWidth}" height="\${sheet.sheetHeight}" fill="#f5f5f0" stroke="#333" stroke-width="2" rx="2"/>
+      <rect x="0" y="0" width="\${sheet.sheetWidth}" height="\${sheet.sheetHeight}" fill="url(#w\${sheet.id})" rx="2"/>
+      \${pieceSvg}
+      <text x="\${sheet.sheetWidth/2}" y="-8" text-anchor="middle" font-size="11" fill="#555" font-family="JetBrains Mono, monospace">\${sheet.sheetWidth}</text>
+      <text x="-8" y="\${sheet.sheetHeight/2}" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#555" font-family="JetBrains Mono, monospace" transform="rotate(-90, -8, \${sheet.sheetHeight/2})">\${sheet.sheetHeight}</text>
+    </svg>
+  </div>
+  <div class="parts-table">
+    <table>
+      <thead><tr><th>#</th><th>Descrição</th><th class="right">C</th><th class="right">L</th><th class="center">Fitas</th><th class="center">Furos</th><th>Cliente</th></tr></thead>
+      <tbody>\${piecesRows}</tbody>
+    </table>
+    <div class="footer">
+      <span>\${sheet.pieces.length} peças</span>
+      <span>Útil: \${(usedArea/1e6).toFixed(3)}m² · Sobra: \${(wasteArea/1e6).toFixed(3)}m²</span>
+    </div>
+  </div>
+</div>\`);
+      }
+
+      printWindow.document.write('</body></html>');
+      printWindow.document.close();
+      printWindow.focus();
+      setTimeout(() => printWindow.print(), 300);
     }
   }, [viewMode, layouts, selectedSheetIdx]);
 
