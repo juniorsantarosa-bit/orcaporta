@@ -168,10 +168,10 @@ export function promobToCuttingPieces(promobPieces: PromobPiece[]): CuttingPiece
     espessura: p.ESP_CHAPA,
     material: p.CHAPA,
     quantidade: p.QUANTIDADE,
-    bordaInf: false, // TODO: parse from CSV edges
-    bordaSup: false,
-    bordaEsq: false,
-    bordaDir: false,
+    bordaInf: p.bordaInf,
+    bordaSup: p.bordaSup,
+    bordaEsq: p.bordaEsq,
+    bordaDir: p.bordaDir,
     veio: p.VEIO === 1,
     observacao: p.OBS || "",
   }));
