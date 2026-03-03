@@ -124,7 +124,7 @@ export default function Index() {
           const ppType = machineConfig.posProcessador.includes("Aspire") ? "aspire" as const
             : machineConfig.posProcessador.includes("Mach3D") ? "mach_cnc" as const
             : "smartcut" as const;
-          mockSheetLayouts.forEach((sheet, idx) => {
+          layouts.forEach((sheet, idx) => {
             const gcode = generateGCode(sheet, { postProcessor: ppType });
             const filename = generateGCodeFilename(idx, sheet.material, ppType);
             const blob = new Blob([gcode], { type: "text/plain" });
@@ -133,7 +133,7 @@ export default function Index() {
             a.href = url; a.download = filename; a.click();
             URL.revokeObjectURL(url);
           });
-          toast.success(`${mockSheetLayouts.length} arquivos G-code gerados (${ppType})!`);
+          toast.success(`${layouts.length} arquivos G-code gerados (${ppType})!`);
         });
         break;
       }
