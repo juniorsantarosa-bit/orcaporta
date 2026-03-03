@@ -1,0 +1,4656 @@
+[
+  {
+    "CLIENTE": "Julia",
+    "COD_CLIENTE": null,
+    "AMBIENTE": "1_PROJETO",
+    "ID_UNICO": 1443,
+    "QUANTIDADE": 1,
+    "DESCRICAO": "!DIV_INT",
+    "COMPRIMENTO": 2399.0,
+    "PROFUNDIDADE": 564.0,
+    "CHAPA": "Branco TX 15mm",
+    "COR_1C": null,
+    "COR_2C": "Carvalho Treviso",
+    "COR_1P": null,
+    "COR_2P": null,
+    "ROTEIRO": "Lam1C-NORMAL",
+    "CATEGORIA": "CAIXAS",
+    "SETOR": "PRODUCAO",
+    "ESTRUTURA": 1412,
+    "MODULO_DESC": "1412-ARM_01 - Roupeiro Planejado - Branco TX (1500x2500x580)",
+    "COD_CORTE": 7002,
+    "COMP_CHAPA": 2750.0,
+    "PROF_CHAPA": 1840.0,
+    "ESP_CHAPA": 15.0,
+    "VEIO": 0,
+    "CNC_A": "",
+    "CNC_B": "PEC1443B",
+    "CNC_FUROS_TOTAL": "NAO",
+    "OBS": null,
+    "ALINHAMENTO": "NORMAL",
+    "FRESAS": [],
+    "FUROS": [
+      {
+        "FACE": "SUP",
+        "X": 511.2,
+        "Y": 50.0,
+        "DIAM": 5.0,
+        "Z": 12.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 511.2,
+        "Y": 509.0,
+        "DIAM": 5.0,
+        "Z": 12.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 901.2,
+        "Y": 50.0,
+        "DIAM": 5.0,
+        "Z": 12.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 901.2,
+        "Y": 509.0,
+        "DIAM": 5.0,
+        "Z": 12.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 1291.2,
+        "Y": 50.0,
+        "DIAM": 5.0,
+        "Z": 12.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 1291.2,
+        "Y": 509.0,
+        "DIAM": 5.0,
+        "Z": 12.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 1681.2,
+        "Y": 50.0,
+        "DIAM": 5.0,
+        "Z": 12.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 1681.2,
+        "Y": 509.0,
+        "DIAM": 5.0,
+        "Z": 12.0
+      },
+      {
+        "FACE": "INF",
+        "X": 1887.8,
+        "Y": 50.0,
+        "DIAM": 5.0,
+        "Z": 12.0
+      },
+      {
+        "FACE": "INF",
+        "X": 1887.8,
+        "Y": 509.0,
+        "DIAM": 5.0,
+        "Z": 12.0
+      },
+      {
+        "FACE": "INF",
+        "X": 717.5,
+        "Y": 292.0,
+        "DIAM": 3.0,
+        "Z": 15.5
+      },
+      {
+        "FACE": "INF",
+        "X": 717.5,
+        "Y": 50.0,
+        "DIAM": 3.0,
+        "Z": 15.5
+      },
+      {
+        "FACE": "INF",
+        "X": 717.5,
+        "Y": 534.0,
+        "DIAM": 3.0,
+        "Z": 15.5
+      }
+    ],
+    "CONTORNO": [
+      {
+        "X": 2399,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 2399,
+        "Y": 564,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 564,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 0,
+        "ANG": "NAO"
+      }
+    ],
+    "HAS_FRESAS_SUP": false,
+    "HAS_FRESAS_INF": false,
+    "HAS_FUROS_SUP": true,
+    "HAS_FUROS_INF": true,
+    "HAS_FUROS_TOPOS": false
+  },
+  {
+    "CLIENTE": "Julia",
+    "COD_CLIENTE": null,
+    "AMBIENTE": "1_PROJETO",
+    "ID_UNICO": 1506,
+    "QUANTIDADE": 1,
+    "DESCRICAO": "!BASE_SUP",
+    "COMPRIMENTO": 1469.0,
+    "PROFUNDIDADE": 580.0,
+    "CHAPA": "Branco TX 15mm",
+    "COR_1C": "Carvalho Treviso",
+    "COR_2C": null,
+    "COR_1P": null,
+    "COR_2P": null,
+    "ROTEIRO": "Lam1C-EMBUTIDO",
+    "CATEGORIA": "CAIXAS",
+    "SETOR": "PRODUCAO",
+    "ESTRUTURA": 1412,
+    "MODULO_DESC": "1412-ARM_01 - Roupeiro Planejado - Branco TX (1500x2500x580)",
+    "COD_CORTE": 7002,
+    "COMP_CHAPA": 2750.0,
+    "PROF_CHAPA": 1840.0,
+    "ESP_CHAPA": 15.0,
+    "VEIO": 0,
+    "CNC_A": "",
+    "CNC_B": "",
+    "CNC_FUROS_TOTAL": "NAO",
+    "OBS": null,
+    "ALINHAMENTO": "INVERSO",
+    "FRESAS": [],
+    "FUROS": [
+      {
+        "FACE": "SUP",
+        "X": 983.0,
+        "Y": 280.0,
+        "DIAM": 3.0,
+        "Z": 15.5
+      },
+      {
+        "FACE": "SUP",
+        "X": 983.0,
+        "Y": 530.0,
+        "DIAM": 3.0,
+        "Z": 15.5
+      },
+      {
+        "FACE": "SUP",
+        "X": 983.0,
+        "Y": 30.0,
+        "DIAM": 3.0,
+        "Z": 15.5
+      },
+      {
+        "FACE": "SUP",
+        "X": 150.0,
+        "Y": 571.7,
+        "DIAM": 3.0,
+        "Z": 15.5
+      },
+      {
+        "FACE": "SUP",
+        "X": 734.6,
+        "Y": 571.7,
+        "DIAM": 3.0,
+        "Z": 15.5
+      },
+      {
+        "FACE": "SUP",
+        "X": 1319.2,
+        "Y": 571.7,
+        "DIAM": 3.0,
+        "Z": 15.5
+      }
+    ],
+    "CONTORNO": [
+      {
+        "X": 1469,
+        "Y": 580,
+        "ANG": "NAO"
+      },
+      {
+        "X": 1469,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 580,
+        "ANG": "NAO"
+      }
+    ],
+    "HAS_FRESAS_SUP": false,
+    "HAS_FRESAS_INF": false,
+    "HAS_FUROS_SUP": true,
+    "HAS_FUROS_INF": false,
+    "HAS_FUROS_TOPOS": false
+  },
+  {
+    "CLIENTE": "Julia",
+    "COD_CLIENTE": null,
+    "AMBIENTE": "1_PROJETO",
+    "ID_UNICO": 1854,
+    "QUANTIDADE": 1,
+    "DESCRICAO": "!LAT_ESQ",
+    "COMPRIMENTO": 2500.0,
+    "PROFUNDIDADE": 580.0,
+    "CHAPA": "Branco TX 15mm",
+    "COR_1C": "Carvalho Treviso",
+    "COR_2C": null,
+    "COR_1P": null,
+    "COR_2P": null,
+    "ROTEIRO": "Lam1C-EMBUTIDO",
+    "CATEGORIA": "CAIXAS",
+    "SETOR": "PRODUCAO",
+    "ESTRUTURA": 1412,
+    "MODULO_DESC": "1412-ARM_01 - Roupeiro Planejado - Branco TX (1500x2500x580)",
+    "COD_CORTE": 7002,
+    "COMP_CHAPA": 2750.0,
+    "PROF_CHAPA": 1840.0,
+    "ESP_CHAPA": 15.0,
+    "VEIO": 0,
+    "CNC_A": "",
+    "CNC_B": "",
+    "CNC_FUROS_TOTAL": "NAO",
+    "OBS": null,
+    "ALINHAMENTO": "INVERSO",
+    "FRESAS": [],
+    "FUROS": [
+      {
+        "FACE": "SUP",
+        "X": 2422.3,
+        "Y": 280.0,
+        "DIAM": 3.0,
+        "Z": 15.5
+      },
+      {
+        "FACE": "SUP",
+        "X": 2422.3,
+        "Y": 530.0,
+        "DIAM": 3.0,
+        "Z": 15.5
+      },
+      {
+        "FACE": "SUP",
+        "X": 2422.3,
+        "Y": 30.0,
+        "DIAM": 3.0,
+        "Z": 15.5
+      },
+      {
+        "FACE": "SUP",
+        "X": 7.7,
+        "Y": 280.0,
+        "DIAM": 3.0,
+        "Z": 15.5
+      },
+      {
+        "FACE": "SUP",
+        "X": 7.7,
+        "Y": 530.0,
+        "DIAM": 3.0,
+        "Z": 15.5
+      },
+      {
+        "FACE": "SUP",
+        "X": 7.7,
+        "Y": 30.0,
+        "DIAM": 3.0,
+        "Z": 15.5
+      },
+      {
+        "FACE": "SUP",
+        "X": 2450.0,
+        "Y": 7.7,
+        "DIAM": 3.0,
+        "Z": 15.5
+      },
+      {
+        "FACE": "SUP",
+        "X": 2480.0,
+        "Y": 7.7,
+        "DIAM": 3.0,
+        "Z": 15.5
+      },
+      {
+        "FACE": "SUP",
+        "X": 2450.0,
+        "Y": 556.3,
+        "DIAM": 3.0,
+        "Z": 15.5
+      },
+      {
+        "FACE": "SUP",
+        "X": 2480.0,
+        "Y": 556.3,
+        "DIAM": 3.0,
+        "Z": 15.5
+      },
+      {
+        "FACE": "SUP",
+        "X": 925.4,
+        "Y": 571.7,
+        "DIAM": 3.0,
+        "Z": 15.5
+      },
+      {
+        "FACE": "SUP",
+        "X": 65.4,
+        "Y": 571.7,
+        "DIAM": 3.0,
+        "Z": 15.5
+      },
+      {
+        "FACE": "SUP",
+        "X": 1785.4,
+        "Y": 571.7,
+        "DIAM": 3.0,
+        "Z": 15.5
+      },
+      {
+        "FACE": "SUP",
+        "X": 526.6,
+        "Y": 514.0,
+        "DIAM": 5.0,
+        "Z": 12.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 526.6,
+        "Y": 55.0,
+        "DIAM": 5.0,
+        "Z": 12.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 916.6,
+        "Y": 514.0,
+        "DIAM": 5.0,
+        "Z": 12.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 916.6,
+        "Y": 55.0,
+        "DIAM": 5.0,
+        "Z": 12.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 1306.6,
+        "Y": 514.0,
+        "DIAM": 5.0,
+        "Z": 12.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 1306.6,
+        "Y": 55.0,
+        "DIAM": 5.0,
+        "Z": 12.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 1696.6,
+        "Y": 514.0,
+        "DIAM": 5.0,
+        "Z": 12.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 1696.6,
+        "Y": 55.0,
+        "DIAM": 5.0,
+        "Z": 12.0
+      }
+    ],
+    "CONTORNO": [
+      {
+        "X": 2500,
+        "Y": 580,
+        "ANG": "NAO"
+      },
+      {
+        "X": 2500,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 580,
+        "ANG": "NAO"
+      }
+    ],
+    "HAS_FRESAS_SUP": false,
+    "HAS_FRESAS_INF": false,
+    "HAS_FUROS_SUP": true,
+    "HAS_FUROS_INF": false,
+    "HAS_FUROS_TOPOS": false
+  },
+  {
+    "CLIENTE": "Julia",
+    "COD_CLIENTE": null,
+    "AMBIENTE": "1_PROJETO",
+    "ID_UNICO": 1858,
+    "QUANTIDADE": 1,
+    "DESCRICAO": "!LAT_DIR",
+    "COMPRIMENTO": 2500.0,
+    "PROFUNDIDADE": 580.0,
+    "CHAPA": "Branco TX 15mm",
+    "COR_1C": "Carvalho Treviso",
+    "COR_2C": null,
+    "COR_1P": null,
+    "COR_2P": null,
+    "ROTEIRO": "Lam1C-EMBUTIDO",
+    "CATEGORIA": "CAIXAS",
+    "SETOR": "PRODUCAO",
+    "ESTRUTURA": 1412,
+    "MODULO_DESC": "1412-ARM_01 - Roupeiro Planejado - Branco TX (1500x2500x580)",
+    "COD_CORTE": 7002,
+    "COMP_CHAPA": 2750.0,
+    "PROF_CHAPA": 1840.0,
+    "ESP_CHAPA": 15.0,
+    "VEIO": 0,
+    "CNC_A": "",
+    "CNC_B": "",
+    "CNC_FUROS_TOTAL": "NAO",
+    "OBS": null,
+    "ALINHAMENTO": "INVERSO",
+    "FRESAS": [],
+    "FUROS": [
+      {
+        "FACE": "SUP",
+        "X": 77.7,
+        "Y": 280.0,
+        "DIAM": 3.0,
+        "Z": 15.5
+      },
+      {
+        "FACE": "SUP",
+        "X": 77.7,
+        "Y": 530.0,
+        "DIAM": 3.0,
+        "Z": 15.5
+      },
+      {
+        "FACE": "SUP",
+        "X": 77.7,
+        "Y": 30.0,
+        "DIAM": 3.0,
+        "Z": 15.5
+      },
+      {
+        "FACE": "SUP",
+        "X": 2492.3,
+        "Y": 280.0,
+        "DIAM": 3.0,
+        "Z": 15.5
+      },
+      {
+        "FACE": "SUP",
+        "X": 2492.3,
+        "Y": 530.0,
+        "DIAM": 3.0,
+        "Z": 15.5
+      },
+      {
+        "FACE": "SUP",
+        "X": 2492.3,
+        "Y": 30.0,
+        "DIAM": 3.0,
+        "Z": 15.5
+      },
+      {
+        "FACE": "SUP",
+        "X": 50.0,
+        "Y": 7.7,
+        "DIAM": 3.0,
+        "Z": 15.5
+      },
+      {
+        "FACE": "SUP",
+        "X": 20.0,
+        "Y": 7.7,
+        "DIAM": 3.0,
+        "Z": 15.5
+      },
+      {
+        "FACE": "SUP",
+        "X": 50.0,
+        "Y": 556.3,
+        "DIAM": 3.0,
+        "Z": 15.5
+      },
+      {
+        "FACE": "SUP",
+        "X": 20.0,
+        "Y": 556.3,
+        "DIAM": 3.0,
+        "Z": 15.5
+      },
+      {
+        "FACE": "SUP",
+        "X": 189.5,
+        "Y": 41.0,
+        "DIAM": 3.0,
+        "Z": 1.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 156.5,
+        "Y": 41.0,
+        "DIAM": 3.0,
+        "Z": 1.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 745.5,
+        "Y": 41.0,
+        "DIAM": 3.0,
+        "Z": 1.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 712.5,
+        "Y": 41.0,
+        "DIAM": 3.0,
+        "Z": 1.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 1301.5,
+        "Y": 41.0,
+        "DIAM": 3.0,
+        "Z": 1.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 1268.5,
+        "Y": 41.0,
+        "DIAM": 3.0,
+        "Z": 1.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 1857.5,
+        "Y": 41.0,
+        "DIAM": 3.0,
+        "Z": 1.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 1824.5,
+        "Y": 41.0,
+        "DIAM": 3.0,
+        "Z": 1.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 2413.5,
+        "Y": 41.0,
+        "DIAM": 3.0,
+        "Z": 1.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 2380.5,
+        "Y": 41.0,
+        "DIAM": 3.0,
+        "Z": 1.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 1574.6,
+        "Y": 571.7,
+        "DIAM": 3.0,
+        "Z": 15.5
+      },
+      {
+        "FACE": "SUP",
+        "X": 2434.6,
+        "Y": 571.7,
+        "DIAM": 3.0,
+        "Z": 15.5
+      },
+      {
+        "FACE": "SUP",
+        "X": 714.6,
+        "Y": 571.7,
+        "DIAM": 3.0,
+        "Z": 15.5
+      },
+      {
+        "FACE": "SUP",
+        "X": 1973.4,
+        "Y": 514.0,
+        "DIAM": 5.0,
+        "Z": 12.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 1973.4,
+        "Y": 55.0,
+        "DIAM": 5.0,
+        "Z": 12.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 803.1,
+        "Y": 272.0,
+        "DIAM": 3.0,
+        "Z": 15.5
+      },
+      {
+        "FACE": "SUP",
+        "X": 803.1,
+        "Y": 514.0,
+        "DIAM": 3.0,
+        "Z": 15.5
+      },
+      {
+        "FACE": "SUP",
+        "X": 803.1,
+        "Y": 30.0,
+        "DIAM": 3.0,
+        "Z": 15.5
+      }
+    ],
+    "CONTORNO": [
+      {
+        "X": 2500,
+        "Y": 580,
+        "ANG": "NAO"
+      },
+      {
+        "X": 2500,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 580,
+        "ANG": "NAO"
+      }
+    ],
+    "HAS_FRESAS_SUP": false,
+    "HAS_FRESAS_INF": false,
+    "HAS_FUROS_SUP": true,
+    "HAS_FUROS_INF": false,
+    "HAS_FUROS_TOPOS": false
+  },
+  {
+    "CLIENTE": "Julia",
+    "COD_CLIENTE": null,
+    "AMBIENTE": "1_PROJETO",
+    "ID_UNICO": 1862,
+    "QUANTIDADE": 1,
+    "DESCRICAO": "!BASE_INF",
+    "COMPRIMENTO": 1469.0,
+    "PROFUNDIDADE": 580.0,
+    "CHAPA": "Branco TX 15mm",
+    "COR_1C": "Carvalho Treviso",
+    "COR_2C": null,
+    "COR_1P": null,
+    "COR_2P": null,
+    "ROTEIRO": "Lam1C-EMBUTIDO",
+    "CATEGORIA": "CAIXAS",
+    "SETOR": "PRODUCAO",
+    "ESTRUTURA": 1412,
+    "MODULO_DESC": "1412-ARM_01 - Roupeiro Planejado - Branco TX (1500x2500x580)",
+    "COD_CORTE": 7002,
+    "COMP_CHAPA": 2750.0,
+    "PROF_CHAPA": 1840.0,
+    "ESP_CHAPA": 15.0,
+    "VEIO": 0,
+    "CNC_A": "",
+    "CNC_B": "",
+    "CNC_FUROS_TOTAL": "NAO",
+    "OBS": null,
+    "ALINHAMENTO": "INVERSO",
+    "FRESAS": [],
+    "FUROS": [
+      {
+        "FACE": "SUP",
+        "X": 486.2,
+        "Y": 280.0,
+        "DIAM": 3.0,
+        "Z": 15.5
+      },
+      {
+        "FACE": "SUP",
+        "X": 486.2,
+        "Y": 530.0,
+        "DIAM": 3.0,
+        "Z": 15.5
+      },
+      {
+        "FACE": "SUP",
+        "X": 486.2,
+        "Y": 30.0,
+        "DIAM": 3.0,
+        "Z": 15.5
+      },
+      {
+        "FACE": "SUP",
+        "X": 150.0,
+        "Y": 571.7,
+        "DIAM": 3.0,
+        "Z": 15.5
+      },
+      {
+        "FACE": "SUP",
+        "X": 734.6,
+        "Y": 571.7,
+        "DIAM": 3.0,
+        "Z": 15.5
+      },
+      {
+        "FACE": "SUP",
+        "X": 1319.2,
+        "Y": 571.7,
+        "DIAM": 3.0,
+        "Z": 15.5
+      }
+    ],
+    "CONTORNO": [
+      {
+        "X": 1469,
+        "Y": 580,
+        "ANG": "NAO"
+      },
+      {
+        "X": 1469,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 580,
+        "ANG": "NAO"
+      }
+    ],
+    "HAS_FRESAS_SUP": false,
+    "HAS_FRESAS_INF": false,
+    "HAS_FUROS_SUP": true,
+    "HAS_FUROS_INF": false,
+    "HAS_FUROS_TOPOS": false
+  },
+  {
+    "CLIENTE": "Julia",
+    "COD_CLIENTE": null,
+    "AMBIENTE": "1_PROJETO",
+    "ID_UNICO": 1866,
+    "QUANTIDADE": 1,
+    "DESCRICAO": "!RDP_INT",
+    "COMPRIMENTO": 1469.0,
+    "PROFUNDIDADE": 70.0,
+    "CHAPA": "Carvalho Treviso 15mm",
+    "COR_1C": null,
+    "COR_2C": null,
+    "COR_1P": null,
+    "COR_2P": null,
+    "ROTEIRO": "NaoLam-NORMAL",
+    "CATEGORIA": "CAIXAS",
+    "SETOR": "PRODUCAO",
+    "ESTRUTURA": 1412,
+    "MODULO_DESC": "1412-ARM_01 - Roupeiro Planejado - Branco TX (1500x2500x580)",
+    "COD_CORTE": 6006,
+    "COMP_CHAPA": 2750.0,
+    "PROF_CHAPA": 1840.0,
+    "ESP_CHAPA": 15.0,
+    "VEIO": 1,
+    "CNC_A": "",
+    "CNC_B": "",
+    "CNC_FUROS_TOTAL": "NAO",
+    "OBS": null,
+    "ALINHAMENTO": "NORMAL",
+    "FRESAS": [],
+    "FUROS": [],
+    "CONTORNO": [
+      {
+        "X": 1469,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 1469,
+        "Y": 70,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 70,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 0,
+        "ANG": "NAO"
+      }
+    ],
+    "HAS_FRESAS_SUP": false,
+    "HAS_FRESAS_INF": false,
+    "HAS_FUROS_SUP": false,
+    "HAS_FUROS_INF": false,
+    "HAS_FUROS_TOPOS": false
+  },
+  {
+    "CLIENTE": "Julia",
+    "COD_CLIENTE": null,
+    "AMBIENTE": "1_PROJETO",
+    "ID_UNICO": 1870,
+    "QUANTIDADE": 1,
+    "DESCRICAO": "!RDP_EMB",
+    "COMPRIMENTO": 1469.0,
+    "PROFUNDIDADE": 70.0,
+    "CHAPA": "Branco TX 15mm",
+    "COR_1C": null,
+    "COR_2C": null,
+    "COR_1P": null,
+    "COR_2P": null,
+    "ROTEIRO": "NaoLam-NORMAL",
+    "CATEGORIA": "INTERNOS",
+    "SETOR": "PRODUCAO",
+    "ESTRUTURA": 1412,
+    "MODULO_DESC": "1412-ARM_01 - Roupeiro Planejado - Branco TX (1500x2500x580)",
+    "COD_CORTE": 7002,
+    "COMP_CHAPA": 2750.0,
+    "PROF_CHAPA": 1840.0,
+    "ESP_CHAPA": 15.0,
+    "VEIO": 0,
+    "CNC_A": "",
+    "CNC_B": "",
+    "CNC_FUROS_TOTAL": "NAO",
+    "OBS": null,
+    "ALINHAMENTO": "INVERSO",
+    "FRESAS": [],
+    "FUROS": [],
+    "CONTORNO": [
+      {
+        "X": 1469,
+        "Y": 70,
+        "ANG": "NAO"
+      },
+      {
+        "X": 1469,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 70,
+        "ANG": "NAO"
+      }
+    ],
+    "HAS_FRESAS_SUP": false,
+    "HAS_FRESAS_INF": false,
+    "HAS_FUROS_SUP": false,
+    "HAS_FUROS_INF": false,
+    "HAS_FUROS_TOPOS": false
+  },
+  {
+    "CLIENTE": "Julia",
+    "COD_CLIENTE": null,
+    "AMBIENTE": "1_PROJETO",
+    "ID_UNICO": 1874,
+    "QUANTIDADE": 1,
+    "DESCRICAO": "!FUNDO",
+    "COMPRIMENTO": 2399.0,
+    "PROFUNDIDADE": 1469.0,
+    "CHAPA": "Branco TX 15mm",
+    "COR_1C": null,
+    "COR_2C": null,
+    "COR_1P": null,
+    "COR_2P": null,
+    "ROTEIRO": "NaoLam-NORMAL",
+    "CATEGORIA": "INTERNOS",
+    "SETOR": "PRODUCAO",
+    "ESTRUTURA": 1412,
+    "MODULO_DESC": "1412-ARM_01 - Roupeiro Planejado - Branco TX (1500x2500x580)",
+    "COD_CORTE": 7002,
+    "COMP_CHAPA": 2750.0,
+    "PROF_CHAPA": 1840.0,
+    "ESP_CHAPA": 15.0,
+    "VEIO": 0,
+    "CNC_A": "",
+    "CNC_B": "",
+    "CNC_FUROS_TOTAL": "NAO",
+    "OBS": null,
+    "ALINHAMENTO": "INVERSO",
+    "FRESAS": [],
+    "FUROS": [],
+    "CONTORNO": [
+      {
+        "X": 2399,
+        "Y": 1469,
+        "ANG": "NAO"
+      },
+      {
+        "X": 2399,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 1469,
+        "ANG": "NAO"
+      }
+    ],
+    "HAS_FRESAS_SUP": false,
+    "HAS_FRESAS_INF": false,
+    "HAS_FUROS_SUP": false,
+    "HAS_FUROS_INF": false,
+    "HAS_FUROS_TOPOS": false
+  },
+  {
+    "CLIENTE": "Julia",
+    "COD_CLIENTE": null,
+    "AMBIENTE": "1_PROJETO",
+    "ID_UNICO": 2489,
+    "QUANTIDADE": 1,
+    "DESCRICAO": "!PRAT",
+    "COMPRIMENTO": 478.5,
+    "PROFUNDIDADE": 559.0,
+    "CHAPA": "Branco TX 15mm",
+    "COR_1C": "Carvalho Treviso",
+    "COR_2C": null,
+    "COR_1P": null,
+    "COR_2P": null,
+    "ROTEIRO": "Lam1C-NORMAL",
+    "CATEGORIA": "INTERNOS",
+    "SETOR": "PRODUCAO",
+    "ESTRUTURA": 1412,
+    "MODULO_DESC": "1412-ARM_01 - Roupeiro Planejado - Branco TX (1500x2500x580)",
+    "COD_CORTE": 7002,
+    "COMP_CHAPA": 2750.0,
+    "PROF_CHAPA": 1840.0,
+    "ESP_CHAPA": 15.0,
+    "VEIO": 0,
+    "CNC_A": "",
+    "CNC_B": "",
+    "CNC_FUROS_TOTAL": "NAO",
+    "OBS": null,
+    "ALINHAMENTO": "INVERSO",
+    "FRESAS": [],
+    "FUROS": [
+      {
+        "FACE": "SUP",
+        "X": 469.0,
+        "Y": 509.0,
+        "DIAM": 20.0,
+        "Z": 13.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 9.5,
+        "Y": 509.0,
+        "DIAM": 20.0,
+        "Z": 13.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 469.0,
+        "Y": 50.0,
+        "DIAM": 20.0,
+        "Z": 13.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 9.5,
+        "Y": 50.0,
+        "DIAM": 20.0,
+        "Z": 13.0
+      }
+    ],
+    "CONTORNO": [
+      {
+        "X": 478.5,
+        "Y": 559,
+        "ANG": "NAO"
+      },
+      {
+        "X": 478.5,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 559,
+        "ANG": "NAO"
+      }
+    ],
+    "HAS_FRESAS_SUP": false,
+    "HAS_FRESAS_INF": false,
+    "HAS_FUROS_SUP": true,
+    "HAS_FUROS_INF": false,
+    "HAS_FUROS_TOPOS": false
+  },
+  {
+    "CLIENTE": "Julia",
+    "COD_CLIENTE": null,
+    "AMBIENTE": "1_PROJETO",
+    "ID_UNICO": 2506,
+    "QUANTIDADE": 1,
+    "DESCRICAO": "!PRAT",
+    "COMPRIMENTO": 478.5,
+    "PROFUNDIDADE": 559.0,
+    "CHAPA": "Branco TX 15mm",
+    "COR_1C": "Carvalho Treviso",
+    "COR_2C": null,
+    "COR_1P": null,
+    "COR_2P": null,
+    "ROTEIRO": "Lam1C-NORMAL",
+    "CATEGORIA": "INTERNOS",
+    "SETOR": "PRODUCAO",
+    "ESTRUTURA": 1412,
+    "MODULO_DESC": "1412-ARM_01 - Roupeiro Planejado - Branco TX (1500x2500x580)",
+    "COD_CORTE": 7002,
+    "COMP_CHAPA": 2750.0,
+    "PROF_CHAPA": 1840.0,
+    "ESP_CHAPA": 15.0,
+    "VEIO": 0,
+    "CNC_A": "",
+    "CNC_B": "",
+    "CNC_FUROS_TOTAL": "NAO",
+    "OBS": null,
+    "ALINHAMENTO": "INVERSO",
+    "FRESAS": [],
+    "FUROS": [
+      {
+        "FACE": "SUP",
+        "X": 469.0,
+        "Y": 509.0,
+        "DIAM": 20.0,
+        "Z": 13.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 9.5,
+        "Y": 509.0,
+        "DIAM": 20.0,
+        "Z": 13.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 469.0,
+        "Y": 50.0,
+        "DIAM": 20.0,
+        "Z": 13.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 9.5,
+        "Y": 50.0,
+        "DIAM": 20.0,
+        "Z": 13.0
+      }
+    ],
+    "CONTORNO": [
+      {
+        "X": 478.5,
+        "Y": 559,
+        "ANG": "NAO"
+      },
+      {
+        "X": 478.5,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 559,
+        "ANG": "NAO"
+      }
+    ],
+    "HAS_FRESAS_SUP": false,
+    "HAS_FRESAS_INF": false,
+    "HAS_FUROS_SUP": true,
+    "HAS_FUROS_INF": false,
+    "HAS_FUROS_TOPOS": false
+  },
+  {
+    "CLIENTE": "Julia",
+    "COD_CLIENTE": null,
+    "AMBIENTE": "1_PROJETO",
+    "ID_UNICO": 2523,
+    "QUANTIDADE": 1,
+    "DESCRICAO": "!PRAT",
+    "COMPRIMENTO": 478.5,
+    "PROFUNDIDADE": 559.0,
+    "CHAPA": "Branco TX 15mm",
+    "COR_1C": "Carvalho Treviso",
+    "COR_2C": null,
+    "COR_1P": null,
+    "COR_2P": null,
+    "ROTEIRO": "Lam1C-NORMAL",
+    "CATEGORIA": "INTERNOS",
+    "SETOR": "PRODUCAO",
+    "ESTRUTURA": 1412,
+    "MODULO_DESC": "1412-ARM_01 - Roupeiro Planejado - Branco TX (1500x2500x580)",
+    "COD_CORTE": 7002,
+    "COMP_CHAPA": 2750.0,
+    "PROF_CHAPA": 1840.0,
+    "ESP_CHAPA": 15.0,
+    "VEIO": 0,
+    "CNC_A": "",
+    "CNC_B": "",
+    "CNC_FUROS_TOTAL": "NAO",
+    "OBS": null,
+    "ALINHAMENTO": "INVERSO",
+    "FRESAS": [],
+    "FUROS": [
+      {
+        "FACE": "SUP",
+        "X": 469.0,
+        "Y": 509.0,
+        "DIAM": 20.0,
+        "Z": 13.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 9.5,
+        "Y": 509.0,
+        "DIAM": 20.0,
+        "Z": 13.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 469.0,
+        "Y": 50.0,
+        "DIAM": 20.0,
+        "Z": 13.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 9.5,
+        "Y": 50.0,
+        "DIAM": 20.0,
+        "Z": 13.0
+      }
+    ],
+    "CONTORNO": [
+      {
+        "X": 478.5,
+        "Y": 559,
+        "ANG": "NAO"
+      },
+      {
+        "X": 478.5,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 559,
+        "ANG": "NAO"
+      }
+    ],
+    "HAS_FRESAS_SUP": false,
+    "HAS_FRESAS_INF": false,
+    "HAS_FUROS_SUP": true,
+    "HAS_FUROS_INF": false,
+    "HAS_FUROS_TOPOS": false
+  },
+  {
+    "CLIENTE": "Julia",
+    "COD_CLIENTE": null,
+    "AMBIENTE": "1_PROJETO",
+    "ID_UNICO": 2540,
+    "QUANTIDADE": 1,
+    "DESCRICAO": "!PRAT",
+    "COMPRIMENTO": 478.5,
+    "PROFUNDIDADE": 559.0,
+    "CHAPA": "Branco TX 15mm",
+    "COR_1C": "Carvalho Treviso",
+    "COR_2C": null,
+    "COR_1P": null,
+    "COR_2P": null,
+    "ROTEIRO": "Lam1C-NORMAL",
+    "CATEGORIA": "INTERNOS",
+    "SETOR": "PRODUCAO",
+    "ESTRUTURA": 1412,
+    "MODULO_DESC": "1412-ARM_01 - Roupeiro Planejado - Branco TX (1500x2500x580)",
+    "COD_CORTE": 7002,
+    "COMP_CHAPA": 2750.0,
+    "PROF_CHAPA": 1840.0,
+    "ESP_CHAPA": 15.0,
+    "VEIO": 0,
+    "CNC_A": "",
+    "CNC_B": "",
+    "CNC_FUROS_TOTAL": "NAO",
+    "OBS": null,
+    "ALINHAMENTO": "INVERSO",
+    "FRESAS": [],
+    "FUROS": [
+      {
+        "FACE": "SUP",
+        "X": 469.0,
+        "Y": 509.0,
+        "DIAM": 20.0,
+        "Z": 13.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 9.5,
+        "Y": 509.0,
+        "DIAM": 20.0,
+        "Z": 13.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 469.0,
+        "Y": 50.0,
+        "DIAM": 20.0,
+        "Z": 13.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 9.5,
+        "Y": 50.0,
+        "DIAM": 20.0,
+        "Z": 13.0
+      }
+    ],
+    "CONTORNO": [
+      {
+        "X": 478.5,
+        "Y": 559,
+        "ANG": "NAO"
+      },
+      {
+        "X": 478.5,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 559,
+        "ANG": "NAO"
+      }
+    ],
+    "HAS_FRESAS_SUP": false,
+    "HAS_FRESAS_INF": false,
+    "HAS_FUROS_SUP": true,
+    "HAS_FUROS_INF": false,
+    "HAS_FUROS_TOPOS": false
+  },
+  {
+    "CLIENTE": "Julia",
+    "COD_CLIENTE": null,
+    "AMBIENTE": "1_PROJETO",
+    "ID_UNICO": 2557,
+    "QUANTIDADE": 1,
+    "DESCRICAO": "!PRAT",
+    "COMPRIMENTO": 975.5,
+    "PROFUNDIDADE": 559.0,
+    "CHAPA": "Branco TX 15mm",
+    "COR_1C": "Carvalho Treviso",
+    "COR_2C": null,
+    "COR_1P": null,
+    "COR_2P": null,
+    "ROTEIRO": "Lam1C-NORMAL",
+    "CATEGORIA": "INTERNOS",
+    "SETOR": "PRODUCAO",
+    "ESTRUTURA": 1412,
+    "MODULO_DESC": "1412-ARM_01 - Roupeiro Planejado - Branco TX (1500x2500x580)",
+    "COD_CORTE": 7002,
+    "COMP_CHAPA": 2750.0,
+    "PROF_CHAPA": 1840.0,
+    "ESP_CHAPA": 15.0,
+    "VEIO": 0,
+    "CNC_A": "",
+    "CNC_B": "",
+    "CNC_FUROS_TOTAL": "NAO",
+    "OBS": null,
+    "ALINHAMENTO": "INVERSO",
+    "FRESAS": [],
+    "FUROS": [
+      {
+        "FACE": "SUP",
+        "X": 965.8,
+        "Y": 509.0,
+        "DIAM": 20.0,
+        "Z": 13.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 9.5,
+        "Y": 509.0,
+        "DIAM": 20.0,
+        "Z": 13.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 965.8,
+        "Y": 50.0,
+        "DIAM": 20.0,
+        "Z": 13.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 9.5,
+        "Y": 50.0,
+        "DIAM": 20.0,
+        "Z": 13.0
+      }
+    ],
+    "CONTORNO": [
+      {
+        "X": 975.5,
+        "Y": 559,
+        "ANG": "NAO"
+      },
+      {
+        "X": 975.5,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 559,
+        "ANG": "NAO"
+      }
+    ],
+    "HAS_FRESAS_SUP": false,
+    "HAS_FRESAS_INF": false,
+    "HAS_FUROS_SUP": true,
+    "HAS_FUROS_INF": false,
+    "HAS_FUROS_TOPOS": false
+  },
+  {
+    "CLIENTE": "Julia",
+    "COD_CLIENTE": null,
+    "AMBIENTE": "1_PROJETO",
+    "ID_UNICO": 2586,
+    "QUANTIDADE": 1,
+    "DESCRICAO": "!DIV_HORZ",
+    "COMPRIMENTO": 975.5,
+    "PROFUNDIDADE": 564.0,
+    "CHAPA": "Branco TX 15mm",
+    "COR_1C": "Carvalho Treviso",
+    "COR_2C": null,
+    "COR_1P": null,
+    "COR_2P": null,
+    "ROTEIRO": "Lam1C-NORMAL",
+    "CATEGORIA": "CAIXAS",
+    "SETOR": "PRODUCAO",
+    "ESTRUTURA": 1412,
+    "MODULO_DESC": "1412-ARM_01 - Roupeiro Planejado - Branco TX (1500x2500x580)",
+    "COD_CORTE": 7002,
+    "COMP_CHAPA": 2750.0,
+    "PROF_CHAPA": 1840.0,
+    "ESP_CHAPA": 15.0,
+    "VEIO": 0,
+    "CNC_A": "",
+    "CNC_B": "",
+    "CNC_FUROS_TOTAL": "NAO",
+    "OBS": null,
+    "ALINHAMENTO": "INVERSO",
+    "FRESAS": [],
+    "FUROS": [],
+    "CONTORNO": [
+      {
+        "X": 975.5,
+        "Y": 564,
+        "ANG": "NAO"
+      },
+      {
+        "X": 975.5,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 564,
+        "ANG": "NAO"
+      }
+    ],
+    "HAS_FRESAS_SUP": false,
+    "HAS_FRESAS_INF": false,
+    "HAS_FUROS_SUP": false,
+    "HAS_FUROS_INF": false,
+    "HAS_FUROS_TOPOS": false
+  },
+  {
+    "CLIENTE": "Julia",
+    "COD_CLIENTE": null,
+    "AMBIENTE": "1_PROJETO",
+    "ID_UNICO": 3144,
+    "QUANTIDADE": 1,
+    "DESCRICAO": "!FRT_GAV_INT_HORZ_NORMAL",
+    "COMPRIMENTO": 911.5,
+    "PROFUNDIDADE": 149.0,
+    "CHAPA": "Branco TX 15mm",
+    "COR_1C": "Carvalho Treviso",
+    "COR_2C": "Carvalho Treviso",
+    "COR_1P": "Carvalho Treviso",
+    "COR_2P": "Carvalho Treviso",
+    "ROTEIRO": "Lam4L-NORMAL",
+    "CATEGORIA": "INTERNOS",
+    "SETOR": "PRODUCAO",
+    "ESTRUTURA": 1412,
+    "MODULO_DESC": "1412-ARM_01 - Roupeiro Planejado - Branco TX (1500x2500x580)",
+    "COD_CORTE": 7002,
+    "COMP_CHAPA": 2750.0,
+    "PROF_CHAPA": 1840.0,
+    "ESP_CHAPA": 15.0,
+    "VEIO": 0,
+    "CNC_A": "",
+    "CNC_B": "",
+    "CNC_FUROS_TOTAL": "NAO",
+    "OBS": null,
+    "ALINHAMENTO": "NORMAL",
+    "FRESAS": [],
+    "FUROS": [
+      {
+        "FACE": "SUP",
+        "X": 66.9,
+        "Y": 95.0,
+        "DIAM": 3.0,
+        "Z": 10.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 844.6,
+        "Y": 95.0,
+        "DIAM": 3.0,
+        "Z": 10.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 455.8,
+        "Y": 51.4,
+        "DIAM": 3.0,
+        "Z": 10.0
+      }
+    ],
+    "CONTORNO": [
+      {
+        "X": 911.5,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 911.5,
+        "Y": 149,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 149,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 0,
+        "ANG": "NAO"
+      }
+    ],
+    "HAS_FRESAS_SUP": false,
+    "HAS_FRESAS_INF": false,
+    "HAS_FUROS_SUP": true,
+    "HAS_FUROS_INF": false,
+    "HAS_FUROS_TOPOS": false
+  },
+  {
+    "CLIENTE": "Julia",
+    "COD_CLIENTE": null,
+    "AMBIENTE": "1_PROJETO",
+    "ID_UNICO": 3149,
+    "QUANTIDADE": 1,
+    "DESCRICAO": "!FUNDO_GAV",
+    "COMPRIMENTO": 857.5,
+    "PROFUNDIDADE": 450.0,
+    "CHAPA": "Branco TX 15mm",
+    "COR_1C": null,
+    "COR_2C": null,
+    "COR_1P": null,
+    "COR_2P": null,
+    "ROTEIRO": "NaoLam-NORMAL",
+    "CATEGORIA": "INTERNOS",
+    "SETOR": "PRODUCAO",
+    "ESTRUTURA": 1412,
+    "MODULO_DESC": "1412-ARM_01 - Roupeiro Planejado - Branco TX (1500x2500x580)",
+    "COD_CORTE": 7002,
+    "COMP_CHAPA": 2750.0,
+    "PROF_CHAPA": 1840.0,
+    "ESP_CHAPA": 15.0,
+    "VEIO": 0,
+    "CNC_A": "",
+    "CNC_B": "",
+    "CNC_FUROS_TOTAL": "NAO",
+    "OBS": null,
+    "ALINHAMENTO": "INVERSO",
+    "FRESAS": [],
+    "FUROS": [],
+    "CONTORNO": [
+      {
+        "X": 857.5,
+        "Y": 450,
+        "ANG": "NAO"
+      },
+      {
+        "X": 857.5,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 450,
+        "ANG": "NAO"
+      }
+    ],
+    "HAS_FRESAS_SUP": false,
+    "HAS_FRESAS_INF": false,
+    "HAS_FUROS_SUP": false,
+    "HAS_FUROS_INF": false,
+    "HAS_FUROS_TOPOS": false
+  },
+  {
+    "CLIENTE": "Julia",
+    "COD_CLIENTE": null,
+    "AMBIENTE": "1_PROJETO",
+    "ID_UNICO": 3180,
+    "QUANTIDADE": 1,
+    "DESCRICAO": "!LAT_GAV_DIR",
+    "COMPRIMENTO": 450.0,
+    "PROFUNDIDADE": 119.0,
+    "CHAPA": "Branco TX 15mm",
+    "COR_1C": "Carvalho Treviso",
+    "COR_2C": null,
+    "COR_1P": null,
+    "COR_2P": null,
+    "ROTEIRO": "Lam1C-NORMAL_PAR_15",
+    "CATEGORIA": "INTERNOS",
+    "SETOR": "PRODUCAO",
+    "ESTRUTURA": 1412,
+    "MODULO_DESC": "1412-ARM_01 - Roupeiro Planejado - Branco TX (1500x2500x580)",
+    "COD_CORTE": 7002,
+    "COMP_CHAPA": 2750.0,
+    "PROF_CHAPA": 1840.0,
+    "ESP_CHAPA": 15.0,
+    "VEIO": 0,
+    "CNC_A": "",
+    "CNC_B": "",
+    "CNC_FUROS_TOTAL": "NAO",
+    "OBS": null,
+    "ALINHAMENTO": "INVERSO",
+    "FRESAS": [
+      {
+        "FACE": "SUP",
+        "SENTIDO": "H",
+        "X": 434.6,
+        "Y": 69.5,
+        "LARG": 99.0,
+        "PROF": 10.4,
+        "COMP": 15.4
+      },
+      {
+        "FACE": "SUP",
+        "SENTIDO": "H",
+        "X": 0.0,
+        "Y": 69.5,
+        "LARG": 99.0,
+        "PROF": 10.4,
+        "COMP": 15.4
+      }
+    ],
+    "FUROS": [],
+    "CONTORNO": [
+      {
+        "X": 450,
+        "Y": 119,
+        "ANG": "NAO"
+      },
+      {
+        "X": 450,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 119,
+        "ANG": "NAO"
+      }
+    ],
+    "HAS_FRESAS_SUP": true,
+    "HAS_FRESAS_INF": false,
+    "HAS_FUROS_SUP": false,
+    "HAS_FUROS_INF": false,
+    "HAS_FUROS_TOPOS": false
+  },
+  {
+    "CLIENTE": "Julia",
+    "COD_CLIENTE": null,
+    "AMBIENTE": "1_PROJETO",
+    "ID_UNICO": 3186,
+    "QUANTIDADE": 1,
+    "DESCRICAO": "!LAT_GAV_ESQ",
+    "COMPRIMENTO": 450.0,
+    "PROFUNDIDADE": 119.0,
+    "CHAPA": "Branco TX 15mm",
+    "COR_1C": "Carvalho Treviso",
+    "COR_2C": null,
+    "COR_1P": null,
+    "COR_2P": null,
+    "ROTEIRO": "Lam1C-NORMAL_PAR_15",
+    "CATEGORIA": "INTERNOS",
+    "SETOR": "PRODUCAO",
+    "ESTRUTURA": 1412,
+    "MODULO_DESC": "1412-ARM_01 - Roupeiro Planejado - Branco TX (1500x2500x580)",
+    "COD_CORTE": 7002,
+    "COMP_CHAPA": 2750.0,
+    "PROF_CHAPA": 1840.0,
+    "ESP_CHAPA": 15.0,
+    "VEIO": 0,
+    "CNC_A": "",
+    "CNC_B": "",
+    "CNC_FUROS_TOTAL": "NAO",
+    "OBS": null,
+    "ALINHAMENTO": "INVERSO",
+    "FRESAS": [
+      {
+        "FACE": "SUP",
+        "SENTIDO": "H",
+        "X": 434.6,
+        "Y": 69.5,
+        "LARG": 99.0,
+        "PROF": 10.4,
+        "COMP": 15.4
+      },
+      {
+        "FACE": "SUP",
+        "SENTIDO": "H",
+        "X": 0.0,
+        "Y": 69.5,
+        "LARG": 99.0,
+        "PROF": 10.4,
+        "COMP": 15.4
+      }
+    ],
+    "FUROS": [],
+    "CONTORNO": [
+      {
+        "X": 450,
+        "Y": 119,
+        "ANG": "NAO"
+      },
+      {
+        "X": 450,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 119,
+        "ANG": "NAO"
+      }
+    ],
+    "HAS_FRESAS_SUP": true,
+    "HAS_FRESAS_INF": false,
+    "HAS_FUROS_SUP": false,
+    "HAS_FUROS_INF": false,
+    "HAS_FUROS_TOPOS": false
+  },
+  {
+    "CLIENTE": "Julia",
+    "COD_CLIENTE": null,
+    "AMBIENTE": "1_PROJETO",
+    "ID_UNICO": 3195,
+    "QUANTIDADE": 1,
+    "DESCRICAO": "!TRAV_GAV_FRT",
+    "COMPRIMENTO": 877.5,
+    "PROFUNDIDADE": 103.5,
+    "CHAPA": "Branco TX 15mm",
+    "COR_1C": null,
+    "COR_2C": "Carvalho Treviso",
+    "COR_1P": null,
+    "COR_2P": null,
+    "ROTEIRO": "Lam1C-REC_GAV_15",
+    "CATEGORIA": "INTERNOS",
+    "SETOR": "PRODUCAO",
+    "ESTRUTURA": 1412,
+    "MODULO_DESC": "1412-ARM_01 - Roupeiro Planejado - Branco TX (1500x2500x580)",
+    "COD_CORTE": 7002,
+    "COMP_CHAPA": 2750.0,
+    "PROF_CHAPA": 1840.0,
+    "ESP_CHAPA": 15.0,
+    "VEIO": 0,
+    "CNC_A": "",
+    "CNC_B": "",
+    "CNC_FUROS_TOTAL": "NAO",
+    "OBS": null,
+    "ALINHAMENTO": "NORMAL",
+    "FRESAS": [
+      {
+        "FACE": "SUP",
+        "SENTIDO": "V",
+        "X": 0.0,
+        "Y": 91.0,
+        "LARG": 25.0,
+        "PROF": 15.4,
+        "COMP": 10.0
+      },
+      {
+        "FACE": "SUP",
+        "SENTIDO": "V",
+        "X": 867.5,
+        "Y": 91.0,
+        "LARG": 25.0,
+        "PROF": 15.4,
+        "COMP": 10.0
+      }
+    ],
+    "FUROS": [
+      {
+        "FACE": "SUP",
+        "X": 827.7,
+        "Y": 74.6,
+        "DIAM": 3.0,
+        "Z": 15.5
+      },
+      {
+        "FACE": "SUP",
+        "X": 50.0,
+        "Y": 74.6,
+        "DIAM": 3.0,
+        "Z": 15.5
+      },
+      {
+        "FACE": "SUP",
+        "X": 438.9,
+        "Y": 31.0,
+        "DIAM": 3.0,
+        "Z": 15.5
+      }
+    ],
+    "CONTORNO": [
+      {
+        "X": 877.5,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 877.5,
+        "Y": 103.5,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 103.5,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 0,
+        "ANG": "NAO"
+      }
+    ],
+    "HAS_FRESAS_SUP": true,
+    "HAS_FRESAS_INF": false,
+    "HAS_FUROS_SUP": true,
+    "HAS_FUROS_INF": false,
+    "HAS_FUROS_TOPOS": false
+  },
+  {
+    "CLIENTE": "Julia",
+    "COD_CLIENTE": null,
+    "AMBIENTE": "1_PROJETO",
+    "ID_UNICO": 3200,
+    "QUANTIDADE": 1,
+    "DESCRICAO": "!TRAV_GAV_TRZ",
+    "COMPRIMENTO": 877.5,
+    "PROFUNDIDADE": 103.5,
+    "CHAPA": "Branco TX 15mm",
+    "COR_1C": null,
+    "COR_2C": "Carvalho Treviso",
+    "COR_1P": null,
+    "COR_2P": null,
+    "ROTEIRO": "Lam1C-REC_GAV_15",
+    "CATEGORIA": "INTERNOS",
+    "SETOR": "PRODUCAO",
+    "ESTRUTURA": 1412,
+    "MODULO_DESC": "1412-ARM_01 - Roupeiro Planejado - Branco TX (1500x2500x580)",
+    "COD_CORTE": 7002,
+    "COMP_CHAPA": 2750.0,
+    "PROF_CHAPA": 1840.0,
+    "ESP_CHAPA": 15.0,
+    "VEIO": 0,
+    "CNC_A": "",
+    "CNC_B": "",
+    "CNC_FUROS_TOTAL": "NAO",
+    "OBS": null,
+    "ALINHAMENTO": "NORMAL",
+    "FRESAS": [
+      {
+        "FACE": "SUP",
+        "SENTIDO": "V",
+        "X": 0.0,
+        "Y": 91.0,
+        "LARG": 25.0,
+        "PROF": 15.4,
+        "COMP": 10.0
+      },
+      {
+        "FACE": "SUP",
+        "SENTIDO": "V",
+        "X": 867.5,
+        "Y": 91.0,
+        "LARG": 25.0,
+        "PROF": 15.4,
+        "COMP": 10.0
+      }
+    ],
+    "FUROS": [],
+    "CONTORNO": [
+      {
+        "X": 877.5,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 877.5,
+        "Y": 103.5,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 103.5,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 0,
+        "ANG": "NAO"
+      }
+    ],
+    "HAS_FRESAS_SUP": true,
+    "HAS_FRESAS_INF": false,
+    "HAS_FUROS_SUP": false,
+    "HAS_FUROS_INF": false,
+    "HAS_FUROS_TOPOS": false
+  },
+  {
+    "CLIENTE": "Julia",
+    "COD_CLIENTE": null,
+    "AMBIENTE": "1_PROJETO",
+    "ID_UNICO": 3226,
+    "QUANTIDADE": 1,
+    "DESCRICAO": "!FRT_GAV_INT_HORZ_NORMAL",
+    "COMPRIMENTO": 911.5,
+    "PROFUNDIDADE": 149.0,
+    "CHAPA": "Branco TX 15mm",
+    "COR_1C": "Carvalho Treviso",
+    "COR_2C": "Carvalho Treviso",
+    "COR_1P": "Carvalho Treviso",
+    "COR_2P": "Carvalho Treviso",
+    "ROTEIRO": "Lam4L-NORMAL",
+    "CATEGORIA": "INTERNOS",
+    "SETOR": "PRODUCAO",
+    "ESTRUTURA": 1412,
+    "MODULO_DESC": "1412-ARM_01 - Roupeiro Planejado - Branco TX (1500x2500x580)",
+    "COD_CORTE": 7002,
+    "COMP_CHAPA": 2750.0,
+    "PROF_CHAPA": 1840.0,
+    "ESP_CHAPA": 15.0,
+    "VEIO": 0,
+    "CNC_A": "",
+    "CNC_B": "",
+    "CNC_FUROS_TOTAL": "NAO",
+    "OBS": null,
+    "ALINHAMENTO": "NORMAL",
+    "FRESAS": [],
+    "FUROS": [
+      {
+        "FACE": "SUP",
+        "X": 66.9,
+        "Y": 95.0,
+        "DIAM": 3.0,
+        "Z": 10.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 844.6,
+        "Y": 95.0,
+        "DIAM": 3.0,
+        "Z": 10.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 455.8,
+        "Y": 51.4,
+        "DIAM": 3.0,
+        "Z": 10.0
+      }
+    ],
+    "CONTORNO": [
+      {
+        "X": 911.5,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 911.5,
+        "Y": 149,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 149,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 0,
+        "ANG": "NAO"
+      }
+    ],
+    "HAS_FRESAS_SUP": false,
+    "HAS_FRESAS_INF": false,
+    "HAS_FUROS_SUP": true,
+    "HAS_FUROS_INF": false,
+    "HAS_FUROS_TOPOS": false
+  },
+  {
+    "CLIENTE": "Julia",
+    "COD_CLIENTE": null,
+    "AMBIENTE": "1_PROJETO",
+    "ID_UNICO": 3231,
+    "QUANTIDADE": 1,
+    "DESCRICAO": "!FUNDO_GAV",
+    "COMPRIMENTO": 857.5,
+    "PROFUNDIDADE": 450.0,
+    "CHAPA": "Branco TX 15mm",
+    "COR_1C": null,
+    "COR_2C": null,
+    "COR_1P": null,
+    "COR_2P": null,
+    "ROTEIRO": "NaoLam-NORMAL",
+    "CATEGORIA": "INTERNOS",
+    "SETOR": "PRODUCAO",
+    "ESTRUTURA": 1412,
+    "MODULO_DESC": "1412-ARM_01 - Roupeiro Planejado - Branco TX (1500x2500x580)",
+    "COD_CORTE": 7002,
+    "COMP_CHAPA": 2750.0,
+    "PROF_CHAPA": 1840.0,
+    "ESP_CHAPA": 15.0,
+    "VEIO": 0,
+    "CNC_A": "",
+    "CNC_B": "",
+    "CNC_FUROS_TOTAL": "NAO",
+    "OBS": null,
+    "ALINHAMENTO": "INVERSO",
+    "FRESAS": [],
+    "FUROS": [],
+    "CONTORNO": [
+      {
+        "X": 857.5,
+        "Y": 450,
+        "ANG": "NAO"
+      },
+      {
+        "X": 857.5,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 450,
+        "ANG": "NAO"
+      }
+    ],
+    "HAS_FRESAS_SUP": false,
+    "HAS_FRESAS_INF": false,
+    "HAS_FUROS_SUP": false,
+    "HAS_FUROS_INF": false,
+    "HAS_FUROS_TOPOS": false
+  },
+  {
+    "CLIENTE": "Julia",
+    "COD_CLIENTE": null,
+    "AMBIENTE": "1_PROJETO",
+    "ID_UNICO": 3262,
+    "QUANTIDADE": 1,
+    "DESCRICAO": "!LAT_GAV_DIR",
+    "COMPRIMENTO": 450.0,
+    "PROFUNDIDADE": 119.0,
+    "CHAPA": "Branco TX 15mm",
+    "COR_1C": "Carvalho Treviso",
+    "COR_2C": null,
+    "COR_1P": null,
+    "COR_2P": null,
+    "ROTEIRO": "Lam1C-NORMAL_PAR_15",
+    "CATEGORIA": "INTERNOS",
+    "SETOR": "PRODUCAO",
+    "ESTRUTURA": 1412,
+    "MODULO_DESC": "1412-ARM_01 - Roupeiro Planejado - Branco TX (1500x2500x580)",
+    "COD_CORTE": 7002,
+    "COMP_CHAPA": 2750.0,
+    "PROF_CHAPA": 1840.0,
+    "ESP_CHAPA": 15.0,
+    "VEIO": 0,
+    "CNC_A": "",
+    "CNC_B": "",
+    "CNC_FUROS_TOTAL": "NAO",
+    "OBS": null,
+    "ALINHAMENTO": "INVERSO",
+    "FRESAS": [
+      {
+        "FACE": "SUP",
+        "SENTIDO": "H",
+        "X": 434.6,
+        "Y": 69.5,
+        "LARG": 99.0,
+        "PROF": 10.4,
+        "COMP": 15.4
+      },
+      {
+        "FACE": "SUP",
+        "SENTIDO": "H",
+        "X": 0.0,
+        "Y": 69.5,
+        "LARG": 99.0,
+        "PROF": 10.4,
+        "COMP": 15.4
+      }
+    ],
+    "FUROS": [],
+    "CONTORNO": [
+      {
+        "X": 450,
+        "Y": 119,
+        "ANG": "NAO"
+      },
+      {
+        "X": 450,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 119,
+        "ANG": "NAO"
+      }
+    ],
+    "HAS_FRESAS_SUP": true,
+    "HAS_FRESAS_INF": false,
+    "HAS_FUROS_SUP": false,
+    "HAS_FUROS_INF": false,
+    "HAS_FUROS_TOPOS": false
+  },
+  {
+    "CLIENTE": "Julia",
+    "COD_CLIENTE": null,
+    "AMBIENTE": "1_PROJETO",
+    "ID_UNICO": 3268,
+    "QUANTIDADE": 1,
+    "DESCRICAO": "!LAT_GAV_ESQ",
+    "COMPRIMENTO": 450.0,
+    "PROFUNDIDADE": 119.0,
+    "CHAPA": "Branco TX 15mm",
+    "COR_1C": "Carvalho Treviso",
+    "COR_2C": null,
+    "COR_1P": null,
+    "COR_2P": null,
+    "ROTEIRO": "Lam1C-NORMAL_PAR_15",
+    "CATEGORIA": "INTERNOS",
+    "SETOR": "PRODUCAO",
+    "ESTRUTURA": 1412,
+    "MODULO_DESC": "1412-ARM_01 - Roupeiro Planejado - Branco TX (1500x2500x580)",
+    "COD_CORTE": 7002,
+    "COMP_CHAPA": 2750.0,
+    "PROF_CHAPA": 1840.0,
+    "ESP_CHAPA": 15.0,
+    "VEIO": 0,
+    "CNC_A": "",
+    "CNC_B": "",
+    "CNC_FUROS_TOTAL": "NAO",
+    "OBS": null,
+    "ALINHAMENTO": "INVERSO",
+    "FRESAS": [
+      {
+        "FACE": "SUP",
+        "SENTIDO": "H",
+        "X": 434.6,
+        "Y": 69.5,
+        "LARG": 99.0,
+        "PROF": 10.4,
+        "COMP": 15.4
+      },
+      {
+        "FACE": "SUP",
+        "SENTIDO": "H",
+        "X": 0.0,
+        "Y": 69.5,
+        "LARG": 99.0,
+        "PROF": 10.4,
+        "COMP": 15.4
+      }
+    ],
+    "FUROS": [],
+    "CONTORNO": [
+      {
+        "X": 450,
+        "Y": 119,
+        "ANG": "NAO"
+      },
+      {
+        "X": 450,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 119,
+        "ANG": "NAO"
+      }
+    ],
+    "HAS_FRESAS_SUP": true,
+    "HAS_FRESAS_INF": false,
+    "HAS_FUROS_SUP": false,
+    "HAS_FUROS_INF": false,
+    "HAS_FUROS_TOPOS": false
+  },
+  {
+    "CLIENTE": "Julia",
+    "COD_CLIENTE": null,
+    "AMBIENTE": "1_PROJETO",
+    "ID_UNICO": 3277,
+    "QUANTIDADE": 1,
+    "DESCRICAO": "!TRAV_GAV_FRT",
+    "COMPRIMENTO": 877.5,
+    "PROFUNDIDADE": 103.5,
+    "CHAPA": "Branco TX 15mm",
+    "COR_1C": null,
+    "COR_2C": "Carvalho Treviso",
+    "COR_1P": null,
+    "COR_2P": null,
+    "ROTEIRO": "Lam1C-REC_GAV_15",
+    "CATEGORIA": "INTERNOS",
+    "SETOR": "PRODUCAO",
+    "ESTRUTURA": 1412,
+    "MODULO_DESC": "1412-ARM_01 - Roupeiro Planejado - Branco TX (1500x2500x580)",
+    "COD_CORTE": 7002,
+    "COMP_CHAPA": 2750.0,
+    "PROF_CHAPA": 1840.0,
+    "ESP_CHAPA": 15.0,
+    "VEIO": 0,
+    "CNC_A": "",
+    "CNC_B": "",
+    "CNC_FUROS_TOTAL": "NAO",
+    "OBS": null,
+    "ALINHAMENTO": "NORMAL",
+    "FRESAS": [
+      {
+        "FACE": "SUP",
+        "SENTIDO": "V",
+        "X": 0.0,
+        "Y": 91.0,
+        "LARG": 25.0,
+        "PROF": 15.4,
+        "COMP": 10.0
+      },
+      {
+        "FACE": "SUP",
+        "SENTIDO": "V",
+        "X": 867.5,
+        "Y": 91.0,
+        "LARG": 25.0,
+        "PROF": 15.4,
+        "COMP": 10.0
+      }
+    ],
+    "FUROS": [
+      {
+        "FACE": "SUP",
+        "X": 827.7,
+        "Y": 74.6,
+        "DIAM": 3.0,
+        "Z": 15.5
+      },
+      {
+        "FACE": "SUP",
+        "X": 50.0,
+        "Y": 74.6,
+        "DIAM": 3.0,
+        "Z": 15.5
+      },
+      {
+        "FACE": "SUP",
+        "X": 438.9,
+        "Y": 31.0,
+        "DIAM": 3.0,
+        "Z": 15.5
+      }
+    ],
+    "CONTORNO": [
+      {
+        "X": 877.5,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 877.5,
+        "Y": 103.5,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 103.5,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 0,
+        "ANG": "NAO"
+      }
+    ],
+    "HAS_FRESAS_SUP": true,
+    "HAS_FRESAS_INF": false,
+    "HAS_FUROS_SUP": true,
+    "HAS_FUROS_INF": false,
+    "HAS_FUROS_TOPOS": false
+  },
+  {
+    "CLIENTE": "Julia",
+    "COD_CLIENTE": null,
+    "AMBIENTE": "1_PROJETO",
+    "ID_UNICO": 3282,
+    "QUANTIDADE": 1,
+    "DESCRICAO": "!TRAV_GAV_TRZ",
+    "COMPRIMENTO": 877.5,
+    "PROFUNDIDADE": 103.5,
+    "CHAPA": "Branco TX 15mm",
+    "COR_1C": null,
+    "COR_2C": "Carvalho Treviso",
+    "COR_1P": null,
+    "COR_2P": null,
+    "ROTEIRO": "Lam1C-REC_GAV_15",
+    "CATEGORIA": "INTERNOS",
+    "SETOR": "PRODUCAO",
+    "ESTRUTURA": 1412,
+    "MODULO_DESC": "1412-ARM_01 - Roupeiro Planejado - Branco TX (1500x2500x580)",
+    "COD_CORTE": 7002,
+    "COMP_CHAPA": 2750.0,
+    "PROF_CHAPA": 1840.0,
+    "ESP_CHAPA": 15.0,
+    "VEIO": 0,
+    "CNC_A": "",
+    "CNC_B": "",
+    "CNC_FUROS_TOTAL": "NAO",
+    "OBS": null,
+    "ALINHAMENTO": "NORMAL",
+    "FRESAS": [
+      {
+        "FACE": "SUP",
+        "SENTIDO": "V",
+        "X": 0.0,
+        "Y": 91.0,
+        "LARG": 25.0,
+        "PROF": 15.4,
+        "COMP": 10.0
+      },
+      {
+        "FACE": "SUP",
+        "SENTIDO": "V",
+        "X": 867.5,
+        "Y": 91.0,
+        "LARG": 25.0,
+        "PROF": 15.4,
+        "COMP": 10.0
+      }
+    ],
+    "FUROS": [],
+    "CONTORNO": [
+      {
+        "X": 877.5,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 877.5,
+        "Y": 103.5,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 103.5,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 0,
+        "ANG": "NAO"
+      }
+    ],
+    "HAS_FRESAS_SUP": true,
+    "HAS_FRESAS_INF": false,
+    "HAS_FUROS_SUP": false,
+    "HAS_FUROS_INF": false,
+    "HAS_FUROS_TOPOS": false
+  },
+  {
+    "CLIENTE": "Julia",
+    "COD_CLIENTE": null,
+    "AMBIENTE": "1_PROJETO",
+    "ID_UNICO": 3308,
+    "QUANTIDADE": 1,
+    "DESCRICAO": "!FRT_GAV_INT_HORZ_NORMAL",
+    "COMPRIMENTO": 911.5,
+    "PROFUNDIDADE": 149.0,
+    "CHAPA": "Branco TX 15mm",
+    "COR_1C": "Carvalho Treviso",
+    "COR_2C": "Carvalho Treviso",
+    "COR_1P": "Carvalho Treviso",
+    "COR_2P": "Carvalho Treviso",
+    "ROTEIRO": "Lam4L-NORMAL",
+    "CATEGORIA": "INTERNOS",
+    "SETOR": "PRODUCAO",
+    "ESTRUTURA": 1412,
+    "MODULO_DESC": "1412-ARM_01 - Roupeiro Planejado - Branco TX (1500x2500x580)",
+    "COD_CORTE": 7002,
+    "COMP_CHAPA": 2750.0,
+    "PROF_CHAPA": 1840.0,
+    "ESP_CHAPA": 15.0,
+    "VEIO": 0,
+    "CNC_A": "",
+    "CNC_B": "",
+    "CNC_FUROS_TOTAL": "NAO",
+    "OBS": null,
+    "ALINHAMENTO": "NORMAL",
+    "FRESAS": [],
+    "FUROS": [
+      {
+        "FACE": "SUP",
+        "X": 66.9,
+        "Y": 95.0,
+        "DIAM": 3.0,
+        "Z": 10.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 844.6,
+        "Y": 95.0,
+        "DIAM": 3.0,
+        "Z": 10.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 455.8,
+        "Y": 51.4,
+        "DIAM": 3.0,
+        "Z": 10.0
+      }
+    ],
+    "CONTORNO": [
+      {
+        "X": 911.5,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 911.5,
+        "Y": 149,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 149,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 0,
+        "ANG": "NAO"
+      }
+    ],
+    "HAS_FRESAS_SUP": false,
+    "HAS_FRESAS_INF": false,
+    "HAS_FUROS_SUP": true,
+    "HAS_FUROS_INF": false,
+    "HAS_FUROS_TOPOS": false
+  },
+  {
+    "CLIENTE": "Julia",
+    "COD_CLIENTE": null,
+    "AMBIENTE": "1_PROJETO",
+    "ID_UNICO": 3313,
+    "QUANTIDADE": 1,
+    "DESCRICAO": "!FUNDO_GAV",
+    "COMPRIMENTO": 857.5,
+    "PROFUNDIDADE": 450.0,
+    "CHAPA": "Branco TX 15mm",
+    "COR_1C": null,
+    "COR_2C": null,
+    "COR_1P": null,
+    "COR_2P": null,
+    "ROTEIRO": "NaoLam-NORMAL",
+    "CATEGORIA": "INTERNOS",
+    "SETOR": "PRODUCAO",
+    "ESTRUTURA": 1412,
+    "MODULO_DESC": "1412-ARM_01 - Roupeiro Planejado - Branco TX (1500x2500x580)",
+    "COD_CORTE": 7002,
+    "COMP_CHAPA": 2750.0,
+    "PROF_CHAPA": 1840.0,
+    "ESP_CHAPA": 15.0,
+    "VEIO": 0,
+    "CNC_A": "",
+    "CNC_B": "",
+    "CNC_FUROS_TOTAL": "NAO",
+    "OBS": null,
+    "ALINHAMENTO": "INVERSO",
+    "FRESAS": [],
+    "FUROS": [],
+    "CONTORNO": [
+      {
+        "X": 857.5,
+        "Y": 450,
+        "ANG": "NAO"
+      },
+      {
+        "X": 857.5,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 450,
+        "ANG": "NAO"
+      }
+    ],
+    "HAS_FRESAS_SUP": false,
+    "HAS_FRESAS_INF": false,
+    "HAS_FUROS_SUP": false,
+    "HAS_FUROS_INF": false,
+    "HAS_FUROS_TOPOS": false
+  },
+  {
+    "CLIENTE": "Julia",
+    "COD_CLIENTE": null,
+    "AMBIENTE": "1_PROJETO",
+    "ID_UNICO": 3344,
+    "QUANTIDADE": 1,
+    "DESCRICAO": "!LAT_GAV_DIR",
+    "COMPRIMENTO": 450.0,
+    "PROFUNDIDADE": 119.0,
+    "CHAPA": "Branco TX 15mm",
+    "COR_1C": "Carvalho Treviso",
+    "COR_2C": null,
+    "COR_1P": null,
+    "COR_2P": null,
+    "ROTEIRO": "Lam1C-NORMAL_PAR_15",
+    "CATEGORIA": "INTERNOS",
+    "SETOR": "PRODUCAO",
+    "ESTRUTURA": 1412,
+    "MODULO_DESC": "1412-ARM_01 - Roupeiro Planejado - Branco TX (1500x2500x580)",
+    "COD_CORTE": 7002,
+    "COMP_CHAPA": 2750.0,
+    "PROF_CHAPA": 1840.0,
+    "ESP_CHAPA": 15.0,
+    "VEIO": 0,
+    "CNC_A": "",
+    "CNC_B": "",
+    "CNC_FUROS_TOTAL": "NAO",
+    "OBS": null,
+    "ALINHAMENTO": "INVERSO",
+    "FRESAS": [
+      {
+        "FACE": "SUP",
+        "SENTIDO": "H",
+        "X": 434.6,
+        "Y": 69.5,
+        "LARG": 99.0,
+        "PROF": 10.4,
+        "COMP": 15.4
+      },
+      {
+        "FACE": "SUP",
+        "SENTIDO": "H",
+        "X": 0.0,
+        "Y": 69.5,
+        "LARG": 99.0,
+        "PROF": 10.4,
+        "COMP": 15.4
+      }
+    ],
+    "FUROS": [],
+    "CONTORNO": [
+      {
+        "X": 450,
+        "Y": 119,
+        "ANG": "NAO"
+      },
+      {
+        "X": 450,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 119,
+        "ANG": "NAO"
+      }
+    ],
+    "HAS_FRESAS_SUP": true,
+    "HAS_FRESAS_INF": false,
+    "HAS_FUROS_SUP": false,
+    "HAS_FUROS_INF": false,
+    "HAS_FUROS_TOPOS": false
+  },
+  {
+    "CLIENTE": "Julia",
+    "COD_CLIENTE": null,
+    "AMBIENTE": "1_PROJETO",
+    "ID_UNICO": 3350,
+    "QUANTIDADE": 1,
+    "DESCRICAO": "!LAT_GAV_ESQ",
+    "COMPRIMENTO": 450.0,
+    "PROFUNDIDADE": 119.0,
+    "CHAPA": "Branco TX 15mm",
+    "COR_1C": "Carvalho Treviso",
+    "COR_2C": null,
+    "COR_1P": null,
+    "COR_2P": null,
+    "ROTEIRO": "Lam1C-NORMAL_PAR_15",
+    "CATEGORIA": "INTERNOS",
+    "SETOR": "PRODUCAO",
+    "ESTRUTURA": 1412,
+    "MODULO_DESC": "1412-ARM_01 - Roupeiro Planejado - Branco TX (1500x2500x580)",
+    "COD_CORTE": 7002,
+    "COMP_CHAPA": 2750.0,
+    "PROF_CHAPA": 1840.0,
+    "ESP_CHAPA": 15.0,
+    "VEIO": 0,
+    "CNC_A": "",
+    "CNC_B": "",
+    "CNC_FUROS_TOTAL": "NAO",
+    "OBS": null,
+    "ALINHAMENTO": "INVERSO",
+    "FRESAS": [
+      {
+        "FACE": "SUP",
+        "SENTIDO": "H",
+        "X": 434.6,
+        "Y": 69.5,
+        "LARG": 99.0,
+        "PROF": 10.4,
+        "COMP": 15.4
+      },
+      {
+        "FACE": "SUP",
+        "SENTIDO": "H",
+        "X": 0.0,
+        "Y": 69.5,
+        "LARG": 99.0,
+        "PROF": 10.4,
+        "COMP": 15.4
+      }
+    ],
+    "FUROS": [],
+    "CONTORNO": [
+      {
+        "X": 450,
+        "Y": 119,
+        "ANG": "NAO"
+      },
+      {
+        "X": 450,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 119,
+        "ANG": "NAO"
+      }
+    ],
+    "HAS_FRESAS_SUP": true,
+    "HAS_FRESAS_INF": false,
+    "HAS_FUROS_SUP": false,
+    "HAS_FUROS_INF": false,
+    "HAS_FUROS_TOPOS": false
+  },
+  {
+    "CLIENTE": "Julia",
+    "COD_CLIENTE": null,
+    "AMBIENTE": "1_PROJETO",
+    "ID_UNICO": 3359,
+    "QUANTIDADE": 1,
+    "DESCRICAO": "!TRAV_GAV_FRT",
+    "COMPRIMENTO": 877.5,
+    "PROFUNDIDADE": 103.5,
+    "CHAPA": "Branco TX 15mm",
+    "COR_1C": null,
+    "COR_2C": "Carvalho Treviso",
+    "COR_1P": null,
+    "COR_2P": null,
+    "ROTEIRO": "Lam1C-REC_GAV_15",
+    "CATEGORIA": "INTERNOS",
+    "SETOR": "PRODUCAO",
+    "ESTRUTURA": 1412,
+    "MODULO_DESC": "1412-ARM_01 - Roupeiro Planejado - Branco TX (1500x2500x580)",
+    "COD_CORTE": 7002,
+    "COMP_CHAPA": 2750.0,
+    "PROF_CHAPA": 1840.0,
+    "ESP_CHAPA": 15.0,
+    "VEIO": 0,
+    "CNC_A": "",
+    "CNC_B": "",
+    "CNC_FUROS_TOTAL": "NAO",
+    "OBS": null,
+    "ALINHAMENTO": "NORMAL",
+    "FRESAS": [
+      {
+        "FACE": "SUP",
+        "SENTIDO": "V",
+        "X": 0.0,
+        "Y": 91.0,
+        "LARG": 25.0,
+        "PROF": 15.4,
+        "COMP": 10.0
+      },
+      {
+        "FACE": "SUP",
+        "SENTIDO": "V",
+        "X": 867.5,
+        "Y": 91.0,
+        "LARG": 25.0,
+        "PROF": 15.4,
+        "COMP": 10.0
+      }
+    ],
+    "FUROS": [
+      {
+        "FACE": "SUP",
+        "X": 827.7,
+        "Y": 74.6,
+        "DIAM": 3.0,
+        "Z": 15.5
+      },
+      {
+        "FACE": "SUP",
+        "X": 50.0,
+        "Y": 74.6,
+        "DIAM": 3.0,
+        "Z": 15.5
+      },
+      {
+        "FACE": "SUP",
+        "X": 438.9,
+        "Y": 31.0,
+        "DIAM": 3.0,
+        "Z": 15.5
+      }
+    ],
+    "CONTORNO": [
+      {
+        "X": 877.5,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 877.5,
+        "Y": 103.5,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 103.5,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 0,
+        "ANG": "NAO"
+      }
+    ],
+    "HAS_FRESAS_SUP": true,
+    "HAS_FRESAS_INF": false,
+    "HAS_FUROS_SUP": true,
+    "HAS_FUROS_INF": false,
+    "HAS_FUROS_TOPOS": false
+  },
+  {
+    "CLIENTE": "Julia",
+    "COD_CLIENTE": null,
+    "AMBIENTE": "1_PROJETO",
+    "ID_UNICO": 3364,
+    "QUANTIDADE": 1,
+    "DESCRICAO": "!TRAV_GAV_TRZ",
+    "COMPRIMENTO": 877.5,
+    "PROFUNDIDADE": 103.5,
+    "CHAPA": "Branco TX 15mm",
+    "COR_1C": null,
+    "COR_2C": "Carvalho Treviso",
+    "COR_1P": null,
+    "COR_2P": null,
+    "ROTEIRO": "Lam1C-REC_GAV_15",
+    "CATEGORIA": "INTERNOS",
+    "SETOR": "PRODUCAO",
+    "ESTRUTURA": 1412,
+    "MODULO_DESC": "1412-ARM_01 - Roupeiro Planejado - Branco TX (1500x2500x580)",
+    "COD_CORTE": 7002,
+    "COMP_CHAPA": 2750.0,
+    "PROF_CHAPA": 1840.0,
+    "ESP_CHAPA": 15.0,
+    "VEIO": 0,
+    "CNC_A": "",
+    "CNC_B": "",
+    "CNC_FUROS_TOTAL": "NAO",
+    "OBS": null,
+    "ALINHAMENTO": "NORMAL",
+    "FRESAS": [
+      {
+        "FACE": "SUP",
+        "SENTIDO": "V",
+        "X": 0.0,
+        "Y": 91.0,
+        "LARG": 25.0,
+        "PROF": 15.4,
+        "COMP": 10.0
+      },
+      {
+        "FACE": "SUP",
+        "SENTIDO": "V",
+        "X": 867.5,
+        "Y": 91.0,
+        "LARG": 25.0,
+        "PROF": 15.4,
+        "COMP": 10.0
+      }
+    ],
+    "FUROS": [],
+    "CONTORNO": [
+      {
+        "X": 877.5,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 877.5,
+        "Y": 103.5,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 103.5,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 0,
+        "ANG": "NAO"
+      }
+    ],
+    "HAS_FRESAS_SUP": true,
+    "HAS_FRESAS_INF": false,
+    "HAS_FUROS_SUP": false,
+    "HAS_FUROS_INF": false,
+    "HAS_FUROS_TOPOS": false
+  },
+  {
+    "CLIENTE": "Julia",
+    "COD_CLIENTE": null,
+    "AMBIENTE": "1_PROJETO",
+    "ID_UNICO": 3390,
+    "QUANTIDADE": 1,
+    "DESCRICAO": "!FRT_GAV_INT_HORZ_NORMAL",
+    "COMPRIMENTO": 911.5,
+    "PROFUNDIDADE": 149.0,
+    "CHAPA": "Branco TX 15mm",
+    "COR_1C": "Carvalho Treviso",
+    "COR_2C": "Carvalho Treviso",
+    "COR_1P": "Carvalho Treviso",
+    "COR_2P": "Carvalho Treviso",
+    "ROTEIRO": "Lam4L-NORMAL",
+    "CATEGORIA": "INTERNOS",
+    "SETOR": "PRODUCAO",
+    "ESTRUTURA": 1412,
+    "MODULO_DESC": "1412-ARM_01 - Roupeiro Planejado - Branco TX (1500x2500x580)",
+    "COD_CORTE": 7002,
+    "COMP_CHAPA": 2750.0,
+    "PROF_CHAPA": 1840.0,
+    "ESP_CHAPA": 15.0,
+    "VEIO": 0,
+    "CNC_A": "",
+    "CNC_B": "",
+    "CNC_FUROS_TOTAL": "NAO",
+    "OBS": null,
+    "ALINHAMENTO": "NORMAL",
+    "FRESAS": [],
+    "FUROS": [
+      {
+        "FACE": "SUP",
+        "X": 66.9,
+        "Y": 95.0,
+        "DIAM": 3.0,
+        "Z": 10.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 844.6,
+        "Y": 95.0,
+        "DIAM": 3.0,
+        "Z": 10.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 455.8,
+        "Y": 51.4,
+        "DIAM": 3.0,
+        "Z": 10.0
+      }
+    ],
+    "CONTORNO": [
+      {
+        "X": 911.5,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 911.5,
+        "Y": 149,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 149,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 0,
+        "ANG": "NAO"
+      }
+    ],
+    "HAS_FRESAS_SUP": false,
+    "HAS_FRESAS_INF": false,
+    "HAS_FUROS_SUP": true,
+    "HAS_FUROS_INF": false,
+    "HAS_FUROS_TOPOS": false
+  },
+  {
+    "CLIENTE": "Julia",
+    "COD_CLIENTE": null,
+    "AMBIENTE": "1_PROJETO",
+    "ID_UNICO": 3395,
+    "QUANTIDADE": 1,
+    "DESCRICAO": "!FUNDO_GAV",
+    "COMPRIMENTO": 857.5,
+    "PROFUNDIDADE": 450.0,
+    "CHAPA": "Branco TX 15mm",
+    "COR_1C": null,
+    "COR_2C": null,
+    "COR_1P": null,
+    "COR_2P": null,
+    "ROTEIRO": "NaoLam-NORMAL",
+    "CATEGORIA": "INTERNOS",
+    "SETOR": "PRODUCAO",
+    "ESTRUTURA": 1412,
+    "MODULO_DESC": "1412-ARM_01 - Roupeiro Planejado - Branco TX (1500x2500x580)",
+    "COD_CORTE": 7002,
+    "COMP_CHAPA": 2750.0,
+    "PROF_CHAPA": 1840.0,
+    "ESP_CHAPA": 15.0,
+    "VEIO": 0,
+    "CNC_A": "",
+    "CNC_B": "",
+    "CNC_FUROS_TOTAL": "NAO",
+    "OBS": null,
+    "ALINHAMENTO": "INVERSO",
+    "FRESAS": [],
+    "FUROS": [],
+    "CONTORNO": [
+      {
+        "X": 857.5,
+        "Y": 450,
+        "ANG": "NAO"
+      },
+      {
+        "X": 857.5,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 450,
+        "ANG": "NAO"
+      }
+    ],
+    "HAS_FRESAS_SUP": false,
+    "HAS_FRESAS_INF": false,
+    "HAS_FUROS_SUP": false,
+    "HAS_FUROS_INF": false,
+    "HAS_FUROS_TOPOS": false
+  },
+  {
+    "CLIENTE": "Julia",
+    "COD_CLIENTE": null,
+    "AMBIENTE": "1_PROJETO",
+    "ID_UNICO": 3426,
+    "QUANTIDADE": 1,
+    "DESCRICAO": "!LAT_GAV_DIR",
+    "COMPRIMENTO": 450.0,
+    "PROFUNDIDADE": 119.0,
+    "CHAPA": "Branco TX 15mm",
+    "COR_1C": "Carvalho Treviso",
+    "COR_2C": null,
+    "COR_1P": null,
+    "COR_2P": null,
+    "ROTEIRO": "Lam1C-NORMAL_PAR_15",
+    "CATEGORIA": "INTERNOS",
+    "SETOR": "PRODUCAO",
+    "ESTRUTURA": 1412,
+    "MODULO_DESC": "1412-ARM_01 - Roupeiro Planejado - Branco TX (1500x2500x580)",
+    "COD_CORTE": 7002,
+    "COMP_CHAPA": 2750.0,
+    "PROF_CHAPA": 1840.0,
+    "ESP_CHAPA": 15.0,
+    "VEIO": 0,
+    "CNC_A": "",
+    "CNC_B": "",
+    "CNC_FUROS_TOTAL": "NAO",
+    "OBS": null,
+    "ALINHAMENTO": "INVERSO",
+    "FRESAS": [
+      {
+        "FACE": "SUP",
+        "SENTIDO": "H",
+        "X": 434.6,
+        "Y": 69.5,
+        "LARG": 99.0,
+        "PROF": 10.4,
+        "COMP": 15.4
+      },
+      {
+        "FACE": "SUP",
+        "SENTIDO": "H",
+        "X": 0.0,
+        "Y": 69.5,
+        "LARG": 99.0,
+        "PROF": 10.4,
+        "COMP": 15.4
+      }
+    ],
+    "FUROS": [],
+    "CONTORNO": [
+      {
+        "X": 450,
+        "Y": 119,
+        "ANG": "NAO"
+      },
+      {
+        "X": 450,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 119,
+        "ANG": "NAO"
+      }
+    ],
+    "HAS_FRESAS_SUP": true,
+    "HAS_FRESAS_INF": false,
+    "HAS_FUROS_SUP": false,
+    "HAS_FUROS_INF": false,
+    "HAS_FUROS_TOPOS": false
+  },
+  {
+    "CLIENTE": "Julia",
+    "COD_CLIENTE": null,
+    "AMBIENTE": "1_PROJETO",
+    "ID_UNICO": 3432,
+    "QUANTIDADE": 1,
+    "DESCRICAO": "!LAT_GAV_ESQ",
+    "COMPRIMENTO": 450.0,
+    "PROFUNDIDADE": 119.0,
+    "CHAPA": "Branco TX 15mm",
+    "COR_1C": "Carvalho Treviso",
+    "COR_2C": null,
+    "COR_1P": null,
+    "COR_2P": null,
+    "ROTEIRO": "Lam1C-NORMAL_PAR_15",
+    "CATEGORIA": "INTERNOS",
+    "SETOR": "PRODUCAO",
+    "ESTRUTURA": 1412,
+    "MODULO_DESC": "1412-ARM_01 - Roupeiro Planejado - Branco TX (1500x2500x580)",
+    "COD_CORTE": 7002,
+    "COMP_CHAPA": 2750.0,
+    "PROF_CHAPA": 1840.0,
+    "ESP_CHAPA": 15.0,
+    "VEIO": 0,
+    "CNC_A": "",
+    "CNC_B": "",
+    "CNC_FUROS_TOTAL": "NAO",
+    "OBS": null,
+    "ALINHAMENTO": "INVERSO",
+    "FRESAS": [
+      {
+        "FACE": "SUP",
+        "SENTIDO": "H",
+        "X": 434.6,
+        "Y": 69.5,
+        "LARG": 99.0,
+        "PROF": 10.4,
+        "COMP": 15.4
+      },
+      {
+        "FACE": "SUP",
+        "SENTIDO": "H",
+        "X": 0.0,
+        "Y": 69.5,
+        "LARG": 99.0,
+        "PROF": 10.4,
+        "COMP": 15.4
+      }
+    ],
+    "FUROS": [],
+    "CONTORNO": [
+      {
+        "X": 450,
+        "Y": 119,
+        "ANG": "NAO"
+      },
+      {
+        "X": 450,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 119,
+        "ANG": "NAO"
+      }
+    ],
+    "HAS_FRESAS_SUP": true,
+    "HAS_FRESAS_INF": false,
+    "HAS_FUROS_SUP": false,
+    "HAS_FUROS_INF": false,
+    "HAS_FUROS_TOPOS": false
+  },
+  {
+    "CLIENTE": "Julia",
+    "COD_CLIENTE": null,
+    "AMBIENTE": "1_PROJETO",
+    "ID_UNICO": 3441,
+    "QUANTIDADE": 1,
+    "DESCRICAO": "!TRAV_GAV_FRT",
+    "COMPRIMENTO": 877.5,
+    "PROFUNDIDADE": 103.5,
+    "CHAPA": "Branco TX 15mm",
+    "COR_1C": null,
+    "COR_2C": "Carvalho Treviso",
+    "COR_1P": null,
+    "COR_2P": null,
+    "ROTEIRO": "Lam1C-REC_GAV_15",
+    "CATEGORIA": "INTERNOS",
+    "SETOR": "PRODUCAO",
+    "ESTRUTURA": 1412,
+    "MODULO_DESC": "1412-ARM_01 - Roupeiro Planejado - Branco TX (1500x2500x580)",
+    "COD_CORTE": 7002,
+    "COMP_CHAPA": 2750.0,
+    "PROF_CHAPA": 1840.0,
+    "ESP_CHAPA": 15.0,
+    "VEIO": 0,
+    "CNC_A": "",
+    "CNC_B": "",
+    "CNC_FUROS_TOTAL": "NAO",
+    "OBS": null,
+    "ALINHAMENTO": "NORMAL",
+    "FRESAS": [
+      {
+        "FACE": "SUP",
+        "SENTIDO": "V",
+        "X": 0.0,
+        "Y": 91.0,
+        "LARG": 25.0,
+        "PROF": 15.4,
+        "COMP": 10.0
+      },
+      {
+        "FACE": "SUP",
+        "SENTIDO": "V",
+        "X": 867.5,
+        "Y": 91.0,
+        "LARG": 25.0,
+        "PROF": 15.4,
+        "COMP": 10.0
+      }
+    ],
+    "FUROS": [
+      {
+        "FACE": "SUP",
+        "X": 827.7,
+        "Y": 74.6,
+        "DIAM": 3.0,
+        "Z": 15.5
+      },
+      {
+        "FACE": "SUP",
+        "X": 50.0,
+        "Y": 74.6,
+        "DIAM": 3.0,
+        "Z": 15.5
+      },
+      {
+        "FACE": "SUP",
+        "X": 438.9,
+        "Y": 31.0,
+        "DIAM": 3.0,
+        "Z": 15.5
+      }
+    ],
+    "CONTORNO": [
+      {
+        "X": 877.5,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 877.5,
+        "Y": 103.5,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 103.5,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 0,
+        "ANG": "NAO"
+      }
+    ],
+    "HAS_FRESAS_SUP": true,
+    "HAS_FRESAS_INF": false,
+    "HAS_FUROS_SUP": true,
+    "HAS_FUROS_INF": false,
+    "HAS_FUROS_TOPOS": false
+  },
+  {
+    "CLIENTE": "Julia",
+    "COD_CLIENTE": null,
+    "AMBIENTE": "1_PROJETO",
+    "ID_UNICO": 3446,
+    "QUANTIDADE": 1,
+    "DESCRICAO": "!TRAV_GAV_TRZ",
+    "COMPRIMENTO": 877.5,
+    "PROFUNDIDADE": 103.5,
+    "CHAPA": "Branco TX 15mm",
+    "COR_1C": null,
+    "COR_2C": "Carvalho Treviso",
+    "COR_1P": null,
+    "COR_2P": null,
+    "ROTEIRO": "Lam1C-REC_GAV_15",
+    "CATEGORIA": "INTERNOS",
+    "SETOR": "PRODUCAO",
+    "ESTRUTURA": 1412,
+    "MODULO_DESC": "1412-ARM_01 - Roupeiro Planejado - Branco TX (1500x2500x580)",
+    "COD_CORTE": 7002,
+    "COMP_CHAPA": 2750.0,
+    "PROF_CHAPA": 1840.0,
+    "ESP_CHAPA": 15.0,
+    "VEIO": 0,
+    "CNC_A": "",
+    "CNC_B": "",
+    "CNC_FUROS_TOTAL": "NAO",
+    "OBS": null,
+    "ALINHAMENTO": "NORMAL",
+    "FRESAS": [
+      {
+        "FACE": "SUP",
+        "SENTIDO": "V",
+        "X": 0.0,
+        "Y": 91.0,
+        "LARG": 25.0,
+        "PROF": 15.4,
+        "COMP": 10.0
+      },
+      {
+        "FACE": "SUP",
+        "SENTIDO": "V",
+        "X": 867.5,
+        "Y": 91.0,
+        "LARG": 25.0,
+        "PROF": 15.4,
+        "COMP": 10.0
+      }
+    ],
+    "FUROS": [],
+    "CONTORNO": [
+      {
+        "X": 877.5,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 877.5,
+        "Y": 103.5,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 103.5,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 0,
+        "ANG": "NAO"
+      }
+    ],
+    "HAS_FRESAS_SUP": true,
+    "HAS_FRESAS_INF": false,
+    "HAS_FUROS_SUP": false,
+    "HAS_FUROS_INF": false,
+    "HAS_FUROS_TOPOS": false
+  },
+  {
+    "CLIENTE": "Julia",
+    "COD_CLIENTE": null,
+    "AMBIENTE": "1_PROJETO",
+    "ID_UNICO": 3473,
+    "QUANTIDADE": 1,
+    "DESCRICAO": "!AFAST_DUP",
+    "COMPRIMENTO": 710.0,
+    "PROFUNDIDADE": 70.0,
+    "CHAPA": "Branco TX 15mm",
+    "COR_1C": null,
+    "COR_2C": null,
+    "COR_1P": null,
+    "COR_2P": null,
+    "ROTEIRO": "NaoLam-DUPLAR",
+    "CATEGORIA": "INTERNOS",
+    "SETOR": "COMPOSTOS",
+    "ESTRUTURA": 3123,
+    "MODULO_DESC": "1412-ARM_01 - Roupeiro Planejado - Branco TX (1500x2500x580)",
+    "COD_CORTE": 7002,
+    "COMP_CHAPA": 2750.0,
+    "PROF_CHAPA": 1840.0,
+    "ESP_CHAPA": 15.0,
+    "VEIO": 0,
+    "CNC_A": "",
+    "CNC_B": "",
+    "CNC_FUROS_TOTAL": "NAO",
+    "OBS": null,
+    "ALINHAMENTO": "NORMAL",
+    "FRESAS": [],
+    "FUROS": [
+      {
+        "FACE": "SUP",
+        "X": 610.0,
+        "Y": 35.0,
+        "DIAM": 6.0,
+        "Z": 11.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 100.0,
+        "Y": 35.0,
+        "DIAM": 6.0,
+        "Z": 11.0
+      }
+    ],
+    "CONTORNO": [
+      {
+        "X": 710,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 710,
+        "Y": 70,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 70,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 0,
+        "ANG": "NAO"
+      }
+    ],
+    "HAS_FRESAS_SUP": false,
+    "HAS_FRESAS_INF": false,
+    "HAS_FUROS_SUP": true,
+    "HAS_FUROS_INF": false,
+    "HAS_FUROS_TOPOS": false
+  },
+  {
+    "CLIENTE": "Julia",
+    "COD_CLIENTE": null,
+    "AMBIENTE": "1_PROJETO",
+    "ID_UNICO": 3477,
+    "QUANTIDADE": 1,
+    "DESCRICAO": "!AFAST_DUP",
+    "COMPRIMENTO": 710.0,
+    "PROFUNDIDADE": 70.0,
+    "CHAPA": "Branco TX 15mm",
+    "COR_1C": null,
+    "COR_2C": null,
+    "COR_1P": null,
+    "COR_2P": null,
+    "ROTEIRO": "NaoLam-DUPLAR",
+    "CATEGORIA": "INTERNOS",
+    "SETOR": "COMPOSTOS",
+    "ESTRUTURA": 3123,
+    "MODULO_DESC": "1412-ARM_01 - Roupeiro Planejado - Branco TX (1500x2500x580)",
+    "COD_CORTE": 7002,
+    "COMP_CHAPA": 2750.0,
+    "PROF_CHAPA": 1840.0,
+    "ESP_CHAPA": 15.0,
+    "VEIO": 0,
+    "CNC_A": "",
+    "CNC_B": "",
+    "CNC_FUROS_TOTAL": "NAO",
+    "OBS": null,
+    "ALINHAMENTO": "NORMAL",
+    "FRESAS": [],
+    "FUROS": [
+      {
+        "FACE": "SUP",
+        "X": 100.0,
+        "Y": 35.0,
+        "DIAM": 6.0,
+        "Z": 11.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 610.0,
+        "Y": 35.0,
+        "DIAM": 6.0,
+        "Z": 11.0
+      }
+    ],
+    "CONTORNO": [
+      {
+        "X": 710,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 710,
+        "Y": 70,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 70,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 0,
+        "ANG": "NAO"
+      }
+    ],
+    "HAS_FRESAS_SUP": false,
+    "HAS_FRESAS_INF": false,
+    "HAS_FUROS_SUP": true,
+    "HAS_FUROS_INF": false,
+    "HAS_FUROS_TOPOS": false
+  },
+  {
+    "CLIENTE": "Julia",
+    "COD_CLIENTE": null,
+    "AMBIENTE": "1_PROJETO",
+    "ID_UNICO": 3485,
+    "QUANTIDADE": 1,
+    "DESCRICAO": "!AFAST_DUP",
+    "COMPRIMENTO": 710.0,
+    "PROFUNDIDADE": 70.0,
+    "CHAPA": "Branco TX 15mm",
+    "COR_1C": null,
+    "COR_2C": null,
+    "COR_1P": null,
+    "COR_2P": null,
+    "ROTEIRO": "NaoLam-DUPLAR",
+    "CATEGORIA": "INTERNOS",
+    "SETOR": "COMPOSTOS",
+    "ESTRUTURA": 3128,
+    "MODULO_DESC": "1412-ARM_01 - Roupeiro Planejado - Branco TX (1500x2500x580)",
+    "COD_CORTE": 7002,
+    "COMP_CHAPA": 2750.0,
+    "PROF_CHAPA": 1840.0,
+    "ESP_CHAPA": 15.0,
+    "VEIO": 0,
+    "CNC_A": "",
+    "CNC_B": "",
+    "CNC_FUROS_TOTAL": "NAO",
+    "OBS": null,
+    "ALINHAMENTO": "NORMAL",
+    "FRESAS": [],
+    "FUROS": [
+      {
+        "FACE": "SUP",
+        "X": 610.0,
+        "Y": 35.0,
+        "DIAM": 6.0,
+        "Z": 11.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 100.0,
+        "Y": 35.0,
+        "DIAM": 6.0,
+        "Z": 11.0
+      }
+    ],
+    "CONTORNO": [
+      {
+        "X": 710,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 710,
+        "Y": 70,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 70,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 0,
+        "ANG": "NAO"
+      }
+    ],
+    "HAS_FRESAS_SUP": false,
+    "HAS_FRESAS_INF": false,
+    "HAS_FUROS_SUP": true,
+    "HAS_FUROS_INF": false,
+    "HAS_FUROS_TOPOS": false
+  },
+  {
+    "CLIENTE": "Julia",
+    "COD_CLIENTE": null,
+    "AMBIENTE": "1_PROJETO",
+    "ID_UNICO": 3489,
+    "QUANTIDADE": 1,
+    "DESCRICAO": "!AFAST_DUP",
+    "COMPRIMENTO": 710.0,
+    "PROFUNDIDADE": 70.0,
+    "CHAPA": "Branco TX 15mm",
+    "COR_1C": null,
+    "COR_2C": null,
+    "COR_1P": null,
+    "COR_2P": null,
+    "ROTEIRO": "NaoLam-DUPLAR",
+    "CATEGORIA": "INTERNOS",
+    "SETOR": "COMPOSTOS",
+    "ESTRUTURA": 3128,
+    "MODULO_DESC": "1412-ARM_01 - Roupeiro Planejado - Branco TX (1500x2500x580)",
+    "COD_CORTE": 7002,
+    "COMP_CHAPA": 2750.0,
+    "PROF_CHAPA": 1840.0,
+    "ESP_CHAPA": 15.0,
+    "VEIO": 0,
+    "CNC_A": "",
+    "CNC_B": "",
+    "CNC_FUROS_TOTAL": "NAO",
+    "OBS": null,
+    "ALINHAMENTO": "NORMAL",
+    "FRESAS": [],
+    "FUROS": [
+      {
+        "FACE": "SUP",
+        "X": 100.0,
+        "Y": 35.0,
+        "DIAM": 6.0,
+        "Z": 11.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 610.0,
+        "Y": 35.0,
+        "DIAM": 6.0,
+        "Z": 11.0
+      }
+    ],
+    "CONTORNO": [
+      {
+        "X": 710,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 710,
+        "Y": 70,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 70,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 0,
+        "ANG": "NAO"
+      }
+    ],
+    "HAS_FRESAS_SUP": false,
+    "HAS_FRESAS_INF": false,
+    "HAS_FUROS_SUP": true,
+    "HAS_FUROS_INF": false,
+    "HAS_FUROS_TOPOS": false
+  },
+  {
+    "CLIENTE": "Julia",
+    "COD_CLIENTE": null,
+    "AMBIENTE": "1_PROJETO",
+    "ID_UNICO": 3497,
+    "QUANTIDADE": 1,
+    "DESCRICAO": "!AFAST_DUP",
+    "COMPRIMENTO": 710.0,
+    "PROFUNDIDADE": 70.0,
+    "CHAPA": "Branco TX 15mm",
+    "COR_1C": null,
+    "COR_2C": null,
+    "COR_1P": null,
+    "COR_2P": null,
+    "ROTEIRO": "NaoLam-DUPLAR",
+    "CATEGORIA": "INTERNOS",
+    "SETOR": "COMPOSTOS",
+    "ESTRUTURA": 3134,
+    "MODULO_DESC": "1412-ARM_01 - Roupeiro Planejado - Branco TX (1500x2500x580)",
+    "COD_CORTE": 7002,
+    "COMP_CHAPA": 2750.0,
+    "PROF_CHAPA": 1840.0,
+    "ESP_CHAPA": 15.0,
+    "VEIO": 0,
+    "CNC_A": "",
+    "CNC_B": "",
+    "CNC_FUROS_TOTAL": "NAO",
+    "OBS": null,
+    "ALINHAMENTO": "NORMAL",
+    "FRESAS": [],
+    "FUROS": [
+      {
+        "FACE": "SUP",
+        "X": 610.0,
+        "Y": 35.0,
+        "DIAM": 6.0,
+        "Z": 11.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 100.0,
+        "Y": 35.0,
+        "DIAM": 6.0,
+        "Z": 11.0
+      }
+    ],
+    "CONTORNO": [
+      {
+        "X": 710,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 710,
+        "Y": 70,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 70,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 0,
+        "ANG": "NAO"
+      }
+    ],
+    "HAS_FRESAS_SUP": false,
+    "HAS_FRESAS_INF": false,
+    "HAS_FUROS_SUP": true,
+    "HAS_FUROS_INF": false,
+    "HAS_FUROS_TOPOS": false
+  },
+  {
+    "CLIENTE": "Julia",
+    "COD_CLIENTE": null,
+    "AMBIENTE": "1_PROJETO",
+    "ID_UNICO": 3501,
+    "QUANTIDADE": 1,
+    "DESCRICAO": "!AFAST_DUP",
+    "COMPRIMENTO": 710.0,
+    "PROFUNDIDADE": 70.0,
+    "CHAPA": "Branco TX 15mm",
+    "COR_1C": null,
+    "COR_2C": null,
+    "COR_1P": null,
+    "COR_2P": null,
+    "ROTEIRO": "NaoLam-DUPLAR",
+    "CATEGORIA": "INTERNOS",
+    "SETOR": "COMPOSTOS",
+    "ESTRUTURA": 3134,
+    "MODULO_DESC": "1412-ARM_01 - Roupeiro Planejado - Branco TX (1500x2500x580)",
+    "COD_CORTE": 7002,
+    "COMP_CHAPA": 2750.0,
+    "PROF_CHAPA": 1840.0,
+    "ESP_CHAPA": 15.0,
+    "VEIO": 0,
+    "CNC_A": "",
+    "CNC_B": "",
+    "CNC_FUROS_TOTAL": "NAO",
+    "OBS": null,
+    "ALINHAMENTO": "NORMAL",
+    "FRESAS": [],
+    "FUROS": [
+      {
+        "FACE": "SUP",
+        "X": 100.0,
+        "Y": 35.0,
+        "DIAM": 6.0,
+        "Z": 11.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 610.0,
+        "Y": 35.0,
+        "DIAM": 6.0,
+        "Z": 11.0
+      }
+    ],
+    "CONTORNO": [
+      {
+        "X": 710,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 710,
+        "Y": 70,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 70,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 0,
+        "ANG": "NAO"
+      }
+    ],
+    "HAS_FRESAS_SUP": false,
+    "HAS_FRESAS_INF": false,
+    "HAS_FUROS_SUP": true,
+    "HAS_FUROS_INF": false,
+    "HAS_FUROS_TOPOS": false
+  },
+  {
+    "CLIENTE": "Julia",
+    "COD_CLIENTE": null,
+    "AMBIENTE": "1_PROJETO",
+    "ID_UNICO": 3509,
+    "QUANTIDADE": 1,
+    "DESCRICAO": "!AFAST_DUP",
+    "COMPRIMENTO": 710.0,
+    "PROFUNDIDADE": 70.0,
+    "CHAPA": "Branco TX 15mm",
+    "COR_1C": null,
+    "COR_2C": null,
+    "COR_1P": null,
+    "COR_2P": null,
+    "ROTEIRO": "NaoLam-DUPLAR",
+    "CATEGORIA": "INTERNOS",
+    "SETOR": "COMPOSTOS",
+    "ESTRUTURA": 3139,
+    "MODULO_DESC": "1412-ARM_01 - Roupeiro Planejado - Branco TX (1500x2500x580)",
+    "COD_CORTE": 7002,
+    "COMP_CHAPA": 2750.0,
+    "PROF_CHAPA": 1840.0,
+    "ESP_CHAPA": 15.0,
+    "VEIO": 0,
+    "CNC_A": "",
+    "CNC_B": "",
+    "CNC_FUROS_TOTAL": "NAO",
+    "OBS": null,
+    "ALINHAMENTO": "NORMAL",
+    "FRESAS": [],
+    "FUROS": [
+      {
+        "FACE": "SUP",
+        "X": 610.0,
+        "Y": 35.0,
+        "DIAM": 6.0,
+        "Z": 11.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 100.0,
+        "Y": 35.0,
+        "DIAM": 6.0,
+        "Z": 11.0
+      }
+    ],
+    "CONTORNO": [
+      {
+        "X": 710,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 710,
+        "Y": 70,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 70,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 0,
+        "ANG": "NAO"
+      }
+    ],
+    "HAS_FRESAS_SUP": false,
+    "HAS_FRESAS_INF": false,
+    "HAS_FUROS_SUP": true,
+    "HAS_FUROS_INF": false,
+    "HAS_FUROS_TOPOS": false
+  },
+  {
+    "CLIENTE": "Julia",
+    "COD_CLIENTE": null,
+    "AMBIENTE": "1_PROJETO",
+    "ID_UNICO": 3513,
+    "QUANTIDADE": 1,
+    "DESCRICAO": "!AFAST_DUP",
+    "COMPRIMENTO": 710.0,
+    "PROFUNDIDADE": 70.0,
+    "CHAPA": "Branco TX 15mm",
+    "COR_1C": null,
+    "COR_2C": null,
+    "COR_1P": null,
+    "COR_2P": null,
+    "ROTEIRO": "NaoLam-DUPLAR",
+    "CATEGORIA": "INTERNOS",
+    "SETOR": "COMPOSTOS",
+    "ESTRUTURA": 3139,
+    "MODULO_DESC": "1412-ARM_01 - Roupeiro Planejado - Branco TX (1500x2500x580)",
+    "COD_CORTE": 7002,
+    "COMP_CHAPA": 2750.0,
+    "PROF_CHAPA": 1840.0,
+    "ESP_CHAPA": 15.0,
+    "VEIO": 0,
+    "CNC_A": "",
+    "CNC_B": "",
+    "CNC_FUROS_TOTAL": "NAO",
+    "OBS": null,
+    "ALINHAMENTO": "NORMAL",
+    "FRESAS": [],
+    "FUROS": [
+      {
+        "FACE": "SUP",
+        "X": 100.0,
+        "Y": 35.0,
+        "DIAM": 6.0,
+        "Z": 11.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 610.0,
+        "Y": 35.0,
+        "DIAM": 6.0,
+        "Z": 11.0
+      }
+    ],
+    "CONTORNO": [
+      {
+        "X": 710,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 710,
+        "Y": 70,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 70,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 0,
+        "ANG": "NAO"
+      }
+    ],
+    "HAS_FRESAS_SUP": false,
+    "HAS_FRESAS_INF": false,
+    "HAS_FUROS_SUP": true,
+    "HAS_FUROS_INF": false,
+    "HAS_FUROS_TOPOS": false
+  },
+  {
+    "CLIENTE": "Julia",
+    "COD_CLIENTE": null,
+    "AMBIENTE": "1_PROJETO",
+    "ID_UNICO": 3647,
+    "QUANTIDADE": 1,
+    "DESCRICAO": "!TMP",
+    "COMPRIMENTO": 2515.0,
+    "PROFUNDIDADE": 603.0,
+    "CHAPA": "Carvalho Treviso 15mm",
+    "COR_1C": "Carvalho Treviso",
+    "COR_2C": null,
+    "COR_1P": null,
+    "COR_2P": null,
+    "ROTEIRO": "Lam1C-NORMAL",
+    "CATEGORIA": "PAINEIS",
+    "SETOR": "PRODUCAO",
+    "ESTRUTURA": 3657,
+    "MODULO_DESC": "Tamponamento 15mm Simples - Carvalho Treviso",
+    "COD_CORTE": 6006,
+    "COMP_CHAPA": 2750.0,
+    "PROF_CHAPA": 1840.0,
+    "ESP_CHAPA": 15.0,
+    "VEIO": 1,
+    "CNC_A": "",
+    "CNC_B": "",
+    "CNC_FUROS_TOTAL": "NAO",
+    "OBS": null,
+    "ALINHAMENTO": "INVERSO",
+    "FRESAS": [],
+    "FUROS": [],
+    "CONTORNO": [
+      {
+        "X": 2515,
+        "Y": 603,
+        "ANG": "NAO"
+      },
+      {
+        "X": 2515,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 603,
+        "ANG": "NAO"
+      }
+    ],
+    "HAS_FRESAS_SUP": false,
+    "HAS_FRESAS_INF": false,
+    "HAS_FUROS_SUP": false,
+    "HAS_FUROS_INF": false,
+    "HAS_FUROS_TOPOS": false
+  },
+  {
+    "CLIENTE": "Julia",
+    "COD_CLIENTE": null,
+    "AMBIENTE": "1_PROJETO",
+    "ID_UNICO": 3660,
+    "QUANTIDADE": 1,
+    "DESCRICAO": "!TMP",
+    "COMPRIMENTO": 2515.0,
+    "PROFUNDIDADE": 86.0,
+    "CHAPA": "Carvalho Treviso 15mm",
+    "COR_1C": "Carvalho Treviso",
+    "COR_2C": null,
+    "COR_1P": null,
+    "COR_2P": null,
+    "ROTEIRO": "Lam1C-NORMAL",
+    "CATEGORIA": "PAINEIS",
+    "SETOR": "PRODUCAO",
+    "ESTRUTURA": 3670,
+    "MODULO_DESC": "Tamponamento 15mm Simples - Carvalho Treviso",
+    "COD_CORTE": 6006,
+    "COMP_CHAPA": 2750.0,
+    "PROF_CHAPA": 1840.0,
+    "ESP_CHAPA": 15.0,
+    "VEIO": 1,
+    "CNC_A": "",
+    "CNC_B": "",
+    "CNC_FUROS_TOTAL": "NAO",
+    "OBS": null,
+    "ALINHAMENTO": "INVERSO",
+    "FRESAS": [],
+    "FUROS": [],
+    "CONTORNO": [
+      {
+        "X": 2515,
+        "Y": 86,
+        "ANG": "NAO"
+      },
+      {
+        "X": 2515,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 86,
+        "ANG": "NAO"
+      }
+    ],
+    "HAS_FRESAS_SUP": false,
+    "HAS_FRESAS_INF": false,
+    "HAS_FUROS_SUP": false,
+    "HAS_FUROS_INF": false,
+    "HAS_FUROS_TOPOS": false
+  },
+  {
+    "CLIENTE": "Julia",
+    "COD_CLIENTE": null,
+    "AMBIENTE": "1_PROJETO",
+    "ID_UNICO": 3673,
+    "QUANTIDADE": 1,
+    "DESCRICAO": "!TMP",
+    "COMPRIMENTO": 1500.0,
+    "PROFUNDIDADE": 70.0,
+    "CHAPA": "Carvalho Treviso 15mm",
+    "COR_1C": "Carvalho Treviso",
+    "COR_2C": null,
+    "COR_1P": null,
+    "COR_2P": null,
+    "ROTEIRO": "Lam1C-NORMAL",
+    "CATEGORIA": "PAINEIS",
+    "SETOR": "PRODUCAO",
+    "ESTRUTURA": 3683,
+    "MODULO_DESC": "Tamponamento 15mm Simples - Carvalho Treviso",
+    "COD_CORTE": 6006,
+    "COMP_CHAPA": 2750.0,
+    "PROF_CHAPA": 1840.0,
+    "ESP_CHAPA": 15.0,
+    "VEIO": 1,
+    "CNC_A": "",
+    "CNC_B": "",
+    "CNC_FUROS_TOTAL": "NAO",
+    "OBS": null,
+    "ALINHAMENTO": "INVERSO",
+    "FRESAS": [],
+    "FUROS": [],
+    "CONTORNO": [
+      {
+        "X": 1500,
+        "Y": 70,
+        "ANG": "NAO"
+      },
+      {
+        "X": 1500,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 70,
+        "ANG": "NAO"
+      }
+    ],
+    "HAS_FRESAS_SUP": false,
+    "HAS_FRESAS_INF": false,
+    "HAS_FUROS_SUP": false,
+    "HAS_FUROS_INF": false,
+    "HAS_FUROS_TOPOS": false
+  },
+  {
+    "CLIENTE": "Julia",
+    "COD_CLIENTE": null,
+    "AMBIENTE": "1_PROJETO",
+    "ID_UNICO": 3687,
+    "QUANTIDADE": 1,
+    "DESCRICAO": "!PORTA_ARM_GOLA_C/PNT_ESQ",
+    "COMPRIMENTO": 2424.0,
+    "PROFUNDIDADE": 462.0,
+    "CHAPA": "Carvalho Treviso 15mm",
+    "COR_1C": "Carvalho Treviso",
+    "COR_2C": "Carvalho Treviso",
+    "COR_1P": "Carvalho Treviso",
+    "COR_2P": "Carvalho Treviso",
+    "ROTEIRO": "Lam4L-2424mm 5 CANECOS",
+    "CATEGORIA": "FRENTES",
+    "SETOR": "PRODUCAO",
+    "ESTRUTURA": 1412,
+    "MODULO_DESC": "1412-ARM_01 - Roupeiro Planejado - Branco TX (1500x2500x580)",
+    "COD_CORTE": 6006,
+    "COMP_CHAPA": 2750.0,
+    "PROF_CHAPA": 1840.0,
+    "ESP_CHAPA": 15.0,
+    "VEIO": 1,
+    "CNC_A": "",
+    "CNC_B": "",
+    "CNC_FUROS_TOTAL": "NAO",
+    "OBS": null,
+    "ALINHAMENTO": "INVERSO",
+    "FRESAS": [],
+    "FUROS": [
+      {
+        "FACE": "SUP",
+        "X": 2324.0,
+        "Y": 440.5,
+        "DIAM": 35.0,
+        "Z": 13.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 2300.0,
+        "Y": 435.0,
+        "DIAM": 3.0,
+        "Z": 1.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 2348.0,
+        "Y": 435.0,
+        "DIAM": 3.0,
+        "Z": 1.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 1768.0,
+        "Y": 440.5,
+        "DIAM": 35.0,
+        "Z": 13.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 1744.0,
+        "Y": 435.0,
+        "DIAM": 3.0,
+        "Z": 1.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 1792.0,
+        "Y": 435.0,
+        "DIAM": 3.0,
+        "Z": 1.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 1212.0,
+        "Y": 440.5,
+        "DIAM": 35.0,
+        "Z": 13.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 1188.0,
+        "Y": 435.0,
+        "DIAM": 3.0,
+        "Z": 1.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 1236.0,
+        "Y": 435.0,
+        "DIAM": 3.0,
+        "Z": 1.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 656.0,
+        "Y": 440.5,
+        "DIAM": 35.0,
+        "Z": 13.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 632.0,
+        "Y": 435.0,
+        "DIAM": 3.0,
+        "Z": 1.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 680.0,
+        "Y": 435.0,
+        "DIAM": 3.0,
+        "Z": 1.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 100.0,
+        "Y": 440.5,
+        "DIAM": 35.0,
+        "Z": 13.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 76.0,
+        "Y": 435.0,
+        "DIAM": 3.0,
+        "Z": 1.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 124.0,
+        "Y": 435.0,
+        "DIAM": 3.0,
+        "Z": 1.0
+      }
+    ],
+    "CONTORNO": [
+      {
+        "X": 2424,
+        "Y": 462,
+        "ANG": "NAO"
+      },
+      {
+        "X": 2424,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 462,
+        "ANG": "NAO"
+      }
+    ],
+    "HAS_FRESAS_SUP": false,
+    "HAS_FRESAS_INF": false,
+    "HAS_FUROS_SUP": true,
+    "HAS_FUROS_INF": false,
+    "HAS_FUROS_TOPOS": false
+  },
+  {
+    "CLIENTE": "Julia",
+    "COD_CLIENTE": null,
+    "AMBIENTE": "1_PROJETO",
+    "ID_UNICO": 3745,
+    "QUANTIDADE": 1,
+    "DESCRICAO": "!PORTA_ARM_GOLA_C/PNT_ESQ",
+    "COMPRIMENTO": 2424.0,
+    "PROFUNDIDADE": 460.5,
+    "CHAPA": "Branco TX 15mm",
+    "COR_1C": "Branco TX",
+    "COR_2C": "Branco TX",
+    "COR_1P": "Branco TX",
+    "COR_2P": "Branco TX",
+    "ROTEIRO": "Lam4L-2424mm 5 CANECOS",
+    "CATEGORIA": "FRENTES",
+    "SETOR": "PRODUCAO",
+    "ESTRUTURA": 1412,
+    "MODULO_DESC": "1412-ARM_01 - Roupeiro Planejado - Branco TX (1500x2500x580)",
+    "COD_CORTE": 7002,
+    "COMP_CHAPA": 2750.0,
+    "PROF_CHAPA": 1840.0,
+    "ESP_CHAPA": 15.0,
+    "VEIO": 0,
+    "CNC_A": "",
+    "CNC_B": "",
+    "CNC_FUROS_TOTAL": "NAO",
+    "OBS": null,
+    "ALINHAMENTO": "INVERSO",
+    "FRESAS": [],
+    "FUROS": [
+      {
+        "FACE": "SUP",
+        "X": 2324.0,
+        "Y": 439.0,
+        "DIAM": 35.0,
+        "Z": 13.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 2300.0,
+        "Y": 433.5,
+        "DIAM": 3.0,
+        "Z": 1.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 2348.0,
+        "Y": 433.5,
+        "DIAM": 3.0,
+        "Z": 1.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 1768.0,
+        "Y": 439.0,
+        "DIAM": 35.0,
+        "Z": 13.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 1744.0,
+        "Y": 433.5,
+        "DIAM": 3.0,
+        "Z": 1.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 1792.0,
+        "Y": 433.5,
+        "DIAM": 3.0,
+        "Z": 1.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 1212.0,
+        "Y": 439.0,
+        "DIAM": 35.0,
+        "Z": 13.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 1188.0,
+        "Y": 433.5,
+        "DIAM": 3.0,
+        "Z": 1.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 1236.0,
+        "Y": 433.5,
+        "DIAM": 3.0,
+        "Z": 1.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 656.0,
+        "Y": 439.0,
+        "DIAM": 35.0,
+        "Z": 13.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 632.0,
+        "Y": 433.5,
+        "DIAM": 3.0,
+        "Z": 1.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 680.0,
+        "Y": 433.5,
+        "DIAM": 3.0,
+        "Z": 1.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 100.0,
+        "Y": 439.0,
+        "DIAM": 35.0,
+        "Z": 13.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 76.0,
+        "Y": 433.5,
+        "DIAM": 3.0,
+        "Z": 1.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 124.0,
+        "Y": 433.5,
+        "DIAM": 3.0,
+        "Z": 1.0
+      }
+    ],
+    "CONTORNO": [
+      {
+        "X": 2424,
+        "Y": 460.5,
+        "ANG": "NAO"
+      },
+      {
+        "X": 2424,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 460.5,
+        "ANG": "NAO"
+      }
+    ],
+    "HAS_FRESAS_SUP": false,
+    "HAS_FRESAS_INF": false,
+    "HAS_FUROS_SUP": true,
+    "HAS_FUROS_INF": false,
+    "HAS_FUROS_TOPOS": false
+  },
+  {
+    "CLIENTE": "Julia",
+    "COD_CLIENTE": null,
+    "AMBIENTE": "1_PROJETO",
+    "ID_UNICO": 3803,
+    "QUANTIDADE": 1,
+    "DESCRICAO": "!PORTA_ARM_GOLA_C/PNT_DIR",
+    "COMPRIMENTO": 2424.0,
+    "PROFUNDIDADE": 460.5,
+    "CHAPA": "Carvalho Treviso 15mm",
+    "COR_1C": "Carvalho Treviso",
+    "COR_2C": "Carvalho Treviso",
+    "COR_1P": "Carvalho Treviso",
+    "COR_2P": "Carvalho Treviso",
+    "ROTEIRO": "Lam4L-2424mm 5 CANECOS",
+    "CATEGORIA": "FRENTES",
+    "SETOR": "PRODUCAO",
+    "ESTRUTURA": 1412,
+    "MODULO_DESC": "1412-ARM_01 - Roupeiro Planejado - Branco TX (1500x2500x580)",
+    "COD_CORTE": 6006,
+    "COMP_CHAPA": 2750.0,
+    "PROF_CHAPA": 1840.0,
+    "ESP_CHAPA": 15.0,
+    "VEIO": 1,
+    "CNC_A": "",
+    "CNC_B": "",
+    "CNC_FUROS_TOTAL": "NAO",
+    "OBS": null,
+    "ALINHAMENTO": "INVERSO",
+    "FRESAS": [],
+    "FUROS": [
+      {
+        "FACE": "SUP",
+        "X": 100.0,
+        "Y": 439.0,
+        "DIAM": 35.0,
+        "Z": 13.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 124.0,
+        "Y": 433.5,
+        "DIAM": 3.0,
+        "Z": 1.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 76.0,
+        "Y": 433.5,
+        "DIAM": 3.0,
+        "Z": 1.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 656.0,
+        "Y": 439.0,
+        "DIAM": 35.0,
+        "Z": 13.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 680.0,
+        "Y": 433.5,
+        "DIAM": 3.0,
+        "Z": 1.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 632.0,
+        "Y": 433.5,
+        "DIAM": 3.0,
+        "Z": 1.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 1212.0,
+        "Y": 439.0,
+        "DIAM": 35.0,
+        "Z": 13.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 1236.0,
+        "Y": 433.5,
+        "DIAM": 3.0,
+        "Z": 1.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 1188.0,
+        "Y": 433.5,
+        "DIAM": 3.0,
+        "Z": 1.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 1768.0,
+        "Y": 439.0,
+        "DIAM": 35.0,
+        "Z": 13.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 1792.0,
+        "Y": 433.5,
+        "DIAM": 3.0,
+        "Z": 1.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 1744.0,
+        "Y": 433.5,
+        "DIAM": 3.0,
+        "Z": 1.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 2324.0,
+        "Y": 439.0,
+        "DIAM": 35.0,
+        "Z": 13.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 2348.0,
+        "Y": 433.5,
+        "DIAM": 3.0,
+        "Z": 1.0
+      },
+      {
+        "FACE": "SUP",
+        "X": 2300.0,
+        "Y": 433.5,
+        "DIAM": 3.0,
+        "Z": 1.0
+      }
+    ],
+    "CONTORNO": [
+      {
+        "X": 2424,
+        "Y": 460.5,
+        "ANG": "NAO"
+      },
+      {
+        "X": 2424,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 0,
+        "ANG": "NAO"
+      },
+      {
+        "X": 0,
+        "Y": 460.5,
+        "ANG": "NAO"
+      }
+    ],
+    "HAS_FRESAS_SUP": false,
+    "HAS_FRESAS_INF": false,
+    "HAS_FUROS_SUP": true,
+    "HAS_FUROS_INF": false,
+    "HAS_FUROS_TOPOS": false
+  }
+]
