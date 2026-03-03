@@ -9,12 +9,12 @@ export interface NestingOptions {
   sheetHeight: number;
   espessura: number;
   material: string;
-  gap: number;             // spacing between pieces (fresa diameter)
-  refiloX: number;         // edge trim X
-  refiloY: number;         // edge trim Y
+  gap: number;
+  refiloX: number;
+  refiloY: number;
   allowRotation: boolean;
   direction: "vertical" | "horizontal" | "indefinido";
-  optimizationLevel: number; // 0-100
+  optimizationLevel: number;
 }
 
 const DEFAULT_OPTIONS: NestingOptions = {
@@ -30,11 +30,13 @@ const DEFAULT_OPTIONS: NestingOptions = {
   optimizationLevel: 80,
 };
 
-interface Rect {
+/**
+ * Skyline node for the skyline bin-packing algorithm
+ */
+interface SkylineNode {
   x: number;
   y: number;
-  w: number;
-  h: number;
+  width: number;
 }
 
 /**
@@ -49,17 +51,7 @@ interface ExpandedPiece {
 }
 
 /**
- * Skyline node for the skyline bin-packing algorithm
- */
-interface SkylineNode {
-  x: number;
-  y: number;
-  width: number;
-}
-
-/**
- * Skyline Bottom-Left bin-packing algorithm
- * More efficient and produces better results than naive gravity packing
+ * Skyline Bottom-Left bin-packing with waste-aware scoring
  */
 class SkylinePacker {
   private skyline: SkylineNode[];
@@ -75,36 +67,60 @@ class SkylinePacker {
   }
 
   /**
-   * Find the best position for a rectangle using the "best fit" heuristic
+   * Find the best position using "min waste fit" heuristic:
+   * 1. Primary: lowest Y (bottom-left)
+   * 2. Secondary: minimize wasted space under the piece (gaps in skyline)
+   * 3. Tertiary: leftmost X
    */
   findPosition(width: number, height: number): { x: number; y: number; score: number } | null {
     const w = width + this.gap;
     const h = height + this.gap;
-    
+
     let bestScore = Infinity;
+    let bestWaste = Infinity;
     let bestX = -1;
     let bestY = -1;
-    let bestIdx = -1;
 
     for (let i = 0; i < this.skyline.length; i++) {
       const result = this.fitAtSkyline(i, w, h);
       if (result !== null) {
-        const score = result.y + h; // minimize wasted vertical space
-        if (score < bestScore) {
-          bestScore = score;
+        const topY = result.y + h;
+        // Calculate wasted area beneath the piece (gaps between skyline and piece bottom)
+        const waste = this.calculateWaste(i, w, result.y);
+
+        // Primary: minimize top Y; Secondary: minimize waste; Tertiary: leftmost
+        if (
+          topY < bestScore ||
+          (topY === bestScore && waste < bestWaste) ||
+          (topY === bestScore && waste === bestWaste && result.x < bestX)
+        ) {
+          bestScore = topY;
+          bestWaste = waste;
           bestX = result.x;
           bestY = result.y;
-          bestIdx = i;
         }
       }
     }
 
-    if (bestIdx === -1) return null;
+    if (bestX === -1) return null;
     return { x: bestX, y: bestY, score: bestScore };
   }
 
+  private calculateWaste(startIdx: number, w: number, maxY: number): number {
+    let waste = 0;
+    let remaining = w;
+    let i = startIdx;
+    while (remaining > 0 && i < this.skyline.length) {
+      const nodeW = Math.min(this.skyline[i].width, remaining);
+      waste += nodeW * (maxY - this.skyline[i].y);
+      remaining -= this.skyline[i].width;
+      i++;
+    }
+    return waste;
+  }
+
   private fitAtSkyline(idx: number, w: number, h: number): { x: number; y: number } | null {
-    let x = this.skyline[idx].x;
+    const x = this.skyline[idx].x;
     if (x + w > this.binWidth) return null;
 
     let y = 0;
@@ -121,42 +137,28 @@ class SkylinePacker {
     return { x, y };
   }
 
-  /**
-   * Place a rectangle and update the skyline
-   */
   place(x: number, y: number, width: number, height: number): void {
     const w = width + this.gap;
     const h = height + this.gap;
     const newNode: SkylineNode = { x, y: y + h, width: w };
-    
-    // Insert new skyline node
-    let i = 0;
-    while (i < this.skyline.length && this.skyline[i].x < x) i++;
-    
-    // Remove covered nodes
+
     const newSkyline: SkylineNode[] = [];
-    for (let j = 0; j < this.skyline.length; j++) {
-      const node = this.skyline[j];
+    for (const node of this.skyline) {
       const nodeRight = node.x + node.width;
       const newRight = x + w;
 
       if (nodeRight <= x || node.x >= newRight) {
-        // Node is completely outside the new rect
         newSkyline.push(node);
       } else {
-        // Node overlaps with new rect
         if (node.x < x) {
-          // Left part remains
           newSkyline.push({ x: node.x, y: node.y, width: x - node.x });
         }
         if (nodeRight > newRight) {
-          // Right part remains
           newSkyline.push({ x: newRight, y: node.y, width: nodeRight - newRight });
         }
       }
     }
 
-    // Insert the new node
     let insertIdx = 0;
     while (insertIdx < newSkyline.length && newSkyline[insertIdx].x < x) insertIdx++;
     newSkyline.splice(insertIdx, 0, newNode);
@@ -174,11 +176,16 @@ class SkylinePacker {
       this.skyline.push({ ...node });
     }
   }
+
+  /** Return total used height (max Y in skyline) — useful for trimming last sheet */
+  getUsedHeight(): number {
+    return Math.max(...this.skyline.map((n) => n.y));
+  }
 }
 
 /**
- * Main nesting optimizer
- * Uses Skyline Bottom-Left algorithm with rotation support
+ * Multi-pass nesting optimizer with multiple sort strategies
+ * Tries several orderings and picks the one with fewest sheets / best efficiency
  */
 export function optimizeNesting(
   pieces: CuttingPiece[],
@@ -186,7 +193,7 @@ export function optimizeNesting(
   existingHoles?: Map<number, PromobHole[]>
 ): NestingSheet[] {
   const opts = { ...DEFAULT_OPTIONS, ...options };
-  
+
   // Group pieces by material
   const byMaterial = new Map<string, CuttingPiece[]>();
   for (const piece of pieces) {
@@ -217,72 +224,46 @@ export function optimizeNesting(
       }
     }
 
-    // Sort by area (largest first) for better packing
-    expanded.sort((a, b) => (b.width * b.height) - (a.width * a.height));
-
-    // Available space after refilo
     const usableW = opts.sheetWidth - opts.refiloX * 2;
     const usableH = opts.sheetHeight - opts.refiloY * 2;
 
-    let remaining = [...expanded];
+    // Try multiple sort strategies and pick the best result
+    const sortStrategies: ((a: ExpandedPiece, b: ExpandedPiece) => number)[] = [
+      // 1. Area descending (classic)
+      (a, b) => (b.width * b.height) - (a.width * a.height),
+      // 2. Height descending, then width descending
+      (a, b) => b.height - a.height || b.width - a.width,
+      // 3. Width descending, then height descending
+      (a, b) => b.width - a.width || b.height - a.height,
+      // 4. Max dimension descending
+      (a, b) => Math.max(b.width, b.height) - Math.max(a.width, a.height),
+      // 5. Perimeter descending
+      (a, b) => (b.width + b.height) - (a.width + a.height),
+    ];
 
-    while (remaining.length > 0) {
-      const packer = new SkylinePacker(usableW, usableH, opts.gap);
-      const placed: { ep: ExpandedPiece; x: number; y: number; w: number; h: number; rotated: boolean }[] = [];
-      const notPlaced: ExpandedPiece[] = [];
+    let bestResult: ReturnType<typeof packWithOrder> | null = null;
 
-      for (const ep of remaining) {
-        // Try normal orientation
-        const pos1 = packer.findPosition(ep.width, ep.height);
-        
-        // Try rotated (if allowed and piece doesn't have grain constraint)
-        let pos2: ReturnType<SkylinePacker["findPosition"]> = null;
-        if (opts.allowRotation && !ep.piece.veio && ep.width !== ep.height) {
-          pos2 = packer.findPosition(ep.height, ep.width);
-        }
+    for (const sortFn of sortStrategies) {
+      const sorted = [...expanded].sort(sortFn);
+      const result = packWithOrder(sorted, usableW, usableH, opts);
 
-        // Pick best position
-        let bestPos = pos1;
-        let useRotated = false;
-
-        if (pos1 && pos2) {
-          if (pos2.score < pos1.score) {
-            bestPos = pos2;
-            useRotated = true;
-          }
-        } else if (!pos1 && pos2) {
-          bestPos = pos2;
-          useRotated = true;
-        }
-
-        if (bestPos) {
-          const w = useRotated ? ep.height : ep.width;
-          const h = useRotated ? ep.width : ep.height;
-          packer.place(bestPos.x, bestPos.y, w, h);
-          placed.push({
-            ep,
-            x: bestPos.x + opts.refiloX,
-            y: bestPos.y + opts.refiloY,
-            w, h,
-            rotated: useRotated,
-          });
-        } else {
-          notPlaced.push(ep);
-        }
+      if (
+        !bestResult ||
+        result.sheets.length < bestResult.sheets.length ||
+        (result.sheets.length === bestResult.sheets.length && result.totalEfficiency > bestResult.totalEfficiency)
+      ) {
+        bestResult = result;
       }
+    }
 
-      if (placed.length === 0) {
-        // Can't fit any more pieces — they're too large for the sheet
-        console.warn(`${notPlaced.length} peças não cabem na chapa ${opts.sheetWidth}x${opts.sheetHeight}`);
-        break;
-      }
+    if (!bestResult) continue;
 
-      // Calculate efficiency
+    // Build NestingSheet objects
+    for (const packedSheet of bestResult.sheets) {
       const totalArea = opts.sheetWidth * opts.sheetHeight;
-      const usedArea = placed.reduce((a, p) => a + p.w * p.h, 0);
+      const usedArea = packedSheet.reduce((a, p) => a + p.w * p.h, 0);
       const efficiency = (usedArea / totalArea) * 100;
 
-      // Build NestingSheet
       const sheet: NestingSheet = {
         id: sheetIdCounter++,
         sheetWidth: opts.sheetWidth,
@@ -291,7 +272,7 @@ export function optimizeNesting(
         material,
         codCorte: 7000 + sheetIdCounter,
         efficiency,
-        pieces: placed.map((p, idx) => {
+        pieces: packedSheet.map((p, idx) => {
           const holes = existingHoles?.get(p.ep.piece.id) || [];
           return {
             pieceId: p.ep.piece.id,
@@ -315,11 +296,122 @@ export function optimizeNesting(
       };
 
       allSheets.push(sheet);
-      remaining = notPlaced;
     }
   }
 
   return allSheets;
+}
+
+interface PackedPiece {
+  ep: ExpandedPiece;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  rotated: boolean;
+}
+
+/**
+ * Pack pieces in given order across multiple sheets
+ * Uses a two-pass approach: first pass packs, second pass tries to fit
+ * remaining pieces into ANY previous sheet (not just the current one)
+ */
+function packWithOrder(
+  sorted: ExpandedPiece[],
+  usableW: number,
+  usableH: number,
+  opts: NestingOptions
+): { sheets: PackedPiece[][]; totalEfficiency: number } {
+  const sheets: { packer: SkylinePacker; pieces: PackedPiece[] }[] = [];
+  let remaining = [...sorted];
+
+  while (remaining.length > 0) {
+    const packer = new SkylinePacker(usableW, usableH, opts.gap);
+    const placed: PackedPiece[] = [];
+    const notPlaced: ExpandedPiece[] = [];
+
+    for (const ep of remaining) {
+      const result = tryPlace(packer, ep, opts);
+      if (result) {
+        placed.push(result);
+      } else {
+        notPlaced.push(ep);
+      }
+    }
+
+    if (placed.length === 0) {
+      console.warn(`${notPlaced.length} peças não cabem na chapa ${opts.sheetWidth}x${opts.sheetHeight}`);
+      break;
+    }
+
+    sheets.push({ packer, pieces: placed });
+
+    // Second pass: try to fit remaining pieces into ALL previous sheets
+    const stillNotPlaced: ExpandedPiece[] = [];
+    for (const ep of notPlaced) {
+      let fitted = false;
+      for (const existingSheet of sheets) {
+        const result = tryPlace(existingSheet.packer, ep, opts);
+        if (result) {
+          existingSheet.pieces.push(result);
+          fitted = true;
+          break;
+        }
+      }
+      if (!fitted) {
+        stillNotPlaced.push(ep);
+      }
+    }
+
+    remaining = stillNotPlaced;
+  }
+
+  const totalArea = sheets.length * usableW * usableH;
+  const usedArea = sheets.reduce(
+    (a, s) => a + s.pieces.reduce((b, p) => b + p.w * p.h, 0),
+    0
+  );
+
+  return {
+    sheets: sheets.map((s) => s.pieces),
+    totalEfficiency: totalArea > 0 ? (usedArea / totalArea) * 100 : 0,
+  };
+}
+
+function tryPlace(packer: SkylinePacker, ep: ExpandedPiece, opts: NestingOptions): PackedPiece | null {
+  const pos1 = packer.findPosition(ep.width, ep.height);
+  let pos2: ReturnType<SkylinePacker["findPosition"]> = null;
+  if (opts.allowRotation && !ep.piece.veio && ep.width !== ep.height) {
+    pos2 = packer.findPosition(ep.height, ep.width);
+  }
+
+  let bestPos = pos1;
+  let useRotated = false;
+
+  if (pos1 && pos2) {
+    if (pos2.score < pos1.score) {
+      bestPos = pos2;
+      useRotated = true;
+    }
+  } else if (!pos1 && pos2) {
+    bestPos = pos2;
+    useRotated = true;
+  }
+
+  if (!bestPos) return null;
+
+  const w = useRotated ? ep.height : ep.width;
+  const h = useRotated ? ep.width : ep.height;
+  packer.place(bestPos.x, bestPos.y, w, h);
+
+  return {
+    ep,
+    x: bestPos.x + opts.refiloX,
+    y: bestPos.y + opts.refiloY,
+    w,
+    h,
+    rotated: useRotated,
+  };
 }
 
 /**
@@ -340,7 +432,7 @@ export function calculateNestingStats(sheets: NestingSheet[]) {
     totalSheets,
     totalPieces,
     avgEfficiency,
-    totalSheetArea: totalSheetArea / 1_000_000, // m²
+    totalSheetArea: totalSheetArea / 1_000_000,
     totalUsedArea: totalUsedArea / 1_000_000,
     totalWasteArea: totalWasteArea / 1_000_000,
   };

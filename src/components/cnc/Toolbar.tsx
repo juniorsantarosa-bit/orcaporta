@@ -1,7 +1,7 @@
 import {
   FileUp, FilePlus, FileCode, Layers, Box, Settings, Scissors,
   BarChart3, Grid3X3, FileDown, FileText, Cog, Image, ChevronDown,
-  Loader2,
+  Loader2, Save, FolderPlus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -63,6 +63,13 @@ export function Toolbar({ config, onConfigChange, onOptimize, onAction, isOptimi
 
   return (
     <div className="flex items-center gap-1.5 px-3 py-1.5 bg-card border-b border-border print:hidden">
+      <ToolbarGroup label="Projeto">
+        <ToolbarButton icon={FolderPlus} label="Novo" onClick={() => act("novoProjeto")} />
+        <ToolbarButton icon={Save} label="Salvar" onClick={() => act("salvarProjeto")} />
+      </ToolbarGroup>
+
+      <Separator orientation="vertical" className="h-10 mx-0.5" />
+
       <ToolbarGroup label="Editar">
         <ToolbarButton icon={FilePlus} label="Peças" onClick={() => act("editarPecas")} />
         <ToolbarButton icon={FileUp} label="Importar" onClick={() => act("importarPecas")} />

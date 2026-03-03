@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { TabBar } from "@/components/cnc/TabBar";
 import { Toolbar } from "@/components/cnc/Toolbar";
 import { PartsTable } from "@/components/cnc/PartsTable";
@@ -22,6 +22,16 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { optimizeNesting, calculateNestingStats, NestingOptions } from "@/lib/nestingOptimizer";
 
@@ -32,6 +42,9 @@ export default function Index() {
   const [layouts, setLayouts] = useState<NestingSheet[]>(mockSheetLayouts);
   const [sobras, setSobras] = useState<SobraMaterial[]>([]);
   const [isOptimizing, setIsOptimizing] = useState(false);
+  const [projectName, setProjectName] = useState("Projeto sem título");
+  const [pendingAction, setPendingAction] = useState<"import" | "new" | null>(null);
+  const [showSavePrompt, setShowSavePrompt] = useState(false);
   const [optimizationResult, setOptimizationResult] = useState<{
     sheets: NestingSheet[];
     stats: ReturnType<typeof calculateNestingStats>;
@@ -90,6 +103,75 @@ export default function Index() {
     setConfig((prev) => ({ ...prev, [key]: value }));
   };
 
+  // --- Save / New / Import logic ---
+  const saveProject = useCallback(() => {
+    const project = {
+      name: projectName,
+      pieces,
+      layouts,
+      config,
+      nestingConfig,
+      generalConfig,
+      machineConfig,
+      sobras,
+      savedAt: new Date().toISOString(),
+    };
+    const blob = new Blob([JSON.stringify(project, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${projectName.replace(/\s+/g, "_")}.corte.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Projeto salvo com sucesso!");
+  }, [projectName, pieces, layouts, config, nestingConfig, generalConfig, machineConfig, sobras]);
+
+  const resetProject = useCallback(() => {
+    setPieces([]);
+    setLayouts([]);
+    setOptimizationResult(null);
+    setSelectedPieceId(null);
+    setProjectName("Projeto sem título");
+    toast.info("Novo projeto iniciado.");
+  }, []);
+
+  const hasPieces = pieces.length > 0;
+
+  const confirmAndProceed = useCallback((action: "import" | "new") => {
+    if (hasPieces) {
+      setPendingAction(action);
+      setShowSavePrompt(true);
+    } else {
+      if (action === "import") openDialog("importarPecas");
+      else resetProject();
+    }
+  }, [hasPieces, resetProject]);
+
+  const handleSavePromptResponse = useCallback((save: boolean) => {
+    setShowSavePrompt(false);
+    if (save) saveProject();
+
+    // After save (or skip), proceed with action
+    if (pendingAction === "import") {
+      setPieces([]);
+      setLayouts([]);
+      setOptimizationResult(null);
+      setSelectedPieceId(null);
+      openDialog("importarPecas");
+    } else if (pendingAction === "new") {
+      resetProject();
+    }
+    setPendingAction(null);
+  }, [pendingAction, saveProject, resetProject]);
+
+  const handleImportPieces = useCallback((newPieces: CuttingPiece[]) => {
+    setPieces(newPieces);
+    setLayouts([]);
+    setOptimizationResult(null);
+    setSelectedPieceId(newPieces.length > 0 ? newPieces[0].id : null);
+  }, []);
+
+  // --- Optimize ---
   const handleOptimize = () => {
     if (pieces.length === 0) {
       toast.error("Adicione peças antes de otimizar.");
@@ -99,13 +181,11 @@ export default function Index() {
     setIsOptimizing(true);
     toast.loading("Otimizando nesting...", { id: "optimize" });
 
-    // Use setTimeout to allow UI to update
     setTimeout(() => {
       const start = performance.now();
-
       const opts: Partial<NestingOptions> = {
-        sheetWidth: generalConfig.chapaY,  // chapaY = comprimento
-        sheetHeight: generalConfig.chapaX, // chapaX = largura
+        sheetWidth: generalConfig.chapaY,
+        sheetHeight: generalConfig.chapaX,
         gap: nestingConfig.espessuraCorte,
         refiloX: nestingConfig.refiloX,
         refiloY: nestingConfig.refiloY,
@@ -114,7 +194,6 @@ export default function Index() {
         optimizationLevel: nestingConfig.otimizacao,
       };
 
-      // Get material/espessura from first piece if not set
       if (pieces.length > 0) {
         opts.material = pieces[0].material;
         opts.espessura = pieces[0].espessura;
@@ -158,8 +237,10 @@ export default function Index() {
 
   const handleToolbarAction = (action: string) => {
     switch (action) {
+      case "novoProjeto": confirmAndProceed("new"); break;
+      case "salvarProjeto": saveProject(); break;
       case "editarPecas": openDialog("editarPecas"); break;
-      case "importarPecas": openDialog("importarPecas"); break;
+      case "importarPecas": confirmAndProceed("import"); break;
       case "importarDXF": openDialog("importarDXF"); break;
       case "importarChapa": openDialog("importarDXF"); break;
       case "materiais": openDialog("materiais"); break;
@@ -214,6 +295,29 @@ export default function Index() {
         </ResizablePanelGroup>
       </div>
 
+      {/* Save prompt before import/new */}
+      <AlertDialog open={showSavePrompt} onOpenChange={setShowSavePrompt}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Salvar projeto atual?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Você tem peças no projeto atual. Deseja salvar antes de continuar?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => { setShowSavePrompt(false); setPendingAction(null); }}>
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction className="bg-secondary text-secondary-foreground hover:bg-secondary/80" onClick={() => handleSavePromptResponse(false)}>
+              Não salvar
+            </AlertDialogAction>
+            <AlertDialogAction onClick={() => handleSavePromptResponse(true)}>
+              Salvar e continuar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <EditarPecasDialog open={dialogs.editarPecas} onOpenChange={(v) => v ? openDialog("editarPecas") : closeDialog("editarPecas")} pieces={pieces} onSave={setPieces} />
       <ConfiguracaoCorteDialog open={dialogs.configuracaoCorte} onOpenChange={(v) => v ? openDialog("configuracaoCorte") : closeDialog("configuracaoCorte")} config={nestingConfig} onSave={setNestingConfig} />
       <ConfiguracoesGeraisDialog open={dialogs.configGerais} onOpenChange={(v) => v ? openDialog("configGerais") : closeDialog("configGerais")} config={generalConfig} onSave={setGeneralConfig} />
@@ -221,7 +325,7 @@ export default function Index() {
       <ConfigMaquinasDialog open={dialogs.configMaquinas || dialogs.estrategias} onOpenChange={(v) => { closeDialog("configMaquinas"); closeDialog("estrategias"); if (v) openDialog("configMaquinas"); }} config={machineConfig} onSave={setMachineConfig} />
       <ConfigBitmapDialog open={dialogs.configBitmap} onOpenChange={(v) => v ? openDialog("configBitmap") : closeDialog("configBitmap")} config={bitmapConfig} onSave={setBitmapConfig} />
       <LayersDialog open={dialogs.layers} onOpenChange={(v) => v ? openDialog("layers") : closeDialog("layers")} />
-      <ImportarPecasDialog open={dialogs.importarPecas} onOpenChange={(v) => v ? openDialog("importarPecas") : closeDialog("importarPecas")} onImport={setPieces} />
+      <ImportarPecasDialog open={dialogs.importarPecas} onOpenChange={(v) => v ? openDialog("importarPecas") : closeDialog("importarPecas")} onImport={handleImportPieces} />
       <ImportarDXFDialog open={dialogs.importarDXF || dialogs.importarChapa} onOpenChange={(v) => { closeDialog("importarDXF"); closeDialog("importarChapa"); if (v) openDialog("importarDXF"); }} onImport={() => {}} />
       <SobrasDialog open={dialogs.sobras} onOpenChange={(v) => v ? openDialog("sobras") : closeDialog("sobras")} sobras={sobras} onSave={setSobras} />
       {optimizationResult && (
