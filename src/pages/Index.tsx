@@ -292,7 +292,7 @@ export default function Index() {
           </ResizablePanel>
           <ResizableHandle withHandle />
           <ResizablePanel defaultSize={70} minSize={40}>
-            <NestingPreview layouts={layouts} selectedPieceId={selectedPieceId} onLayoutUpdate={handleLayoutUpdate} onReoptimize={handleOptimize} />
+            <NestingPreview layouts={layouts} selectedPieceId={selectedPieceId} onLayoutUpdate={handleLayoutUpdate} onReoptimize={handleOptimize} companyLogo={generalConfig.companyLogo} />
           </ResizablePanel>
         </ResizablePanelGroup>
       </div>
