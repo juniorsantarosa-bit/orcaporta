@@ -66,7 +66,7 @@ export default function Index() {
     distanciaX: 2000, distanciaY: 3000, usarDisponiveis: false,
     cadastrarNovas: true, removerUsadas: false, exibirDinabox: false,
     exibirSeletorSobras: false, fresaDiametroMaior: 42, fresaAngulo: 45,
-    fresaDiametroMenor: 18, ignorarMateriais: [],
+    fresaDiametroMenor: 18, ignorarMateriais: [], companyLogo: "",
   });
 
   const [machineConfig, setMachineConfig] = useState<MachineConfig>({
