@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<FileXML>
+  <PostProcessor>
+	<Name>Mach</Name>
+	<Description>Mach_Turbo_ATC16</Description>
+	<ToolsImage>Mach_Turbo_ATC16.jpg</ToolsImage>
+	<FileExtension>nc</FileExtension>
+	<InitialLine>%</InitialLine>
+	<Header>G0 G53 Z0.0
+M752</Header>
+	<Footer>M5
+G0 G53 Z0.0
+M750
+M30
+%</Footer>
+	<BeforeTool/>
+	<AfterTool/>
+	<BeforeDrill/>
+	<AfterDrill/>
+	<BeforeRotation/>
+	<AfterRotation/>
+	<CommentPrefix>(#### </CommentPrefix>
+	<CommentSufix> ####)</CommentSufix>
+	<ExportStrategyName>True</ExportStrategyName>
+	<ToolPrefix></ToolPrefix>	
+	<ToolSufix/>
+	<DrillPrefix></DrillPrefix>
+	<DrillSufix/>
+	<RotationPrefix>M3 S</RotationPrefix>
+	<RotationSufix/>
+	<UseLineNumber>False</UseLineNumber>
+	<LineNumberPrefix>N</LineNumberPrefix>
+	<LineNumberInitialNumber>10</LineNumberInitialNumber>
+	<LineNumberIncrementValue>1</LineNumberIncrementValue>
+	<IgnoreFirstBeforeTool>True</IgnoreFirstBeforeTool>
+	<RapidMovPrefix>G0</RapidMovPrefix>
+	<ControlledMovPrefix>G1</ControlledMovPrefix>
+	<CWPrefix>G2</CWPrefix>
+	<CCWPrefix>G3</CCWPrefix>
+	<XPrefix>X</XPrefix>
+	<YPrefix>Y</YPrefix>
+	<ZPrefix>Z</ZPrefix>
+	<FeedratePrefix>F</FeedratePrefix>
+	<RRadiusPrefix>R</RRadiusPrefix>
+	<IRadiusPrefix>i</IRadiusPrefix>
+	<JRadiusPrefix>j</JRadiusPrefix>
+	<ToolChanger>
+		<ToolChangerQtde>16</ToolChangerQtde>
+		<Tools>
+			<Tool>
+				<ID>1</ID>
+				<ToolNo>1</ToolNo>
+				<ToolName>Magazine 1</ToolName>
+				<ToolID>M6 T1</ToolID>
+				<ToolOffset></ToolOffset>
+			</Tool>
+			<Tool>
+				<ID>2</ID>
+				<ToolNo>2</ToolNo>
+				<ToolName>Magazine 2</ToolName>
+				<ToolID>M6 T2</ToolID>
+				<ToolOffset></ToolOffset>
+			</Tool>
+			<Tool>
+				<ID>3</ID>
+				<ToolNo>3</ToolNo>
+				<ToolName>Magazine 3</ToolName>
+				<ToolID>M6 T3</ToolID>
+				<ToolOffset></ToolOffset>
+			</Tool>
+			<Tool>
+				<ID>4</ID>
+				<ToolNo>4</ToolNo>
+				<ToolName>Magazine 4</ToolName>
+				<ToolID>M6 T4</ToolID>
+				<ToolOffset></ToolOffset>
+			</Tool>
+			<Tool>
+				<ID>5</ID>
+				<ToolNo>5</ToolNo>
+				<ToolName>Magazine 5</ToolName>
+				<ToolID>M6 T5</ToolID>
+				<ToolOffset></ToolOffset>
+			</Tool>
+			<Tool>
+				<ID>6</ID>
+				<ToolNo>6</ToolNo>
+				<ToolName>Magazine 6</ToolName>
+				<ToolID>M6 T6</ToolID>
+				<ToolOffset></ToolOffset>
+			</Tool>
+			<Tool>
+				<ID>7</ID>
+				<ToolNo>7</ToolNo>
+				<ToolName>Magazine 7</ToolName>
+				<ToolID>M6 T7</ToolID>
+				<ToolOffset></ToolOffset>
+			</Tool>
+			<Tool>
+				<ID>8</ID>
+				<ToolNo>8</ToolNo>
+				<ToolName>Magazine 8</ToolName>
+				<ToolID>M6 T8</ToolID>
+				<ToolOffset></ToolOffset>
+			</Tool>
+			<Tool>
+				<ID>9</ID>
+				<ToolNo>9</ToolNo>
+				<ToolName>Magazine 9</ToolName>
+				<ToolID>M6 T9</ToolID>
+				<ToolOffset></ToolOffset>
+			</Tool>
+			<Tool>
+				<ID>10</ID>
+				<ToolNo>10</ToolNo>
+				<ToolName>Magazine 10</ToolName>
+				<ToolID>M6 T10</ToolID>
+				<ToolOffset></ToolOffset>
+			</Tool>
+			<Tool>
+				<ID>11</ID>
+				<ToolNo>11</ToolNo>
+				<ToolName>Magazine 11</ToolName>
+				<ToolID>M6 T11</ToolID>
+				<ToolOffset></ToolOffset>
+			</Tool>
+			<Tool>
+				<ID>12</ID>
+				<ToolNo>12</ToolNo>
+				<ToolName>Magazine 12</ToolName>
+				<ToolID>M6 T12</ToolID>
+				<ToolOffset></ToolOffset>
+			</Tool>
+			<Tool>
+				<ID>13</ID>
+				<ToolNo>13</ToolNo>
+				<ToolName>Magazine 13</ToolName>
+				<ToolID>M6 T13</ToolID>
+				<ToolOffset></ToolOffset>
+			</Tool>
+			<Tool>
+				<ID>14</ID>
+				<ToolNo>14</ToolNo>
+				<ToolName>Magazine 14</ToolName>
+				<ToolID>M6 T14</ToolID>
+				<ToolOffset></ToolOffset>
+			</Tool>
+			<Tool>
+				<ID>15</ID>
+				<ToolNo>15</ToolNo>
+				<ToolName>Magazine 15</ToolName>
+				<ToolID>M6 T15</ToolID>
+				<ToolOffset></ToolOffset>
+			</Tool>
+			<Tool>
+				<ID>16</ID>
+				<ToolNo>16</ToolNo>
+				<ToolName>Magazine 16</ToolName>
+				<ToolID>M6 T16</ToolID>
+				<ToolOffset></ToolOffset>
+			</Tool>
+		</Tools>
+	</ToolChanger>
+	<HasDrillBank>False</HasDrillBank>
+	<HasAutomaticLabel>False</HasAutomaticLabel>
+	<HasAfterCutLabel>False</HasAfterCutLabel>
+	<UseG2ROnDado>True</UseG2ROnDado>
+	<GenerateSheetSecondFace>False</GenerateSheetSecondFace>
+	<SheetSecondFaceMirrorX>False</SheetSecondFaceMirrorX>
+	<SheetSecondFaceFileName>_Inferior</SheetSecondFaceFileName>
+	<FirstSheetAfterHeader/>
+	<FirstSheetBeforeFooter/>
+	<LastSheetAfterHeader/>
+	<LastSheetBeforeFooter/>
+	<UseNewG2G3>True</UseNewG2G3>
+	<AllowUseG2G3>True</AllowUseG2G3>
+	<ArcToLinePrecision>0.5</ArcToLinePrecision>
+	<UseIJForArc>False</UseIJForArc>
+	<UseIJIncremental>False</UseIJIncremental>
+	<GCodeGeneratorV2>True</GCodeGeneratorV2>
+  </PostProcessor>
+</FileXML>
