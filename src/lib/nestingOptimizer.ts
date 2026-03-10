@@ -193,7 +193,9 @@ export function optimizeNesting(
     const expanded: ExpandedPiece[] = [];
     let labelCounter = 0;
     for (const piece of matPieces) {
-      for (let q = 0; q < piece.quantidade; q++) {
+      const qty = Math.max(1, Math.round(piece.quantidade || 1));
+      console.log(`[Nesting] Peça "${piece.descricao}" (${piece.largura}x${piece.altura}) qty=${qty}`);
+      for (let q = 0; q < qty; q++) {
         expanded.push({
           piece,
           width: piece.largura,
