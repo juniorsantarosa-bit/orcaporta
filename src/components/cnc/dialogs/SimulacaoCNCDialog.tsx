@@ -1035,8 +1035,6 @@ export function SimulacaoCNCDialog({ open, onOpenChange, layouts, machineConfig 
   const [cameraAction, setCameraAction] = useState("");
   const cameraActionCounter = useRef(0);
   const animRef = useRef<number>(0);
-  const [useCommonCutSim, setUseCommonCutSim] = useState(true);
-
   const triggerCameraAction = (action: string) => {
     cameraActionCounter.current++;
     setCameraAction(`${action}_${cameraActionCounter.current}`);
@@ -1054,21 +1052,9 @@ export function SimulacaoCNCDialog({ open, onOpenChange, layouts, machineConfig 
   }), [machineConfig, layout]);
 
   const { segments, alerts, totalDistance, cutDistance, rapidDistance } = useMemo(() =>
-    layout ? generateToolpath(layout, limits, useCommonCutSim) : { segments: [], alerts: [], totalDistance: 0, cutDistance: 0, rapidDistance: 0 },
-    [layout, limits, useCommonCutSim]
+    layout ? generateToolpath(layout, limits, false) : { segments: [], alerts: [], totalDistance: 0, cutDistance: 0, rapidDistance: 0 },
+    [layout, limits]
   );
-
-  // Compare: generate stats for the opposite mode
-  const comparison = useMemo(() => {
-    if (!layout) return null;
-    const alt = generateToolpath(layout, limits, !useCommonCutSim);
-    return {
-      altSegments: alt.segments.length,
-      altTotalDist: alt.totalDistance,
-      altRapidDist: alt.rapidDistance,
-      altCutDist: alt.cutDistance,
-    };
-  }, [layout, limits, useCommonCutSim]);
 
   // Reset on sheet change
   useEffect(() => {
@@ -1141,15 +1127,6 @@ export function SimulacaoCNCDialog({ open, onOpenChange, layouts, machineConfig 
                 </div>
               )}
 
-              {/* Common Cut toggle */}
-              <Button
-                variant={useCommonCutSim ? "default" : "outline"}
-                size="sm"
-                className="h-7 text-[10px] gap-1"
-                onClick={() => { setUseCommonCutSim(!useCommonCutSim); setProgress(0); setPlaying(false); }}
-              >
-                ✂️ {useCommonCutSim ? "CC ON" : "CC OFF"}
-              </Button>
 
               <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "3d" | "2d")}>
                 <TabsList className="h-7">
@@ -1302,21 +1279,6 @@ export function SimulacaoCNCDialog({ open, onOpenChange, layouts, machineConfig 
             <span className={alerts.length > 0 ? "text-yellow-600 font-bold" : "text-green-600"}>
               {alerts.length > 0 ? `⚠ ${alerts.length} corrigidos` : "✓ OK"}
             </span>
-            {comparison && (
-              <span className="border-l border-border pl-2">
-                {useCommonCutSim ? "CC" : "Normal"} vs {!useCommonCutSim ? "CC" : "Normal"}:
-                {" "}{comparison.altSegments} mov. / Rápido: {(comparison.altRapidDist / 1000).toFixed(1)}m
-                {rapidDistance < comparison.altRapidDist ? (
-                  <span className="text-green-600 font-bold ml-1">
-                    ↓{((1 - rapidDistance / comparison.altRapidDist) * 100).toFixed(0)}% menos deslocamento
-                  </span>
-                ) : rapidDistance > comparison.altRapidDist ? (
-                  <span className="text-destructive font-bold ml-1">
-                    ↑{((rapidDistance / comparison.altRapidDist - 1) * 100).toFixed(0)}% mais deslocamento
-                  </span>
-                ) : null}
-              </span>
-            )}
           </div>
         </div>
       </DialogContent>

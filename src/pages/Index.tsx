@@ -56,7 +56,7 @@ export default function Index() {
   const [config, setConfig] = useState<CuttingConfig>({
     serraSerpentina: 4, margemChapa: 0, espacamentoEntreCortes: 4,
     permitirRotacao: true, usarDisponiveis: false, cadastrarNovas: true, removerUsadas: false,
-    useCommonCut: true,
+    useCommonCut: false,
   });
 
   const [nestingConfig, setNestingConfig] = useState<NestingConfig>({
@@ -259,7 +259,7 @@ export default function Index() {
             : machineConfig.posProcessador.includes("Mach3D") ? "mach_cnc" as const
             : "smartcut" as const;
           layouts.forEach((sheet, idx) => {
-            const gcode = generateGCode(sheet, { postProcessor: ppType, useCommonCut: config.useCommonCut !== false });
+            const gcode = generateGCode(sheet, { postProcessor: ppType, useCommonCut: false });
             const filename = generateGCodeFilename(idx, sheet.material, ppType);
             const blob = new Blob([gcode], { type: "text/plain" });
             const url = URL.createObjectURL(blob);
