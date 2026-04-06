@@ -66,15 +66,70 @@ function parseCNCJson(raw: string): { furos: PromobHole[]; fresas: any[]; alinha
  * 
  * Also handles CSVs WITHOUT the CNC column (older/different exports).
  */
+/** Parse number handling both dot and comma as decimal separator */
+function parseNum(val: string | undefined): number {
+  if (!val) return 0;
+  return parseFloat(val.replace(",", ".")) || 0;
+}
+
 export function parsePromobCSV(csvText: string): PromobPiece[] {
   const lines = csvText.split("\n").filter(l => l.trim());
   if (lines.length < 2) return [];
 
   const header = lines[0].replace(/^\uFEFF/, "").split(";").map(h => h.trim());
 
-  const colIdx = (name: string) => {
-    const idx = header.indexOf(name);
-    return idx;
+  // Column name aliases: maps canonical names to possible CSV header variants
+  const COLUMN_ALIASES: Record<string, string[]> = {
+    "ID_UNICO": ["ID_UNICO", "COLUMN_ITEM_CODE"],
+    "CLIENTE": ["CLIENTE", "CLIENTE - DADOS DO CLIENTE"],
+    "AMBIENTE": ["AMBIENTE"],
+    "COMPRIMENTO": ["COMPRIMENTO", "ALTURA (X)"],
+    "PROFUNDIDADE": ["PROFUNDIDADE", "PROF (Y)"],
+    "QUANTIDADE": ["QUANTIDADE", "QUANTIDADE ITEM"],
+    "DESCRICAO": ["DESCRICAO", "PEÇA DESCRIÇÃO"],
+    "CHAPA": ["CHAPA", "DESCRIÇÃO DO MATERIAL"],
+    "ESP_CHAPA": ["ESP_CHAPA", "ESPESSURA DO MATERIAL"],
+    "COMP_CHAPA": ["COMP_CHAPA", "DIM_X_MATERIAL"],
+    "PROF_CHAPA": ["PROF_CHAPA", "DIM_Y_MATERIAL"],
+    "VEIO": ["VEIO"],
+    "CNC": ["CNC", "OPERAÇÕES"],
+    "ALINHAMENTO": ["ALINHAMENTO"],
+    "CNC_FUROS_TOTAL": ["CNC_FUROS_TOTAL"],
+    "COLUMN_POINT_X_ITEM": ["COLUMN_POINT_X_ITEM"],
+    "COLUMN_POINT_Y_ITEM": ["COLUMN_POINT_Y_ITEM"],
+    "COLUMN_POINTS_ANGLE": ["COLUMN_POINTS_ANGLE"],
+    "COLUMN_BORDER_DESCRIPTION": ["COLUMN_BORDER_DESCRIPTION"],
+    "COLUMN_BORDER_FINISHING": ["COLUMN_BORDER_FINISHING"],
+    "COD_CLIENTE": ["COD_CLIENTE", "CÓDIGO DO PROJETO"],
+    "ROTEIRO": ["ROTEIRO", "REFERÊNCIA"],
+    "CATEGORIA": ["CATEGORIA"],
+    "SETOR": ["SETOR"],
+    "ESTRUTURA": ["ESTRUTURA", "ID MÓDULO"],
+    "MODULO_DESC": ["MODULO_DESC", "REFERÊNCIA"],
+    "COD_CORTE": ["COD_CORTE", "CÓDIGO MATERIAL"],
+    "COR_1C": ["COR_1C"],
+    "COR_2C": ["COR_2C"],
+    "COR_1P": ["COR_1P"],
+    "COR_2P": ["COR_2P"],
+    "OBS": ["OBS"],
+    "COLUMN_ITEM_DEPTH": ["COLUMN_ITEM_DEPTH"],
+    "NOME_MATERIAL": ["NOME DO MATERIAL", "NOME_MATERIAL"],
+    "REFERENCIA_MATERIAL": ["REFERÊNCIA DO MATERIAL", "REFERENCIA_MATERIAL"],
+  };
+
+  const colIdx = (name: string): number => {
+    // Direct match first
+    const directIdx = header.indexOf(name);
+    if (directIdx >= 0) return directIdx;
+    // Try aliases
+    const aliases = COLUMN_ALIASES[name];
+    if (aliases) {
+      for (const alias of aliases) {
+        const idx = header.indexOf(alias);
+        if (idx >= 0) return idx;
+      }
+    }
+    return -1;
   };
 
   const hasCNC = colIdx("CNC") >= 0;
@@ -161,9 +216,14 @@ export function parsePromobCSV(csvText: string): PromobPiece[] {
 
     // Determine edge bands from contour segments
     let bordaSup = false, bordaInf = false, bordaEsq = false, bordaDir = false;
-    const comp = parseFloat(firstRow[colIdx("COMPRIMENTO")]) || 0;
-    const prof = parseFloat(firstRow[colIdx("PROFUNDIDADE")]) || 0;
+    const comp = parseNum(firstRow[colIdx("COMPRIMENTO")]);
+    const prof = parseNum(firstRow[colIdx("PROFUNDIDADE")]);
     const tol = 2.0;
+
+    // Parse espessura from ESP_CHAPA or COLUMN_ITEM_DEPTH
+    const espIdx = colIdx("ESP_CHAPA");
+    const depthIdx = colIdx("COLUMN_ITEM_DEPTH");
+    const espChapa = espIdx >= 0 ? parseNum(firstRow[espIdx]) : (depthIdx >= 0 ? parseNum(firstRow[depthIdx]) : 15);
 
     // Check from border rows
     for (const row of rows) {
@@ -197,6 +257,9 @@ export function parsePromobCSV(csvText: string): PromobPiece[] {
       else if (Math.abs(midX - comp) < tol && Math.abs(curr.x - next.x) < tol) bordaDir = true;
     }
 
+    // Try to get a better material name: NOME_MATERIAL or CHAPA
+    const materialName = firstRow[colIdx("NOME_MATERIAL")] || firstRow[colIdx("CHAPA")] || "";
+
     pieces.push({
       CLIENTE: firstRow[colIdx("CLIENTE")] || "",
       COD_CLIENTE: firstRow[colIdx("COD_CLIENTE")] || null,
@@ -206,7 +269,7 @@ export function parsePromobCSV(csvText: string): PromobPiece[] {
       DESCRICAO: firstRow[colIdx("DESCRICAO")] || "",
       COMPRIMENTO: comp,
       PROFUNDIDADE: prof,
-      CHAPA: firstRow[colIdx("CHAPA")] || "",
+      CHAPA: materialName,
       COR_1C: firstRow[colIdx("COR_1C")] || null,
       COR_2C: firstRow[colIdx("COR_2C")] || null,
       COR_1P: firstRow[colIdx("COR_1P")] || null,
@@ -217,13 +280,13 @@ export function parsePromobCSV(csvText: string): PromobPiece[] {
       ESTRUTURA: parseInt(firstRow[colIdx("ESTRUTURA")]) || 0,
       MODULO_DESC: firstRow[colIdx("MODULO_DESC")] || "",
       COD_CORTE: parseInt(firstRow[colIdx("COD_CORTE")]) || 0,
-      COMP_CHAPA: parseFloat(firstRow[colIdx("COMP_CHAPA")]) || 2750,
-      PROF_CHAPA: parseFloat(firstRow[colIdx("PROF_CHAPA")]) || 1840,
-      ESP_CHAPA: parseFloat(firstRow[colIdx("ESP_CHAPA")]) || 15,
+      COMP_CHAPA: parseNum(firstRow[colIdx("COMP_CHAPA")]) || 2750,
+      PROF_CHAPA: parseNum(firstRow[colIdx("PROF_CHAPA")]) || 1840,
+      ESP_CHAPA: espChapa || 15,
       VEIO: parseInt(firstRow[colIdx("VEIO")]) || 0,
       CNC_A: firstRow[colIdx("CNC_A")] || "",
       CNC_B: firstRow[colIdx("CNC_B")] || "",
-      CNC_FUROS_TOTAL: firstRow[colIdx("CNC_FUROS_TOTAL")] || "NAO",
+      CNC_FUROS_TOTAL: firstRow[colIdx("CNC_FUROS_TOTAL")] || (furos.length > 0 ? "SIM" : "NAO"),
       OBS: firstRow[colIdx("OBS")] || null,
       ALINHAMENTO: alinhamento,
       FRESAS: fresas,

@@ -258,14 +258,39 @@ function generateToolpath(layout: NestingSheet, limits: SafetyLimits): { segment
 }
 
 // ============ 3D Camera Controls Component ============
-function CameraControls({ sheetW, sheetH }: { sheetW: number; sheetH: number }) {
-  const { camera } = useThree();
+function CameraControls({ sheetW, sheetH, cameraAction }: { sheetW: number; sheetH: number; cameraAction: string }) {
+  const { camera, gl } = useThree();
   const controlsRef = useRef<any>(null);
 
   useEffect(() => {
-    // Set initial camera position
     camera.position.set(sheetW / 2 + 15, 12, sheetH / 2 + 15);
   }, [camera, sheetW, sheetH]);
+
+  useEffect(() => {
+    if (!cameraAction || !controlsRef.current) return;
+    const actionName = cameraAction.split("_")[0];
+    const controls = controlsRef.current;
+    const target = new THREE.Vector3(sheetW / 2, 0, sheetH / 2);
+    
+    if (actionName === "zoomIn") {
+      camera.position.lerp(target, 0.2);
+      camera.updateProjectionMatrix();
+    } else if (actionName === "zoomOut") {
+      const dir = camera.position.clone().sub(target).normalize();
+      camera.position.add(dir.multiplyScalar(3));
+      camera.updateProjectionMatrix();
+    } else if (actionName === "fit") {
+      camera.position.set(sheetW / 2, Math.max(sheetW, sheetH) * 0.8, sheetH / 2 + 0.1);
+      camera.lookAt(target);
+      camera.updateProjectionMatrix();
+      if (controls.target) controls.target.copy(target);
+    } else if (actionName === "home") {
+      camera.position.set(sheetW / 2 + 15, 12, sheetH / 2 + 15);
+      camera.updateProjectionMatrix();
+      if (controls.target) controls.target.copy(target);
+    }
+    controls.update?.();
+  }, [cameraAction, camera, sheetW, sheetH]);
 
   return (
     <OrbitControls
@@ -283,7 +308,7 @@ function CameraControls({ sheetW, sheetH }: { sheetW: number; sheetH: number }) 
 
 // ============ 3D Simulation Scene ============
 
-function SimulationScene3D({ segments, progress, layout }: { segments: ToolpathSegment[]; progress: number; layout: NestingSheet }) {
+function SimulationScene3D({ segments, progress, layout, cameraAction }: { segments: ToolpathSegment[]; progress: number; layout: NestingSheet; cameraAction: string }) {
   const toolRef = useRef<THREE.Group>(null);
   const scale = 0.01;
   const totalSegments = segments.length;
@@ -366,7 +391,7 @@ function SimulationScene3D({ segments, progress, layout }: { segments: ToolpathS
   return (
     <>
       <PerspectiveCamera makeDefault position={[sheetW / 2 + 15, 12, sheetH / 2 + 15]} fov={45} />
-      <CameraControls sheetW={sheetW} sheetH={sheetH} />
+      <CameraControls sheetW={sheetW} sheetH={sheetH} cameraAction={cameraAction} />
 
       <ambientLight intensity={0.6} />
       <directionalLight position={[15, 25, 15]} intensity={0.8} castShadow />
@@ -682,7 +707,14 @@ export function SimulacaoCNCDialog({ open, onOpenChange, layouts, machineConfig 
   const [viewMode, setViewMode] = useState<"3d" | "2d">("3d");
   const [showAlerts, setShowAlerts] = useState(false);
   const [selectedSheetIdx, setSelectedSheetIdx] = useState(0);
+  const [cameraAction, setCameraAction] = useState("");
+  const cameraActionCounter = useRef(0);
   const animRef = useRef<number>(0);
+
+  const triggerCameraAction = (action: string) => {
+    cameraActionCounter.current++;
+    setCameraAction(`${action}_${cameraActionCounter.current}`);
+  };
 
   const layout = layouts[selectedSheetIdx] || null;
 
@@ -787,7 +819,7 @@ export function SimulacaoCNCDialog({ open, onOpenChange, layouts, machineConfig 
             {layout && segments.length > 0 ? (
               viewMode === "3d" ? (
                 <Canvas shadows gl={{ alpha: false }} style={{ background: "#f5f5f5" }}>
-                  <SimulationScene3D segments={segments} progress={progress} layout={layout} />
+                  <SimulationScene3D segments={segments} progress={progress} layout={layout} cameraAction={cameraAction} />
                 </Canvas>
               ) : (
                 <SimulationView2D segments={segments} progress={progress} layout={layout} />
@@ -852,7 +884,7 @@ export function SimulacaoCNCDialog({ open, onOpenChange, layouts, machineConfig 
 
           {/* Right toolbar (similar to cutting view) */}
           <div className="w-9 border-l border-border bg-card flex flex-col items-center py-2 gap-0.5 mr-4">
-            <SimToolButton icon={Home} label="Resetar Vista" onClick={reset} />
+            <SimToolButton icon={Home} label="Resetar Vista" onClick={() => { reset(); triggerCameraAction("home"); }} />
             <Separator className="my-1 w-5" />
             {viewMode === "3d" && (
               <>
@@ -864,9 +896,9 @@ export function SimulacaoCNCDialog({ open, onOpenChange, layouts, machineConfig 
               <SimToolButton icon={Move} label="Pan (botão central)" active />
             )}
             <Separator className="my-1 w-5" />
-            <SimToolButton icon={ZoomIn} label="Zoom +" onClick={() => {}} />
-            <SimToolButton icon={ZoomOut} label="Zoom -" onClick={() => {}} />
-            <SimToolButton icon={Maximize2} label="Zoom Fit" onClick={() => {}} />
+            <SimToolButton icon={ZoomIn} label="Zoom +" onClick={() => triggerCameraAction("zoomIn")} />
+            <SimToolButton icon={ZoomOut} label="Zoom -" onClick={() => triggerCameraAction("zoomOut")} />
+            <SimToolButton icon={Maximize2} label="Zoom Fit" onClick={() => triggerCameraAction("fit")} />
             <Separator className="my-1 w-5" />
             {alerts.length > 0 ? (
               <SimToolButton icon={AlertTriangle} label={`${alerts.length} avisos`} onClick={() => setShowAlerts(!showAlerts)} active={showAlerts} />
