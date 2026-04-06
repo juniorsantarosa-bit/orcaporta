@@ -77,8 +77,9 @@ function clampToLimits(x: number, y: number, z: number, layout: NestingSheet, li
 
 /**
  * Generate optimized toolpath with redundant safety: clamp + validate + alert
+ * useCommonCut: when true, shared edges are cut once between adjacent pieces
  */
-function generateToolpath(layout: NestingSheet, limits: SafetyLimits): { segments: ToolpathSegment[]; alerts: SafetyAlert[] } {
+function generateToolpath(layout: NestingSheet, limits: SafetyLimits, useCommonCut: boolean = true): { segments: ToolpathSegment[]; alerts: SafetyAlert[]; totalDistance: number; cutDistance: number; rapidDistance: number } {
   const segments: ToolpathSegment[] = [];
   const alerts: SafetyAlert[] = [];
   const zSafe = 50;
@@ -89,6 +90,14 @@ function generateToolpath(layout: NestingSheet, limits: SafetyLimits): { segment
 
   const minAllowedZ = -(layout.espessura + Math.abs(MAX_PENETRATION));
   const zCut = Math.max(-(layout.espessura + 0.1), minAllowedZ);
+
+  let totalDistance = 0;
+  let cutDistance = 0;
+  let rapidDistance = 0;
+
+  function dist3d(a: THREE.Vector3, b: THREE.Vector3): number {
+    return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2 + (a.z - b.z) ** 2);
+  }
 
   function validateAndClamp(rawX: number, rawY: number, rawZ: number, segIdx: number, operation: string): { x: number; y: number; z: number; safe: boolean } {
     const clamped = clampToLimits(rawX, rawY, rawZ, layout, limits);
@@ -106,6 +115,14 @@ function generateToolpath(layout: NestingSheet, limits: SafetyLimits): { segment
       });
     }
     return { x: clamped.x, y: clamped.y, z: clamped.z, safe: true };
+  }
+
+  function addSegment(type: ToolpathSegment["type"], from: THREE.Vector3, to: THREE.Vector3, toolDiam: number, toolName?: string, toolPosition?: number) {
+    const d = dist3d(from, to);
+    totalDistance += d;
+    if (type === "rapid" || type === "retract") rapidDistance += d;
+    else if (type === "cut" || type === "drill") cutDistance += d;
+    segments.push({ type, from: from.clone(), to: to.clone(), toolDiam, safe: true, toolName, toolPosition });
   }
 
   // Collect holes and group by diameter
@@ -128,16 +145,12 @@ function generateToolpath(layout: NestingSheet, limits: SafetyLimits): { segment
   let currentToolName = "";
   let currentToolPos = 0;
 
-  // Helper: add toolchange segment
   function emitToolChange(toolSlot: ToolSlot) {
     if (currentToolDiam === toolSlot.diametro && currentToolName === toolSlot.nome) return;
-    // Retract to safe Z first
-    segments.push({ type: "retract", from: pos.clone(), to: new THREE.Vector3(pos.x, pos.y, zSafe), toolDiam: currentToolDiam || toolSlot.diametro, safe: true });
+    addSegment("retract", pos, new THREE.Vector3(pos.x, pos.y, zSafe), currentToolDiam || toolSlot.diametro);
     pos = new THREE.Vector3(pos.x, pos.y, zSafe);
-    // Rapid to tool change position (origin)
-    segments.push({ type: "rapid", from: pos.clone(), to: new THREE.Vector3(0, 0, zSafe), toolDiam: toolSlot.diametro, safe: true });
+    addSegment("rapid", pos, new THREE.Vector3(0, 0, zSafe), toolSlot.diametro);
     pos = new THREE.Vector3(0, 0, zSafe);
-    // Toolchange segment (visual pause)
     segments.push({
       type: "toolchange", from: pos.clone(), to: pos.clone(),
       toolDiam: toolSlot.diametro, safe: true,
@@ -148,7 +161,7 @@ function generateToolpath(layout: NestingSheet, limits: SafetyLimits): { segment
     currentToolPos = toolSlot.position;
   }
 
-  // Helper: nearest-neighbor sort
+  // Nearest-neighbor sort for holes
   function sortByNearest(ops: HoleOp[], startPos: { x: number; y: number }): HoleOp[] {
     const sorted: HoleOp[] = [];
     const remaining = [...ops];
@@ -166,11 +179,10 @@ function generateToolpath(layout: NestingSheet, limits: SafetyLimits): { segment
     return sorted;
   }
 
-  // Process holes grouped by diameter — each group gets a tool change
+  // Process holes grouped by diameter
   const diametersSorted = Array.from(holesByDiam.keys()).sort((a, b) => a - b);
   for (const diam of diametersSorted) {
     const holes = holesByDiam.get(diam)!;
-    // Find matching tool in magazine
     const tool = findToolByDiameter(magazine, diam, "broca") || findToolByDiameter(magazine, diam);
     const toolSlot: ToolSlot = tool || {
       position: 0, nome: `Broca ${diam}mm`, tipo: "broca",
@@ -185,14 +197,14 @@ function generateToolpath(layout: NestingSheet, limits: SafetyLimits): { segment
       const hz = Math.max(rawHz, minAllowedZ);
 
       const above = validateAndClamp(px, py, zRapid, segments.length, `Posicionamento furo Ø${diam}mm`);
-      segments.push({ type: "rapid", from: pos.clone(), to: new THREE.Vector3(above.x, above.y, above.z), toolDiam: diam, safe: true, toolName: toolSlot.nome, toolPosition: toolSlot.position });
+      addSegment("rapid", pos, new THREE.Vector3(above.x, above.y, above.z), diam, toolSlot.nome, toolSlot.position);
       pos = new THREE.Vector3(above.x, above.y, above.z);
 
       const drill = validateAndClamp(px, py, hz, segments.length, `Furação Ø${diam}mm prof.${Math.abs(hz).toFixed(1)}mm`);
-      segments.push({ type: "drill", from: pos.clone(), to: new THREE.Vector3(drill.x, drill.y, drill.z), toolDiam: diam, safe: true, toolName: toolSlot.nome, toolPosition: toolSlot.position });
+      addSegment("drill", pos, new THREE.Vector3(drill.x, drill.y, drill.z), diam, toolSlot.nome, toolSlot.position);
       pos = new THREE.Vector3(drill.x, drill.y, drill.z);
 
-      segments.push({ type: "retract", from: pos.clone(), to: new THREE.Vector3(drill.x, drill.y, zSafe), toolDiam: diam, safe: true, toolName: toolSlot.nome, toolPosition: toolSlot.position });
+      addSegment("retract", pos, new THREE.Vector3(drill.x, drill.y, zSafe), diam, toolSlot.nome, toolSlot.position);
       pos = new THREE.Vector3(drill.x, drill.y, zSafe);
     }
   }
@@ -201,99 +213,152 @@ function generateToolpath(layout: NestingSheet, limits: SafetyLimits): { segment
   emitToolChange(mainFresa);
 
   // === COMMON CUT DETECTION ===
-  const gap = 6; // mm between pieces
-  const { sharedEdges, skippableEdges } = detectSharedEdges(layout.pieces, gap, mainToolDiam);
-
-  // Cut contours - sort pieces by nearest-neighbor
-  const remainPieces = layout.pieces.map((p, i) => ({ piece: p, origIdx: i }));
-  const sortedPieces: { piece: PlacedNestingPiece; origIdx: number }[] = [];
-  let currentPos = { x: pos.x, y: pos.y };
-  while (remainPieces.length > 0) {
-    let bestIdx = 0, bestDist = Infinity;
-    for (let i = 0; i < remainPieces.length; i++) {
-      const d = Math.hypot(remainPieces[i].piece.x - currentPos.x, remainPieces[i].piece.y - currentPos.y);
-      if (d < bestDist) { bestDist = d; bestIdx = i; }
-    }
-    const picked = remainPieces.splice(bestIdx, 1)[0];
-    sortedPieces.push(picked);
-    currentPos = { x: picked.piece.x + picked.piece.width, y: picked.piece.y + picked.piece.height };
-  }
+  const gap = 6;
+  const { sharedEdges, skippableEdges } = useCommonCut
+    ? detectSharedEdges(layout.pieces, gap, mainToolDiam)
+    : { sharedEdges: [] as any[], skippableEdges: new Set<string>() };
 
   const offset = mainToolDiam / 2;
-  sortedPieces.forEach(({ piece, origIdx }) => {
-    const skipRight = skippableEdges.has(`${origIdx}-right`);
-    const skipLeft = skippableEdges.has(`${origIdx}-left`);
-    const skipTop = skippableEdges.has(`${origIdx}-top`);
-    const skipBottom = skippableEdges.has(`${origIdx}-bottom`);
 
-    const cx1 = Math.max(piece.x - offset, 0);
-    const cy1 = Math.max(piece.y - offset, 0);
-    const cx2 = Math.min(piece.x + piece.width + offset, layout.sheetWidth);
-    const cy2 = Math.min(piece.y + piece.height + offset, layout.sheetHeight);
+  // Build a unified list of "cut operations" with a center position for nearest-neighbor sorting
+  interface CutOp {
+    type: "contour" | "commoncut";
+    centerX: number;
+    centerY: number;
+    // For contour ops
+    piece?: PlacedNestingPiece;
+    origIdx?: number;
+    // For common cut ops
+    edge?: typeof sharedEdges[0];
+  }
 
-    // Build edges: bottom, right, top, left (CW)
-    const edges = [
-      { name: "inferior",  skip: skipBottom, from: { x: cx1, y: cy1 }, to: { x: cx2, y: cy1 } },
-      { name: "direita",   skip: skipRight,  from: { x: cx2, y: cy1 }, to: { x: cx2, y: cy2 } },
-      { name: "superior",  skip: skipTop,    from: { x: cx2, y: cy2 }, to: { x: cx1, y: cy2 } },
-      { name: "esquerda",  skip: skipLeft,   from: { x: cx1, y: cy2 }, to: { x: cx1, y: cy1 } },
-    ];
+  const cutOps: CutOp[] = [];
 
-    const activeEdges = edges.filter(e => !e.skip);
-    if (activeEdges.length === 0) return; // All edges handled by common cuts
-
-    // Cut each active edge independently
-    for (const edge of activeEdges) {
-      // Rapid to start
-      const start = validateAndClamp(edge.from.x, edge.from.y, zSafe, segments.length, `Posicionamento borda ${edge.name} peça ${piece.label}`);
-      segments.push({ type: "rapid", from: pos.clone(), to: new THREE.Vector3(start.x, start.y, start.z), toolDiam: mainToolDiam, safe: true, toolName: mainFresa.nome, toolPosition: mainFresa.position });
-      pos = new THREE.Vector3(start.x, start.y, start.z);
-
-      // Plunge
-      const plunge = validateAndClamp(edge.from.x, edge.from.y, zCut, segments.length, `Entrada corte borda ${edge.name} peça ${piece.label}`);
-      segments.push({ type: "cut", from: pos.clone(), to: new THREE.Vector3(plunge.x, plunge.y, plunge.z), toolDiam: mainToolDiam, safe: true, toolName: mainFresa.nome, toolPosition: mainFresa.position });
-      pos = new THREE.Vector3(plunge.x, plunge.y, plunge.z);
-
-      // Cut edge
-      const end = validateAndClamp(edge.to.x, edge.to.y, zCut, segments.length, `Corte borda ${edge.name} peça ${piece.label}`);
-      segments.push({ type: "cut", from: pos.clone(), to: new THREE.Vector3(end.x, end.y, end.z), toolDiam: mainToolDiam, safe: true, toolName: mainFresa.nome, toolPosition: mainFresa.position });
-      pos = new THREE.Vector3(end.x, end.y, end.z);
-
-      // Retract
-      segments.push({ type: "retract", from: pos.clone(), to: new THREE.Vector3(pos.x, pos.y, zSafe), toolDiam: mainToolDiam, safe: true, toolName: mainFresa.nome, toolPosition: mainFresa.position });
-      pos = new THREE.Vector3(pos.x, pos.y, zSafe);
-    }
+  // Add contour ops
+  layout.pieces.forEach((piece, origIdx) => {
+    cutOps.push({
+      type: "contour",
+      centerX: piece.x + piece.width / 2,
+      centerY: piece.y + piece.height / 2,
+      piece,
+      origIdx,
+    });
   });
 
-  // === COMMON CUT PASSES ===
-  if (sharedEdges.length > 0) {
-    for (const edge of sharedEdges) {
-      const sx = edge.cutStart.x;
-      const sy = edge.cutStart.y;
-      const ex = edge.cutEnd.x;
-      const ey = edge.cutEnd.y;
+  // Add common cut ops
+  for (const edge of sharedEdges) {
+    cutOps.push({
+      type: "commoncut",
+      centerX: (edge.cutStart.x + edge.cutEnd.x) / 2,
+      centerY: (edge.cutStart.y + edge.cutEnd.y) / 2,
+      edge,
+    });
+  }
+
+  // Sort ALL cut operations by nearest-neighbor from current position
+  const sortedOps: CutOp[] = [];
+  const remainOps = [...cutOps];
+  let curPos = { x: pos.x, y: pos.y };
+  while (remainOps.length > 0) {
+    let bestIdx = 0, bestDist = Infinity;
+    for (let i = 0; i < remainOps.length; i++) {
+      const d = Math.hypot(remainOps[i].centerX - curPos.x, remainOps[i].centerY - curPos.y);
+      if (d < bestDist) { bestDist = d; bestIdx = i; }
+    }
+    const picked = remainOps.splice(bestIdx, 1)[0];
+    sortedOps.push(picked);
+    if (picked.type === "contour" && picked.piece) {
+      curPos = { x: picked.piece.x + picked.piece.width, y: picked.piece.y + picked.piece.height };
+    } else if (picked.edge) {
+      curPos = { x: picked.edge.cutEnd.x, y: picked.edge.cutEnd.y };
+    }
+  }
+
+  // Execute sorted operations
+  for (const op of sortedOps) {
+    if (op.type === "contour" && op.piece && op.origIdx !== undefined) {
+      const piece = op.piece;
+      const origIdx = op.origIdx;
+
+      const skipRight = skippableEdges.has(`${origIdx}-right`);
+      const skipLeft = skippableEdges.has(`${origIdx}-left`);
+      const skipTop = skippableEdges.has(`${origIdx}-top`);
+      const skipBottom = skippableEdges.has(`${origIdx}-bottom`);
+
+      const cx1 = Math.max(piece.x - offset, 0);
+      const cy1 = Math.max(piece.y - offset, 0);
+      const cx2 = Math.min(piece.x + piece.width + offset, layout.sheetWidth);
+      const cy2 = Math.min(piece.y + piece.height + offset, layout.sheetHeight);
+
+      const edges = [
+        { name: "inferior",  skip: skipBottom, from: { x: cx1, y: cy1 }, to: { x: cx2, y: cy1 } },
+        { name: "direita",   skip: skipRight,  from: { x: cx2, y: cy1 }, to: { x: cx2, y: cy2 } },
+        { name: "superior",  skip: skipTop,    from: { x: cx2, y: cy2 }, to: { x: cx1, y: cy2 } },
+        { name: "esquerda",  skip: skipLeft,   from: { x: cx1, y: cy2 }, to: { x: cx1, y: cy1 } },
+      ];
+
+      const activeEdges = edges.filter(e => !e.skip);
+      if (activeEdges.length === 0) continue;
+
+      if (activeEdges.length === 4) {
+        // Full contour — continuous loop (no retract between edges)
+        const first = activeEdges[0];
+        const start = validateAndClamp(first.from.x, first.from.y, zSafe, segments.length, `Pos. peça ${piece.label}`);
+        addSegment("rapid", pos, new THREE.Vector3(start.x, start.y, start.z), mainToolDiam, mainFresa.nome, mainFresa.position);
+        pos = new THREE.Vector3(start.x, start.y, start.z);
+
+        const plunge = validateAndClamp(first.from.x, first.from.y, zCut, segments.length, `Entrada peça ${piece.label}`);
+        addSegment("cut", pos, new THREE.Vector3(plunge.x, plunge.y, plunge.z), mainToolDiam, mainFresa.nome, mainFresa.position);
+        pos = new THREE.Vector3(plunge.x, plunge.y, plunge.z);
+
+        for (const edge of activeEdges) {
+          const end = validateAndClamp(edge.to.x, edge.to.y, zCut, segments.length, `Corte ${edge.name} peça ${piece.label}`);
+          addSegment("cut", pos, new THREE.Vector3(end.x, end.y, end.z), mainToolDiam, mainFresa.nome, mainFresa.position);
+          pos = new THREE.Vector3(end.x, end.y, end.z);
+        }
+
+        addSegment("retract", pos, new THREE.Vector3(pos.x, pos.y, zSafe), mainToolDiam, mainFresa.nome, mainFresa.position);
+        pos = new THREE.Vector3(pos.x, pos.y, zSafe);
+      } else {
+        // Partial contour — cut each active edge independently
+        for (const edge of activeEdges) {
+          const start = validateAndClamp(edge.from.x, edge.from.y, zSafe, segments.length, `Pos. borda ${edge.name} peça ${piece.label}`);
+          addSegment("rapid", pos, new THREE.Vector3(start.x, start.y, start.z), mainToolDiam, mainFresa.nome, mainFresa.position);
+          pos = new THREE.Vector3(start.x, start.y, start.z);
+
+          const plunge = validateAndClamp(edge.from.x, edge.from.y, zCut, segments.length, `Entrada ${edge.name} peça ${piece.label}`);
+          addSegment("cut", pos, new THREE.Vector3(plunge.x, plunge.y, plunge.z), mainToolDiam, mainFresa.nome, mainFresa.position);
+          pos = new THREE.Vector3(plunge.x, plunge.y, plunge.z);
+
+          const end = validateAndClamp(edge.to.x, edge.to.y, zCut, segments.length, `Corte ${edge.name} peça ${piece.label}`);
+          addSegment("cut", pos, new THREE.Vector3(end.x, end.y, end.z), mainToolDiam, mainFresa.nome, mainFresa.position);
+          pos = new THREE.Vector3(end.x, end.y, end.z);
+
+          addSegment("retract", pos, new THREE.Vector3(pos.x, pos.y, zSafe), mainToolDiam, mainFresa.nome, mainFresa.position);
+          pos = new THREE.Vector3(pos.x, pos.y, zSafe);
+        }
+      }
+
+    } else if (op.type === "commoncut" && op.edge) {
+      const edge = op.edge;
       const pA = layout.pieces[edge.pieceAIndex];
       const pB = layout.pieces[edge.pieceBIndex];
       const labelA = pA.label || String(edge.pieceAIndex + 1);
       const labelB = pB.label || String(edge.pieceBIndex + 1);
 
-      // Rapid to start
-      const start = validateAndClamp(sx, sy, zSafe, segments.length, `CommonCut ${labelA}↔${labelB} posicionamento`);
-      segments.push({ type: "rapid", from: pos.clone(), to: new THREE.Vector3(start.x, start.y, start.z), toolDiam: mainToolDiam, safe: true, toolName: mainFresa.nome, toolPosition: mainFresa.position });
+      const start = validateAndClamp(edge.cutStart.x, edge.cutStart.y, zSafe, segments.length, `CommonCut ${labelA}↔${labelB} pos.`);
+      addSegment("rapid", pos, new THREE.Vector3(start.x, start.y, start.z), mainToolDiam, mainFresa.nome, mainFresa.position);
       pos = new THREE.Vector3(start.x, start.y, start.z);
 
-      // Plunge
-      const plunge = validateAndClamp(sx, sy, zCut, segments.length, `CommonCut ${labelA}↔${labelB} entrada`);
-      segments.push({ type: "cut", from: pos.clone(), to: new THREE.Vector3(plunge.x, plunge.y, plunge.z), toolDiam: mainToolDiam, safe: true, toolName: mainFresa.nome, toolPosition: mainFresa.position });
+      const plunge = validateAndClamp(edge.cutStart.x, edge.cutStart.y, zCut, segments.length, `CommonCut ${labelA}↔${labelB} entrada`);
+      addSegment("cut", pos, new THREE.Vector3(plunge.x, plunge.y, plunge.z), mainToolDiam, mainFresa.nome, mainFresa.position);
       pos = new THREE.Vector3(plunge.x, plunge.y, plunge.z);
 
-      // Common cut line
-      const end = validateAndClamp(ex, ey, zCut, segments.length, `CommonCut ${labelA}↔${labelB} corte`);
-      segments.push({ type: "cut", from: pos.clone(), to: new THREE.Vector3(end.x, end.y, end.z), toolDiam: mainToolDiam, safe: true, toolName: mainFresa.nome, toolPosition: mainFresa.position });
+      const end = validateAndClamp(edge.cutEnd.x, edge.cutEnd.y, zCut, segments.length, `CommonCut ${labelA}↔${labelB} corte`);
+      addSegment("cut", pos, new THREE.Vector3(end.x, end.y, end.z), mainToolDiam, mainFresa.nome, mainFresa.position);
       pos = new THREE.Vector3(end.x, end.y, end.z);
 
-      // Retract
-      segments.push({ type: "retract", from: pos.clone(), to: new THREE.Vector3(pos.x, pos.y, zSafe), toolDiam: mainToolDiam, safe: true, toolName: mainFresa.nome, toolPosition: mainFresa.position });
+      addSegment("retract", pos, new THREE.Vector3(pos.x, pos.y, zSafe), mainToolDiam, mainFresa.nome, mainFresa.position);
       pos = new THREE.Vector3(pos.x, pos.y, zSafe);
     }
   }
@@ -308,7 +373,7 @@ function generateToolpath(layout: NestingSheet, limits: SafetyLimits): { segment
     if (seg.to.y > layout.sheetHeight) seg.to.y = layout.sheetHeight;
   });
 
-  return { segments, alerts };
+  return { segments, alerts, totalDistance, cutDistance, rapidDistance };
 }
 
 // ============ 3D Camera Controls Component ============
