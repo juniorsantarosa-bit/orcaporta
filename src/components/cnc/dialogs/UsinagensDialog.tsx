@@ -164,7 +164,18 @@ function PieceDetail({ piece }: { piece: PlacedNestingPiece }) {
                     : `${u.comprimento || u.largura} × ${u.largura}mm`
                   }
                 </span>
-                <span className="font-mono text-muted-foreground">Prof: {u.profundidade}mm</span>
+                {(() => {
+                  const maxProf = piece.espessura + 0.1;
+                  const rawProf = u.profundidade;
+                  const clamped = Math.min(rawProf, maxProf);
+                  const exceeded = rawProf > maxProf;
+                  return (
+                    <span className={`font-mono ${exceeded ? "text-destructive font-semibold" : "text-muted-foreground"}`}>
+                      Prof: {clamped.toFixed(1)}mm
+                      {exceeded && ` (orig: ${rawProf}mm ⚠)`}
+                    </span>
+                  );
+                })()}
                 <span className="text-muted-foreground">Face: {u.face}</span>
                 {u.passante && <Badge variant="destructive" className="text-[9px]">Passante</Badge>}
               </div>

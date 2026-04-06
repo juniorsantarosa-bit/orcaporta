@@ -142,15 +142,20 @@ export function generateGCode(
       // Handle rotation: swap X/Y coordinates for rotated pieces
       const ux = rotated ? -(pieceX + (u.y || 0)) : -(pieceX + (u.x || 0));
       const uy = rotated ? pieceY + (u.x || 0) : pieceY + (u.y || 0);
-      const depthZ = pp.passeFinal;
+      // Max allowed depth: sheet thickness + 0.1mm (mesa de sacrifício limit)
+      const maxDepth = -(sheet.espessura + 0.1);
+
+      // Clamp depth: never exceed maxDepth (more negative = deeper)
+      const clampDepth = (raw: number) => Math.max(raw, maxDepth);
 
       if (u.tipo === "recorte_circular") {
         const r = (u.largura || 0) / 2;
-        lines.push(`( Recorte Circular Ø${u.largura}mm - Peça ${label} )`);
+        const circDepth = u.passante ? maxDepth : clampDepth(-(u.profundidade || 0));
+        lines.push(`( Recorte Circular Ø${u.largura}mm prof.${Math.abs(circDepth).toFixed(1)}mm - Peça ${label} )`);
         
         // Move to entry point (edge of circle)
         lines.push(`G0 X${f4(ux - r)} Y${f4(uy)} Z${f4(zSeguroVal)}`);
-        lines.push(`G1 Z${f4(depthZ)} F${f4(feedEntry)}`);
+        lines.push(`G1 Z${f4(circDepth)} F${f4(feedEntry)}`);
         // Circular interpolation G2 (clockwise)
         lines.push(`G2 X${f4(ux - r)} Y${f4(uy)} I${f4(r)} J0 F${f4(feedCut)}`);
         lines.push(`G0 Z${f4(zSeguroVal)}`);
@@ -159,9 +164,9 @@ export function generateGCode(
         // Rectangular cutout — trace full perimeter
         const w = u.comprimento || u.largura;
         const h = u.largura;
-        const grooveDepth = Math.min(-(u.profundidade || 0), depthZ);
+        const grooveDepth = u.passante ? maxDepth : clampDepth(-(u.profundidade || 0));
         
-        lines.push(`( Recorte Retangular ${w}mm×${h}mm prof.${u.profundidade}mm - Peça ${label} )`);
+        lines.push(`( Recorte Retangular ${w}mm×${h}mm prof.${Math.abs(grooveDepth).toFixed(1)}mm - Peça ${label} )`);
         
         // Start at corner, plunge, trace 4 sides
         const x1 = ux, y1 = uy;
@@ -179,10 +184,10 @@ export function generateGCode(
         // Canal/groove — linear cut
         const gLen = u.comprimento || u.largura;
         const endX = ux - gLen; // Mirror
-        const grooveDepth = Math.min(-(u.profundidade || 0), depthZ);
+        const grooveDepth = u.passante ? maxDepth : clampDepth(-(u.profundidade || 0));
         
         const tipoLabel = u.tipo === "canal" ? "Canal" : u.tipo === "rebaixo" ? "Rebaixo" : "Usinagem";
-        lines.push(`( ${tipoLabel} ${u.largura}mm×${gLen}mm prof.${u.profundidade}mm - Peça ${label} )`);
+        lines.push(`( ${tipoLabel} ${u.largura}mm×${gLen}mm prof.${Math.abs(grooveDepth).toFixed(1)}mm - Peça ${label} )`);
         
         lines.push(`G0 X${f4(ux)} Y${f4(uy)} Z${f4(zSeguroVal)}`);
         lines.push(`G1 Z${f4(grooveDepth)} F${f4(feedEntry)}`);
