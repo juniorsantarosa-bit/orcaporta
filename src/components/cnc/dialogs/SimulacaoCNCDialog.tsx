@@ -1,6 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { NestingSheet, PlacedNestingPiece, PromobHole } from "@/types/promob";
+import { DEFAULT_TOOL_MAGAZINE, findToolByDiameter, getMainFresa, ToolSlot } from "@/types/toolMagazine";
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import {
   Play, Pause, RotateCcw, AlertTriangle, CheckCircle2,
@@ -48,12 +49,14 @@ interface SafetyAlert {
 }
 
 interface ToolpathSegment {
-  type: "rapid" | "cut" | "drill" | "retract";
+  type: "rapid" | "cut" | "drill" | "retract" | "toolchange";
   from: THREE.Vector3;
   to: THREE.Vector3;
   toolDiam: number;
   safe: boolean;
   alertIdx?: number;
+  toolName?: string;
+  toolPosition?: number;
 }
 
 // Maximum penetration depth below sheet surface
@@ -79,95 +82,129 @@ function generateToolpath(layout: NestingSheet, limits: SafetyLimits): { segment
   const alerts: SafetyAlert[] = [];
   const zSafe = 50;
   const zRapid = 16;
-  const zCutRaw = -(layout.espessura + 0.1); // exactly -0.1mm past sheet bottom
-  const toolDiam = 6;
+  const magazine = DEFAULT_TOOL_MAGAZINE;
+  const mainFresa = getMainFresa(magazine);
+  const mainToolDiam = mainFresa.diametro;
 
-  // SAFETY REDUNDANCY 1: Clamp zCut to never exceed safety limits
   const minAllowedZ = -(layout.espessura + Math.abs(MAX_PENETRATION));
-  const zCut = Math.max(zCutRaw, minAllowedZ);
+  const zCut = Math.max(-(layout.espessura + 0.1), minAllowedZ);
 
   function validateAndClamp(rawX: number, rawY: number, rawZ: number, segIdx: number, operation: string): { x: number; y: number; z: number; safe: boolean } {
-    // SAFETY REDUNDANCY 2: Auto-clamp all coordinates
     const clamped = clampToLimits(rawX, rawY, rawZ, layout, limits);
-
-    // SAFETY REDUNDANCY 3: Validate and log if clamping was needed
     if (clamped.clamped) {
       const changes: string[] = [];
       if (rawX !== clamped.x) changes.push(`X: ${rawX.toFixed(1)}→${clamped.x.toFixed(1)}`);
       if (rawY !== clamped.y) changes.push(`Y: ${rawY.toFixed(1)}→${clamped.y.toFixed(1)}`);
       if (rawZ !== clamped.z) changes.push(`Z: ${rawZ.toFixed(1)}→${clamped.z.toFixed(1)}`);
-
       alerts.push({
-        type: "warning",
-        segmentIdx: segIdx,
+        type: "warning", segmentIdx: segIdx,
         message: `Movimento auto-corrigido em "${operation}"`,
-        detail: `O movimento #${segIdx} foi automaticamente ajustado para respeitar os limites de segurança. Correções: ${changes.join(", ")}.`,
-        fix: `Nenhuma ação necessária — o sistema corrigiu automaticamente. Para evitar futuros avisos, verifique: espessura da chapa (${layout.espessura}mm), dimensões da chapa (${layout.sheetWidth}×${layout.sheetHeight}mm), e deslocamentos da máquina.`,
+        detail: `O movimento #${segIdx} foi automaticamente ajustado. Correções: ${changes.join(", ")}.`,
+        fix: `Nenhuma ação necessária — o sistema corrigiu automaticamente. Verifique: espessura (${layout.espessura}mm), dimensões (${layout.sheetWidth}×${layout.sheetHeight}mm).`,
         x: rawX, y: rawY, z: rawZ,
       });
     }
-
     return { x: clamped.x, y: clamped.y, z: clamped.z, safe: true };
   }
 
-  // Collect all operations: holes first, then cuts
-  interface HoleOp { pieceIdx: number; hole: PromobHole; px: number; py: number; }
-  const holeOps: HoleOp[] = [];
+  // Collect holes and group by diameter
+  interface HoleOp { hole: PromobHole; px: number; py: number; }
+  const holesByDiam = new Map<number, HoleOp[]>();
 
-  layout.pieces.forEach((piece, pieceIdx) => {
+  layout.pieces.forEach((piece) => {
     if (!piece.furos || piece.furos.length === 0) return;
     piece.furos.forEach(hole => {
-      holeOps.push({ pieceIdx, hole, px: piece.x + hole.X, py: piece.y + hole.Y });
+      const px = piece.x + (piece.rotated ? hole.Y : hole.X);
+      const py = piece.y + (piece.rotated ? hole.X : hole.Y);
+      const diam = hole.DIAM;
+      if (!holesByDiam.has(diam)) holesByDiam.set(diam, []);
+      holesByDiam.get(diam)!.push({ hole, px, py });
     });
   });
 
-  // Sort holes by nearest-neighbor for minimum travel
-  const sortedHoles: HoleOp[] = [];
-  const remaining = [...holeOps];
-  let currentPos = { x: 0, y: 0 };
+  let pos = new THREE.Vector3(0, 0, zSafe);
+  let currentToolDiam = 0;
+  let currentToolName = "";
+  let currentToolPos = 0;
 
-  while (remaining.length > 0) {
-    let bestIdx = 0;
-    let bestDist = Infinity;
-    for (let i = 0; i < remaining.length; i++) {
-      const d = Math.hypot(remaining[i].px - currentPos.x, remaining[i].py - currentPos.y);
-      if (d < bestDist) { bestDist = d; bestIdx = i; }
-    }
-    const picked = remaining.splice(bestIdx, 1)[0];
-    sortedHoles.push(picked);
-    currentPos = { x: picked.px, y: picked.py };
+  // Helper: add toolchange segment
+  function emitToolChange(toolSlot: ToolSlot) {
+    if (currentToolDiam === toolSlot.diametro && currentToolName === toolSlot.nome) return;
+    // Retract to safe Z first
+    segments.push({ type: "retract", from: pos.clone(), to: new THREE.Vector3(pos.x, pos.y, zSafe), toolDiam: currentToolDiam || toolSlot.diametro, safe: true });
+    pos = new THREE.Vector3(pos.x, pos.y, zSafe);
+    // Rapid to tool change position (origin)
+    segments.push({ type: "rapid", from: pos.clone(), to: new THREE.Vector3(0, 0, zSafe), toolDiam: toolSlot.diametro, safe: true });
+    pos = new THREE.Vector3(0, 0, zSafe);
+    // Toolchange segment (visual pause)
+    segments.push({
+      type: "toolchange", from: pos.clone(), to: pos.clone(),
+      toolDiam: toolSlot.diametro, safe: true,
+      toolName: toolSlot.nome, toolPosition: toolSlot.position,
+    });
+    currentToolDiam = toolSlot.diametro;
+    currentToolName = toolSlot.nome;
+    currentToolPos = toolSlot.position;
   }
 
-  let pos = new THREE.Vector3(0, 0, zSafe);
+  // Helper: nearest-neighbor sort
+  function sortByNearest(ops: HoleOp[], startPos: { x: number; y: number }): HoleOp[] {
+    const sorted: HoleOp[] = [];
+    const remaining = [...ops];
+    let cur = startPos;
+    while (remaining.length > 0) {
+      let bestIdx = 0, bestDist = Infinity;
+      for (let i = 0; i < remaining.length; i++) {
+        const d = Math.hypot(remaining[i].px - cur.x, remaining[i].py - cur.y);
+        if (d < bestDist) { bestDist = d; bestIdx = i; }
+      }
+      const picked = remaining.splice(bestIdx, 1)[0];
+      sorted.push(picked);
+      cur = { x: picked.px, y: picked.py };
+    }
+    return sorted;
+  }
 
-  // Drill all holes
-  sortedHoles.forEach(({ hole, px, py }) => {
-    const hx = px;
-    const hy = py;
-    // SAFETY: Clamp hole depth
-    const rawHz = -(hole.Z || layout.espessura * 0.7);
-    const hz = Math.max(rawHz, minAllowedZ);
+  // Process holes grouped by diameter — each group gets a tool change
+  const diametersSorted = Array.from(holesByDiam.keys()).sort((a, b) => a - b);
+  for (const diam of diametersSorted) {
+    const holes = holesByDiam.get(diam)!;
+    // Find matching tool in magazine
+    const tool = findToolByDiameter(magazine, diam, "broca") || findToolByDiameter(magazine, diam);
+    const toolSlot: ToolSlot = tool || {
+      position: 0, nome: `Broca ${diam}mm`, tipo: "broca",
+      diametro: diam, rpm: 8000, avancoCorte: 3000, avancoEntrada: 3000, ativo: true,
+    };
 
-    const above = validateAndClamp(hx, hy, zRapid, segments.length, `Posicionamento furo Ø${hole.DIAM}mm`);
-    segments.push({ type: "rapid", from: pos.clone(), to: new THREE.Vector3(above.x, above.y, above.z), toolDiam: hole.DIAM, safe: true });
-    pos = new THREE.Vector3(above.x, above.y, above.z);
+    emitToolChange(toolSlot);
 
-    const drill = validateAndClamp(hx, hy, hz, segments.length, `Furação Ø${hole.DIAM}mm prof.${Math.abs(hz).toFixed(1)}mm`);
-    segments.push({ type: "drill", from: pos.clone(), to: new THREE.Vector3(drill.x, drill.y, drill.z), toolDiam: hole.DIAM, safe: true });
-    pos = new THREE.Vector3(drill.x, drill.y, drill.z);
+    const sorted = sortByNearest(holes, { x: pos.x, y: pos.y });
+    for (const { hole, px, py } of sorted) {
+      const rawHz = -(hole.Z || layout.espessura * 0.7);
+      const hz = Math.max(rawHz, minAllowedZ);
 
-    segments.push({ type: "retract", from: pos.clone(), to: new THREE.Vector3(drill.x, drill.y, zSafe), toolDiam: hole.DIAM, safe: true });
-    pos = new THREE.Vector3(drill.x, drill.y, zSafe);
-  });
+      const above = validateAndClamp(px, py, zRapid, segments.length, `Posicionamento furo Ø${diam}mm`);
+      segments.push({ type: "rapid", from: pos.clone(), to: new THREE.Vector3(above.x, above.y, above.z), toolDiam: diam, safe: true, toolName: toolSlot.nome, toolPosition: toolSlot.position });
+      pos = new THREE.Vector3(above.x, above.y, above.z);
+
+      const drill = validateAndClamp(px, py, hz, segments.length, `Furação Ø${diam}mm prof.${Math.abs(hz).toFixed(1)}mm`);
+      segments.push({ type: "drill", from: pos.clone(), to: new THREE.Vector3(drill.x, drill.y, drill.z), toolDiam: diam, safe: true, toolName: toolSlot.nome, toolPosition: toolSlot.position });
+      pos = new THREE.Vector3(drill.x, drill.y, drill.z);
+
+      segments.push({ type: "retract", from: pos.clone(), to: new THREE.Vector3(drill.x, drill.y, zSafe), toolDiam: diam, safe: true, toolName: toolSlot.nome, toolPosition: toolSlot.position });
+      pos = new THREE.Vector3(drill.x, drill.y, zSafe);
+    }
+  }
+
+  // Switch to main cutting fresa for contours
+  emitToolChange(mainFresa);
 
   // Cut contours - sort pieces by nearest-neighbor
   const remainPieces = [...layout.pieces];
   const sortedPieces: PlacedNestingPiece[] = [];
-  currentPos = { x: pos.x, y: pos.y };
-
+  let currentPos = { x: pos.x, y: pos.y };
   while (remainPieces.length > 0) {
-    let bestIdx = 0;
-    let bestDist = Infinity;
+    let bestIdx = 0, bestDist = Infinity;
     for (let i = 0; i < remainPieces.length; i++) {
       const d = Math.hypot(remainPieces[i].x - currentPos.x, remainPieces[i].y - currentPos.y);
       if (d < bestDist) { bestDist = d; bestIdx = i; }
@@ -177,51 +214,40 @@ function generateToolpath(layout: NestingSheet, limits: SafetyLimits): { segment
     currentPos = { x: picked.x + picked.width, y: picked.y + picked.height };
   }
 
-  // Cut each piece contour
+  const offset = mainToolDiam / 2;
   sortedPieces.forEach(piece => {
-    const offset = toolDiam / 2;
-    // SAFETY: Clamp cut positions within sheet bounds
     const cx1 = Math.max(piece.x - offset, 0);
     const cy1 = Math.max(piece.y - offset, 0);
     const cx2 = Math.min(piece.x + piece.width + offset, layout.sheetWidth);
     const cy2 = Math.min(piece.y + piece.height + offset, layout.sheetHeight);
 
-    // Rapid to start
     const start = validateAndClamp(cx1, cy1, zSafe, segments.length, `Posicionamento peça ${piece.label}`);
-    segments.push({ type: "rapid", from: pos.clone(), to: new THREE.Vector3(start.x, start.y, start.z), toolDiam, safe: true });
+    segments.push({ type: "rapid", from: pos.clone(), to: new THREE.Vector3(start.x, start.y, start.z), toolDiam: mainToolDiam, safe: true, toolName: mainFresa.nome, toolPosition: mainFresa.position });
     pos = new THREE.Vector3(start.x, start.y, start.z);
 
-    // Plunge entry
     const plunge = validateAndClamp(cx1, cy1, zCut, segments.length, `Entrada de corte peça ${piece.label}`);
-    segments.push({ type: "cut", from: pos.clone(), to: new THREE.Vector3(plunge.x, plunge.y, plunge.z), toolDiam, safe: true });
+    segments.push({ type: "cut", from: pos.clone(), to: new THREE.Vector3(plunge.x, plunge.y, plunge.z), toolDiam: mainToolDiam, safe: true, toolName: mainFresa.nome, toolPosition: mainFresa.position });
     pos = new THREE.Vector3(plunge.x, plunge.y, plunge.z);
 
-    // Cut rectangle
     const rawCorners = [
-      { x: cx2, y: cy1 },
-      { x: cx2, y: cy2 },
-      { x: cx1, y: cy2 },
-      { x: cx1, y: cy1 },
+      { x: cx2, y: cy1 }, { x: cx2, y: cy2 },
+      { x: cx1, y: cy2 }, { x: cx1, y: cy1 },
     ];
     const edgeNames = ["inferior", "direita", "superior", "esquerda"];
-
     rawCorners.forEach((corner, ci) => {
       const c = validateAndClamp(corner.x, corner.y, zCut, segments.length, `Corte borda ${edgeNames[ci]} peça ${piece.label}`);
-      segments.push({ type: "cut", from: pos.clone(), to: new THREE.Vector3(c.x, c.y, c.z), toolDiam, safe: true });
+      segments.push({ type: "cut", from: pos.clone(), to: new THREE.Vector3(c.x, c.y, c.z), toolDiam: mainToolDiam, safe: true, toolName: mainFresa.nome, toolPosition: mainFresa.position });
       pos = new THREE.Vector3(c.x, c.y, c.z);
     });
 
-    // Retract
-    segments.push({ type: "retract", from: pos.clone(), to: new THREE.Vector3(pos.x, pos.y, zSafe), toolDiam, safe: true });
+    segments.push({ type: "retract", from: pos.clone(), to: new THREE.Vector3(pos.x, pos.y, zSafe), toolDiam: mainToolDiam, safe: true, toolName: mainFresa.nome, toolPosition: mainFresa.position });
     pos = new THREE.Vector3(pos.x, pos.y, zSafe);
   });
 
-  // SAFETY REDUNDANCY 4: Final pass - verify ALL segments are within bounds
-  segments.forEach((seg, i) => {
+  // Final safety pass
+  segments.forEach((seg) => {
     const minZ = -(layout.espessura + Math.abs(MAX_PENETRATION));
-    if (seg.to.z < minZ) {
-      seg.to.z = minZ;
-    }
+    if (seg.to.z < minZ) seg.to.z = minZ;
     if (seg.to.x < 0) seg.to.x = 0;
     if (seg.to.y < 0) seg.to.y = 0;
     if (seg.to.x > layout.sheetWidth) seg.to.x = layout.sheetWidth;
@@ -787,13 +813,25 @@ export function SimulacaoCNCDialog({ open, onOpenChange, layouts, machineConfig 
             {/* Current operation info */}
             {currentSeg && progress > 0 && progress < 1 && (
               <div className="absolute bottom-2 left-2 bg-card/90 backdrop-blur text-[9px] font-mono px-2 py-1 rounded border border-border">
-                <span className={`font-bold ${currentSeg.type === "rapid" ? "text-red-500" : currentSeg.type === "drill" ? "text-green-600" : currentSeg.type === "cut" ? "text-green-600" : "text-muted-foreground"}`}>
-                  {currentSeg.type === "rapid" ? "G0 RÁPIDO" : currentSeg.type === "drill" ? "FURAÇÃO" : currentSeg.type === "cut" ? "G1 CORTE" : "RETRAÇÃO"}
+                <span className={`font-bold ${
+                  currentSeg.type === "toolchange" ? "text-blue-500" :
+                  currentSeg.type === "rapid" ? "text-red-500" :
+                  currentSeg.type === "drill" ? "text-green-600" :
+                  currentSeg.type === "cut" ? "text-green-600" : "text-muted-foreground"
+                }`}>
+                  {currentSeg.type === "toolchange" ? `🔧 TROCA: T${currentSeg.toolPosition} ${currentSeg.toolName}` :
+                   currentSeg.type === "rapid" ? "G0 RÁPIDO" :
+                   currentSeg.type === "drill" ? "FURAÇÃO" :
+                   currentSeg.type === "cut" ? "G1 CORTE" : "RETRAÇÃO"}
                 </span>
+                {currentSeg.type !== "toolchange" && (
+                  <span className="text-muted-foreground ml-2">
+                    X{currentSeg.to.x.toFixed(0)} Y{currentSeg.to.y.toFixed(0)} Z{currentSeg.to.z.toFixed(1)}
+                  </span>
+                )}
                 <span className="text-muted-foreground ml-2">
-                  X{currentSeg.to.x.toFixed(0)} Y{currentSeg.to.y.toFixed(0)} Z{currentSeg.to.z.toFixed(1)}
+                  {currentSeg.toolName ? `T${currentSeg.toolPosition} ${currentSeg.toolName}` : `Ø${currentSeg.toolDiam}mm`}
                 </span>
-                <span className="text-muted-foreground ml-2">Ø{currentSeg.toolDiam}mm</span>
               </div>
             )}
 
@@ -803,7 +841,11 @@ export function SimulacaoCNCDialog({ open, onOpenChange, layouts, machineConfig 
                 <span className="font-semibold text-foreground">{layout.material}</span>
                 <span className="text-muted-foreground ml-1">{layout.sheetWidth}×{layout.sheetHeight}mm</span>
                 <span className="text-muted-foreground ml-1">Esp: {layout.espessura}mm</span>
-                <span className="text-muted-foreground ml-1">Ø fresa: 6mm</span>
+                {currentSeg && (
+                  <span className="ml-1 text-blue-500 font-semibold">
+                    | T{currentSeg.toolPosition || '?'} {currentSeg.toolName || `Ø${currentSeg.toolDiam}mm`}
+                  </span>
+                )}
               </div>
             )}
           </div>
