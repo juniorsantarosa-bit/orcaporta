@@ -95,7 +95,7 @@ export default function Index() {
     importarChapa: false, materiais: false, configuracaoCorte: false,
     configGerais: false, layers: false, estrategias: false,
     configMaquinas: false, configBitmap: false, sobras: false,
-    optimizationResult: false, orcamento: false,
+    optimizationResult: false, orcamento: false, simulacaoCNC: false,
   });
 
   const openDialog = (key: keyof typeof dialogs) => setDialogs((prev) => ({ ...prev, [key]: true }));
