@@ -215,25 +215,26 @@ export function parsePromobCSV(csvText: string): PromobPiece[] {
     // Parse CNC JSON - try the CNC column first, then try joining remaining columns
     let furos: PromobHole[] = [];
     let fresas: any[] = [];
+    let usinagens: Usinagem[] = [];
     let alinhamento: "NORMAL" | "INVERSO" = "NORMAL";
 
     if (hasCNC) {
       const cncIdx = colIdx("CNC");
-      // The CNC JSON might span multiple "columns" if it contains semicolons
-      // Join everything from CNC column index to end
       const cncRaw = firstRow.slice(cncIdx).join(";");
-      const parsed = parseCNCJson(cncRaw);
+      const parsed = parseCNCJson(cncRaw, espChapa);
       furos = parsed.furos;
       fresas = parsed.fresas;
+      usinagens = parsed.usinagens;
       alinhamento = parsed.alinhamento;
     }
 
-    // Also check CNC_FUROS_TOTAL field for older formats that embed hole data differently
-    if (furos.length === 0) {
+    // Also check CNC_FUROS_TOTAL field for older formats
+    if (furos.length === 0 && usinagens.length === 0) {
       const cncFurosTotal = firstRow[colIdx("CNC_FUROS_TOTAL")] || "";
       if (cncFurosTotal.trim().startsWith("{")) {
-        const parsed = parseCNCJson(cncFurosTotal);
+        const parsed = parseCNCJson(cncFurosTotal, espChapa);
         furos = parsed.furos;
+        usinagens = parsed.usinagens;
       }
     }
 
