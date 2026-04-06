@@ -56,6 +56,7 @@ export default function Index() {
   const [config, setConfig] = useState<CuttingConfig>({
     serraSerpentina: 4, margemChapa: 0, espacamentoEntreCortes: 4,
     permitirRotacao: true, usarDisponiveis: false, cadastrarNovas: true, removerUsadas: false,
+    useCommonCut: true,
   });
 
   const [nestingConfig, setNestingConfig] = useState<NestingConfig>({
