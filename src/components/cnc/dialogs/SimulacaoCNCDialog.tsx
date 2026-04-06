@@ -67,8 +67,10 @@ const MAX_PENETRATION = -0.1;
  * Clamp a value to safety limits, auto-correcting out-of-bounds values
  */
 function clampToLimits(x: number, y: number, z: number, layout: NestingSheet, limits: SafetyLimits) {
-  const safeX = Math.max(limits.mesaMinX, Math.min(x, limits.mesaMaxX));
-  const safeY = Math.max(limits.mesaMinY, Math.min(y, limits.mesaMaxY));
+  // Allow small negative offsets for fresa edge cuts (contour offset beyond sheet edge)
+  const edgeMargin = 10; // generous margin for fresa offset
+  const safeX = Math.max(limits.mesaMinX - edgeMargin, Math.min(x, limits.mesaMaxX + edgeMargin));
+  const safeY = Math.max(limits.mesaMinY - edgeMargin, Math.min(y, limits.mesaMaxY + edgeMargin));
   // Z: never go below -(espessura + 0.1mm) to protect the sacrifice table
   const minZ = -(layout.espessura + Math.abs(MAX_PENETRATION));
   const safeZ = Math.max(minZ, Math.min(z, limits.zMax));
@@ -277,13 +279,15 @@ function generateToolpath(layout: NestingSheet, limits: SafetyLimits, useCommonC
         addSegment("retract", pos, new THREE.Vector3(pos.x, pos.y, zSafe), mainToolDiam, mainFresa.nome, mainFresa.position);
         pos = new THREE.Vector3(pos.x, pos.y, zSafe);
 
-      } else if (u.tipo === "recorte_retangular") {
-        // Rectangular cutout — trace full perimeter
+    } else if (u.tipo === "recorte_retangular") {
+        // Rectangular cutout — trace full perimeter, clamped to piece bounds
         const w = u.comprimento || u.largura;
         const h = u.largura;
-        // Rectangle corners: (px, py) is bottom-left
-        const x1 = px, y1 = py;
-        const x2 = px + w, y2 = py + h;
+        // Clamp rectangle to piece boundaries so it never invades adjacent pieces
+        const pieceX2 = piece.x + piece.width;
+        const pieceY2 = piece.y + piece.height;
+        const x1 = Math.max(px, piece.x), y1 = Math.max(py, piece.y);
+        const x2 = Math.min(px + w, pieceX2), y2 = Math.min(py + h, pieceY2);
 
         const start = validateAndClamp(x1, y1, zSafe, segments.length, `Pos. recorte retangular peça ${label}`);
         addSegment("rapid", pos, new THREE.Vector3(start.x, start.y, start.z), mainToolDiam, mainFresa.nome, mainFresa.position);
@@ -487,14 +491,16 @@ function generateToolpath(layout: NestingSheet, limits: SafetyLimits, useCommonC
     }
   }
 
-  // Final safety pass
+  // Final safety pass — allow small negative offsets for edge contours (fresa offset)
   segments.forEach((seg) => {
     const minZ = -(layout.espessura + Math.abs(MAX_PENETRATION));
     if (seg.to.z < minZ) seg.to.z = minZ;
-    if (seg.to.x < 0) seg.to.x = 0;
-    if (seg.to.y < 0) seg.to.y = 0;
-    if (seg.to.x > layout.sheetWidth) seg.to.x = layout.sheetWidth;
-    if (seg.to.y > layout.sheetHeight) seg.to.y = layout.sheetHeight;
+    // Allow fresa offset beyond sheet edges (up to -offset) for proper through-cuts
+    const edgeMargin = mainToolDiam / 2 + 1;
+    if (seg.to.x < -edgeMargin) seg.to.x = -edgeMargin;
+    if (seg.to.y < -edgeMargin) seg.to.y = -edgeMargin;
+    if (seg.to.x > layout.sheetWidth + edgeMargin) seg.to.x = layout.sheetWidth + edgeMargin;
+    if (seg.to.y > layout.sheetHeight + edgeMargin) seg.to.y = layout.sheetHeight + edgeMargin;
   });
 
   return { segments, alerts, totalDistance, cutDistance, rapidDistance };
