@@ -1,7 +1,8 @@
 import { NestingSheet, PlacedNestingPiece, PromobHole, Usinagem } from "@/types/promob";
 import { useState, forwardRef, useImperativeHandle, useCallback, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Drill } from "lucide-react";
+import { UsinagensDialog } from "@/components/cnc/dialogs/UsinagensDialog";
 
 export interface SheetView2DHandle {
   zoomIn: () => void;
