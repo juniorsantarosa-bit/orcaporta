@@ -463,6 +463,7 @@ function parseSmartFormat(data: any): PromobPiece[] {
       ALINHAMENTO: al === "INVERSO" ? "INVERSO" as const : "NORMAL" as const,
       FRESAS: p.FRESAS || [],
       FUROS: furos,
+      USINAGENS: [],
       CONTORNO: contorno,
       HAS_FRESAS_SUP: false,
       HAS_FRESAS_INF: false,
