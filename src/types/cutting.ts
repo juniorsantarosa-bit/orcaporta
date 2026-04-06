@@ -45,6 +45,7 @@ export interface CuttingConfig {
   usarDisponiveis: boolean;
   cadastrarNovas: boolean;
   removerUsadas: boolean;
+  useCommonCut?: boolean;
 }
 
 export interface NestingConfig {
