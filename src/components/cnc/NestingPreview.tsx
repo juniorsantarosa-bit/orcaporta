@@ -1,4 +1,4 @@
-import { NestingSheet, PlacedNestingPiece } from "@/types/promob";
+import { NestingSheet, PlacedNestingPiece, PromobHole } from "@/types/promob";
 import { useState, useRef, useCallback } from "react";
 import { Nesting3DView, Nesting3DViewHandle } from "./Nesting3DView";
 import {
