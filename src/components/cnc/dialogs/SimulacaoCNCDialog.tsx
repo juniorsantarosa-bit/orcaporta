@@ -219,9 +219,19 @@ function generateToolpath(layout: NestingSheet, limits: SafetyLimits, useCommonC
   layout.pieces.forEach((piece) => {
     if (!piece.usinagens || piece.usinagens.length === 0) return;
     piece.usinagens.forEach(u => {
-      const px = piece.x + (u.x || 0);
-      const py = piece.y + (u.y || 0);
-      usinagemOps.push({ u, px, py, piece });
+      // Handle rotation: when piece is rotated 90°, swap X/Y and adjust dimensions
+      let px: number, py: number;
+      let adjustedU = { ...u };
+      if (piece.rotated) {
+        px = piece.x + (u.y || 0);
+        py = piece.y + (u.x || 0);
+        // Swap comprimento/largura for rotated pieces
+        adjustedU = { ...u, comprimento: u.largura, largura: u.comprimento || u.largura };
+      } else {
+        px = piece.x + (u.x || 0);
+        py = piece.y + (u.y || 0);
+      }
+      usinagemOps.push({ u: adjustedU, px, py, piece });
     });
   });
 
