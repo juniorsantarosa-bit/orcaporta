@@ -257,6 +257,9 @@ export function parsePromobCSV(csvText: string): PromobPiece[] {
       else if (Math.abs(midX - comp) < tol && Math.abs(curr.x - next.x) < tol) bordaDir = true;
     }
 
+    // Try to get a better material name: NOME_MATERIAL or CHAPA
+    const materialName = firstRow[colIdx("NOME_MATERIAL")] || firstRow[colIdx("CHAPA")] || "";
+
     pieces.push({
       CLIENTE: firstRow[colIdx("CLIENTE")] || "",
       COD_CLIENTE: firstRow[colIdx("COD_CLIENTE")] || null,
@@ -266,7 +269,7 @@ export function parsePromobCSV(csvText: string): PromobPiece[] {
       DESCRICAO: firstRow[colIdx("DESCRICAO")] || "",
       COMPRIMENTO: comp,
       PROFUNDIDADE: prof,
-      CHAPA: firstRow[colIdx("CHAPA")] || "",
+      CHAPA: materialName,
       COR_1C: firstRow[colIdx("COR_1C")] || null,
       COR_2C: firstRow[colIdx("COR_2C")] || null,
       COR_1P: firstRow[colIdx("COR_1P")] || null,
@@ -277,13 +280,13 @@ export function parsePromobCSV(csvText: string): PromobPiece[] {
       ESTRUTURA: parseInt(firstRow[colIdx("ESTRUTURA")]) || 0,
       MODULO_DESC: firstRow[colIdx("MODULO_DESC")] || "",
       COD_CORTE: parseInt(firstRow[colIdx("COD_CORTE")]) || 0,
-      COMP_CHAPA: parseFloat(firstRow[colIdx("COMP_CHAPA")]) || 2750,
-      PROF_CHAPA: parseFloat(firstRow[colIdx("PROF_CHAPA")]) || 1840,
-      ESP_CHAPA: parseFloat(firstRow[colIdx("ESP_CHAPA")]) || 15,
+      COMP_CHAPA: parseNum(firstRow[colIdx("COMP_CHAPA")]) || 2750,
+      PROF_CHAPA: parseNum(firstRow[colIdx("PROF_CHAPA")]) || 1840,
+      ESP_CHAPA: espChapa || 15,
       VEIO: parseInt(firstRow[colIdx("VEIO")]) || 0,
       CNC_A: firstRow[colIdx("CNC_A")] || "",
       CNC_B: firstRow[colIdx("CNC_B")] || "",
-      CNC_FUROS_TOTAL: firstRow[colIdx("CNC_FUROS_TOTAL")] || "NAO",
+      CNC_FUROS_TOTAL: firstRow[colIdx("CNC_FUROS_TOTAL")] || (furos.length > 0 ? "SIM" : "NAO"),
       OBS: firstRow[colIdx("OBS")] || null,
       ALINHAMENTO: alinhamento,
       FRESAS: fresas,
