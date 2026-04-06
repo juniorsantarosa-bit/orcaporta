@@ -115,8 +115,6 @@ export function NestingPreview({ layouts, selectedPieceId, onSelectPiece, onLayo
       const doc = printWindow.document;
 
       const today = new Date().toLocaleDateString("pt-BR");
-      const clientes = [...new Set(currentLayout.pieces.map(p => p.cliente).filter(Boolean))].join(", ") || "—";
-      const ambientes = [...new Set(currentLayout.pieces.map(p => p.ambiente).filter(Boolean))].join(", ") || "—";
 
       const css = [
         "@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@300;400;500;600;700;800&display=swap');",
@@ -151,89 +149,91 @@ export function NestingPreview({ layouts, selectedPieceId, onSelectPiece, onLayo
       doc.open();
       doc.write("<!DOCTYPE html><html><head><meta charset='utf-8'><title>Plano de Corte</title><style>" + css + "</style></head><body>");
 
-      const sheet = currentLayout;
-      const totalArea = sheet.sheetWidth * sheet.sheetHeight;
-      const usedArea = sheet.pieces.reduce((a, p) => a + p.width * p.height, 0);
-      const wasteArea = totalArea - usedArea;
-      const effColor = sheet.efficiency > 80 ? "#059669" : sheet.efficiency > 60 ? "#D97706" : "#DC2626";
+      // Iterate over ALL layouts, not just the selected one
+      layouts.forEach((sheet) => {
+        const totalArea = sheet.sheetWidth * sheet.sheetHeight;
+        const usedArea = sheet.pieces.reduce((a, p) => a + p.width * p.height, 0);
+        const wasteArea = totalArea - usedArea;
+        const effColor = sheet.efficiency > 80 ? "#059669" : sheet.efficiency > 60 ? "#D97706" : "#DC2626";
 
-      // Build pieces rows
-      let rows = "";
-      sheet.pieces.forEach((p, idx) => {
-        const fitas = [p.bordaSup && "S", p.bordaInf && "I", p.bordaEsq && "E", p.bordaDir && "D"].filter(Boolean).join("") || "—";
-        rows += "<tr>" +
-          '<td style="font-weight:700;color:' + COLORS[idx % COLORS.length] + '">' + p.label + "</td>" +
-          '<td class="t">' + (p.descricao || "") + "</td>" +
-          '<td class="r m">' + p.width + "</td>" +
-          '<td class="r m">' + p.height + "</td>" +
-          '<td class="c" style="font-size:8px">' + fitas + "</td>" +
-          '<td class="c m">' + (p.furos?.length || 0) + "</td>" +
-          '<td class="t" style="color:#777">' + (p.cliente || "") + "</td>" +
-          "</tr>";
+        const clientes = [...new Set(sheet.pieces.map(p => p.cliente).filter(Boolean))].join(", ") || "—";
+        const ambientes = [...new Set(sheet.pieces.map(p => p.ambiente).filter(Boolean))].join(", ") || "—";
+
+        let rows = "";
+        sheet.pieces.forEach((p, idx) => {
+          const fitas = [p.bordaSup && "S", p.bordaInf && "I", p.bordaEsq && "E", p.bordaDir && "D"].filter(Boolean).join("") || "—";
+          rows += "<tr>" +
+            '<td style="font-weight:700;color:' + COLORS[idx % COLORS.length] + '">' + p.label + "</td>" +
+            '<td class="t">' + (p.descricao || "") + "</td>" +
+            '<td class="r m">' + p.width + "</td>" +
+            '<td class="r m">' + p.height + "</td>" +
+            '<td class="c" style="font-size:8px">' + fitas + "</td>" +
+            '<td class="c m">' + (p.furos?.length || 0) + "</td>" +
+            '<td class="t" style="color:#777">' + (p.cliente || "") + "</td>" +
+            "</tr>";
+        });
+
+        let svgPieces = "";
+        sheet.pieces.forEach((piece, idx) => {
+          const c = COLORS[idx % COLORS.length];
+          svgPieces += '<rect x="' + piece.x + '" y="' + piece.y + '" width="' + piece.width + '" height="' + piece.height + '" fill="' + c + '" stroke="#444" stroke-width="1" rx="1"/>';
+          if (piece.bordaSup) svgPieces += '<line x1="' + piece.x + '" y1="' + piece.y + '" x2="' + (piece.x + piece.width) + '" y2="' + piece.y + '" stroke="#D97706" stroke-width="3"/>';
+          if (piece.bordaInf) svgPieces += '<line x1="' + piece.x + '" y1="' + (piece.y + piece.height) + '" x2="' + (piece.x + piece.width) + '" y2="' + (piece.y + piece.height) + '" stroke="#D97706" stroke-width="3"/>';
+          if (piece.bordaEsq) svgPieces += '<line x1="' + piece.x + '" y1="' + piece.y + '" x2="' + piece.x + '" y2="' + (piece.y + piece.height) + '" stroke="#D97706" stroke-width="3"/>';
+          if (piece.bordaDir) svgPieces += '<line x1="' + (piece.x + piece.width) + '" y1="' + piece.y + '" x2="' + (piece.x + piece.width) + '" y2="' + (piece.y + piece.height) + '" stroke="#D97706" stroke-width="3"/>';
+          if (piece.furos && piece.furos.length > 0) {
+            piece.furos.forEach((hole: PromobHole) => {
+              const cx = piece.x + hole.X;
+              const cy = piece.y + hole.Y;
+              const r = Math.max(hole.DIAM / 2, 2);
+              const holeColor = hole.DIAM >= 15 ? "#D97706" : hole.DIAM >= 5 ? "#3B82F6" : "#EF4444";
+              svgPieces += '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="' + holeColor + '" opacity="0.7"/>';
+            });
+          }
+          if (piece.width > 50 && piece.height > 25) {
+            const fs = Math.min(piece.width / 5, piece.height / 4, 28);
+            const fs2 = Math.min(piece.width / 8, piece.height / 5, 11);
+            svgPieces += '<text x="' + (piece.x + piece.width / 2) + '" y="' + (piece.y + piece.height / 2 - 6) + '" text-anchor="middle" dominant-baseline="central" font-size="' + fs + '" font-weight="700" fill="#1a1a1a" font-family="Inter">' + piece.label + "</text>";
+            svgPieces += '<text x="' + (piece.x + piece.width / 2) + '" y="' + (piece.y + piece.height / 2 + 10) + '" text-anchor="middle" dominant-baseline="central" font-size="' + fs2 + '" fill="#555" font-family="JetBrains Mono, monospace">' + piece.width + "×" + piece.height + "</text>";
+          }
+        });
+
+        const vb = "-20 -20 " + (sheet.sheetWidth + 40) + " " + (sheet.sheetHeight + 40);
+
+        const logoHtml = companyLogo
+          ? '<div class="logo"><img src="' + companyLogo + '" alt="Logo"/></div>'
+          : '<div class="logo"><span class="logo-text">⚡ MAX<span class="green">CUT</span></span></div>';
+
+        doc.write(
+          '<div class="page">' +
+          '<div class="header">' +
+          logoHtml +
+          '<div class="meta">' +
+          '<div class="meta-item"><span class="lbl">Cliente: </span><span class="bld">' + clientes + "</span></div>" +
+          '<div class="meta-item"><span class="lbl">Data: </span><span class="bld">' + today + "</span></div>" +
+          '<div class="meta-item"><span class="lbl">Material: </span><span class="bld">' + sheet.material + "</span></div>" +
+          '<div class="meta-item"><span class="lbl">Chapa Nº: </span><span class="bld m">' + sheet.id + "</span></div>" +
+          '<div class="meta-item"><span class="lbl">Peças: </span><span class="bld m">' + sheet.pieces.length + "</span></div>" +
+          '<div class="meta-item"><span class="lbl">Ambiente: </span><span class="bld">' + ambientes + "</span></div>" +
+          '<div class="meta-item"><span class="lbl">Aproveit.: </span><span class="bld" style="color:' + effColor + '">' + sheet.efficiency.toFixed(1) + "%</span></div>" +
+          "</div></div>" +
+          '<div class="diagram">' +
+          '<svg viewBox="' + vb + '" preserveAspectRatio="xMidYMid meet">' +
+          '<defs><pattern id="w' + sheet.id + '" patternUnits="userSpaceOnUse" width="6" height="6"><path d="M0 6L6 0" stroke="#999" stroke-width="0.3" opacity="0.15"/></pattern></defs>' +
+          '<rect x="0" y="0" width="' + sheet.sheetWidth + '" height="' + sheet.sheetHeight + '" fill="#f5f5f0" stroke="#333" stroke-width="2" rx="2"/>' +
+          '<rect x="0" y="0" width="' + sheet.sheetWidth + '" height="' + sheet.sheetHeight + '" fill="url(#w' + sheet.id + ')" rx="2"/>' +
+          svgPieces +
+          '<text x="' + (sheet.sheetWidth / 2) + '" y="-8" text-anchor="middle" font-size="11" fill="#555" font-family="JetBrains Mono, monospace">' + sheet.sheetWidth + "</text>" +
+          '<text x="-8" y="' + (sheet.sheetHeight / 2) + '" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#555" font-family="JetBrains Mono, monospace" transform="rotate(-90, -8, ' + (sheet.sheetHeight / 2) + ')">' + sheet.sheetHeight + "</text>" +
+          "</svg></div>" +
+          '<div class="ptable">' +
+          "<table><thead><tr><th>#</th><th>Descrição</th><th class='r'>C</th><th class='r'>L</th><th class='c'>Fitas</th><th class='c'>Furos</th><th>Cliente</th></tr></thead>" +
+          "<tbody>" + rows + "</tbody></table>" +
+          '<div class="ft"><span>' + sheet.pieces.length + " peças</span>" +
+          "<span>Útil: " + (usedArea / 1e6).toFixed(3) + "m² · Sobra: " + (wasteArea / 1e6).toFixed(3) + "m²</span></div>" +
+          "</div></div>"
+        );
       });
-
-      // Build SVG pieces
-      let svgPieces = "";
-      sheet.pieces.forEach((piece, idx) => {
-        const c = COLORS[idx % COLORS.length];
-        svgPieces += '<rect x="' + piece.x + '" y="' + piece.y + '" width="' + piece.width + '" height="' + piece.height + '" fill="' + c + '" stroke="#444" stroke-width="1" rx="1"/>';
-        if (piece.bordaSup) svgPieces += '<line x1="' + piece.x + '" y1="' + piece.y + '" x2="' + (piece.x + piece.width) + '" y2="' + piece.y + '" stroke="#D97706" stroke-width="3"/>';
-        if (piece.bordaInf) svgPieces += '<line x1="' + piece.x + '" y1="' + (piece.y + piece.height) + '" x2="' + (piece.x + piece.width) + '" y2="' + (piece.y + piece.height) + '" stroke="#D97706" stroke-width="3"/>';
-        if (piece.bordaEsq) svgPieces += '<line x1="' + piece.x + '" y1="' + piece.y + '" x2="' + piece.x + '" y2="' + (piece.y + piece.height) + '" stroke="#D97706" stroke-width="3"/>';
-        if (piece.bordaDir) svgPieces += '<line x1="' + (piece.x + piece.width) + '" y1="' + piece.y + '" x2="' + (piece.x + piece.width) + '" y2="' + (piece.y + piece.height) + '" stroke="#D97706" stroke-width="3"/>';
-        // Render holes/furos
-        if (piece.furos && piece.furos.length > 0) {
-          piece.furos.forEach((hole: PromobHole) => {
-            const cx = piece.x + hole.X;
-            const cy = piece.y + hole.Y;
-            const r = Math.max(hole.DIAM / 2, 2);
-            const holeColor = hole.DIAM >= 15 ? "#D97706" : hole.DIAM >= 5 ? "#3B82F6" : "#EF4444";
-            svgPieces += '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="' + holeColor + '" opacity="0.7"/>';
-          });
-        }
-        if (piece.width > 50 && piece.height > 25) {
-          const fs = Math.min(piece.width / 5, piece.height / 4, 28);
-          const fs2 = Math.min(piece.width / 8, piece.height / 5, 11);
-          svgPieces += '<text x="' + (piece.x + piece.width / 2) + '" y="' + (piece.y + piece.height / 2 - 6) + '" text-anchor="middle" dominant-baseline="central" font-size="' + fs + '" font-weight="700" fill="#1a1a1a" font-family="Inter">' + piece.label + "</text>";
-          svgPieces += '<text x="' + (piece.x + piece.width / 2) + '" y="' + (piece.y + piece.height / 2 + 10) + '" text-anchor="middle" dominant-baseline="central" font-size="' + fs2 + '" fill="#555" font-family="JetBrains Mono, monospace">' + piece.width + "×" + piece.height + "</text>";
-        }
-      });
-
-      const vb = "-20 -20 " + (sheet.sheetWidth + 40) + " " + (sheet.sheetHeight + 40);
-
-      const logoHtml = companyLogo
-        ? '<div class="logo"><img src="' + companyLogo + '" alt="Logo"/></div>'
-        : '<div class="logo"><span class="logo-text">⚡ MAX<span class="green">CUT</span></span></div>';
-
-      doc.write(
-        '<div class="page">' +
-        '<div class="header">' +
-        logoHtml +
-        '<div class="meta">' +
-        '<div class="meta-item"><span class="lbl">Cliente: </span><span class="bld">' + clientes + "</span></div>" +
-        '<div class="meta-item"><span class="lbl">Data: </span><span class="bld">' + today + "</span></div>" +
-        '<div class="meta-item"><span class="lbl">Material: </span><span class="bld">' + sheet.material + "</span></div>" +
-        '<div class="meta-item"><span class="lbl">Chapa Nº: </span><span class="bld m">' + sheet.id + "</span></div>" +
-        '<div class="meta-item"><span class="lbl">Peças: </span><span class="bld m">' + sheet.pieces.length + "</span></div>" +
-        '<div class="meta-item"><span class="lbl">Ambiente: </span><span class="bld">' + ambientes + "</span></div>" +
-        '<div class="meta-item"><span class="lbl">Aproveit.: </span><span class="bld" style="color:' + effColor + '">' + sheet.efficiency.toFixed(1) + "%</span></div>" +
-        "</div></div>" +
-        '<div class="diagram">' +
-        '<svg viewBox="' + vb + '" preserveAspectRatio="xMidYMid meet">' +
-        '<defs><pattern id="w' + sheet.id + '" patternUnits="userSpaceOnUse" width="6" height="6"><path d="M0 6L6 0" stroke="#999" stroke-width="0.3" opacity="0.15"/></pattern></defs>' +
-        '<rect x="0" y="0" width="' + sheet.sheetWidth + '" height="' + sheet.sheetHeight + '" fill="#f5f5f0" stroke="#333" stroke-width="2" rx="2"/>' +
-        '<rect x="0" y="0" width="' + sheet.sheetWidth + '" height="' + sheet.sheetHeight + '" fill="url(#w' + sheet.id + ')" rx="2"/>' +
-        svgPieces +
-        '<text x="' + (sheet.sheetWidth / 2) + '" y="-8" text-anchor="middle" font-size="11" fill="#555" font-family="JetBrains Mono, monospace">' + sheet.sheetWidth + "</text>" +
-        '<text x="-8" y="' + (sheet.sheetHeight / 2) + '" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#555" font-family="JetBrains Mono, monospace" transform="rotate(-90, -8, ' + (sheet.sheetHeight / 2) + ')">' + sheet.sheetHeight + "</text>" +
-        "</svg></div>" +
-        '<div class="ptable">' +
-        "<table><thead><tr><th>#</th><th>Descrição</th><th class='r'>C</th><th class='r'>L</th><th class='c'>Fitas</th><th class='c'>Furos</th><th>Cliente</th></tr></thead>" +
-        "<tbody>" + rows + "</tbody></table>" +
-        '<div class="ft"><span>' + sheet.pieces.length + " peças</span>" +
-        "<span>Útil: " + (usedArea / 1e6).toFixed(3) + "m² · Sobra: " + (wasteArea / 1e6).toFixed(3) + "m²</span></div>" +
-        "</div></div>"
-      );
 
       doc.write("</body></html>");
       doc.close();
