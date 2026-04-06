@@ -336,7 +336,7 @@ export default function Index() {
       <SimulacaoCNCDialog
         open={dialogs.simulacaoCNC}
         onOpenChange={(v) => v ? openDialog("simulacaoCNC") : closeDialog("simulacaoCNC")}
-        layout={layouts[0] || null}
+        layouts={layouts}
         machineConfig={machineConfig}
       />
       {optimizationResult && (
