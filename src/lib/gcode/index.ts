@@ -154,13 +154,33 @@ export function generateGCode(
         lines.push(`G2 X${f4(ux - r)} Y${f4(uy)} I${f4(r)} J0 F${f4(feedCut)}`);
         lines.push(`G0 Z${f4(zSeguroVal)}`);
         lines.push("");
+      } else if (u.tipo === "recorte_retangular") {
+        // Rectangular cutout — trace full perimeter
+        const w = u.comprimento || u.largura;
+        const h = u.largura;
+        const grooveDepth = Math.min(-(u.profundidade || 0), depthZ);
+        
+        lines.push(`( Recorte Retangular ${w}mm×${h}mm prof.${u.profundidade}mm - Peça ${label} )`);
+        
+        // Start at corner, plunge, trace 4 sides
+        const x1 = ux, y1 = uy;
+        const x2 = ux - w, y2 = uy + h; // Mirror X
+        
+        lines.push(`G0 X${f4(x1)} Y${f4(y1)} Z${f4(zSeguroVal)}`);
+        lines.push(`G1 Z${f4(grooveDepth)} F${f4(feedEntry)}`);
+        lines.push(`G1 X${f4(x2)} Y${f4(y1)} F${f4(feedCut)}`);
+        lines.push(`G1 X${f4(x2)} Y${f4(y2)} F${f4(feedCut)}`);
+        lines.push(`G1 X${f4(x1)} Y${f4(y2)} F${f4(feedCut)}`);
+        lines.push(`G1 X${f4(x1)} Y${f4(y1)} F${f4(feedCut)}`);
+        lines.push(`G0 Z${f4(zSeguroVal)}`);
+        lines.push("");
       } else {
-        // Groove/channel — linear cut
+        // Canal/groove — linear cut
         const gLen = u.comprimento || u.largura;
         const endX = ux - gLen; // Mirror
         const grooveDepth = Math.min(-(u.profundidade || 0), depthZ);
         
-        const tipoLabel = u.tipo === "canal" ? "Canal" : u.tipo === "recorte_retangular" ? "Recorte" : u.tipo === "rebaixo" ? "Rebaixo" : "Usinagem";
+        const tipoLabel = u.tipo === "canal" ? "Canal" : u.tipo === "rebaixo" ? "Rebaixo" : "Usinagem";
         lines.push(`( ${tipoLabel} ${u.largura}mm×${gLen}mm prof.${u.profundidade}mm - Peça ${label} )`);
         
         lines.push(`G0 X${f4(ux)} Y${f4(uy)} Z${f4(zSeguroVal)}`);

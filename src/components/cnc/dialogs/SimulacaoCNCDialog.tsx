@@ -247,7 +247,7 @@ function generateToolpath(layout: NestingSheet, limits: SafetyLimits, useCommonC
       const label = piece.label || "?";
 
       if (u.tipo === "recorte_circular") {
-        // Circular cutout — move to center, plunge, then trace circle (simplified as 8 points)
+        // Circular cutout — smooth circle with 64 segments for proper rendering
         const r = (u.largura || 0) / 2;
         const start = validateAndClamp(px, py, zSafe, segments.length, `Pos. recorte circular Ø${u.largura}mm peça ${label}`);
         addSegment("rapid", pos, new THREE.Vector3(start.x, start.y, start.z), mainToolDiam, mainFresa.nome, mainFresa.position);
@@ -263,8 +263,8 @@ function generateToolpath(layout: NestingSheet, limits: SafetyLimits, useCommonC
         addSegment("cut", pos, new THREE.Vector3(plunge.x, plunge.y, plunge.z), mainToolDiam, mainFresa.nome, mainFresa.position);
         pos = new THREE.Vector3(plunge.x, plunge.y, plunge.z);
 
-        // Trace circle in 16 segments
-        const numSeg = 16;
+        // Trace circle in 64 segments for smooth rendering
+        const numSeg = 64;
         for (let s = 1; s <= numSeg; s++) {
           const angle = (s / numSeg) * Math.PI * 2;
           const cx = px + r * Math.cos(angle);
@@ -277,8 +277,40 @@ function generateToolpath(layout: NestingSheet, limits: SafetyLimits, useCommonC
         addSegment("retract", pos, new THREE.Vector3(pos.x, pos.y, zSafe), mainToolDiam, mainFresa.nome, mainFresa.position);
         pos = new THREE.Vector3(pos.x, pos.y, zSafe);
 
+      } else if (u.tipo === "recorte_retangular") {
+        // Rectangular cutout — trace full perimeter
+        const w = u.comprimento || u.largura;
+        const h = u.largura;
+        // Rectangle corners: (px, py) is bottom-left
+        const x1 = px, y1 = py;
+        const x2 = px + w, y2 = py + h;
+
+        const start = validateAndClamp(x1, y1, zSafe, segments.length, `Pos. recorte retangular peça ${label}`);
+        addSegment("rapid", pos, new THREE.Vector3(start.x, start.y, start.z), mainToolDiam, mainFresa.nome, mainFresa.position);
+        pos = new THREE.Vector3(start.x, start.y, start.z);
+
+        const plunge = validateAndClamp(x1, y1, depthZ, segments.length, `Entrada recorte retangular peça ${label}`);
+        addSegment("cut", pos, new THREE.Vector3(plunge.x, plunge.y, plunge.z), mainToolDiam, mainFresa.nome, mainFresa.position);
+        pos = new THREE.Vector3(plunge.x, plunge.y, plunge.z);
+
+        // Trace 4 sides
+        const corners = [
+          { x: x2, y: y1 }, // bottom-right
+          { x: x2, y: y2 }, // top-right
+          { x: x1, y: y2 }, // top-left
+          { x: x1, y: y1 }, // back to start
+        ];
+        for (const corner of corners) {
+          const pt = validateAndClamp(corner.x, corner.y, depthZ, segments.length, `Recorte retangular peça ${label}`);
+          addSegment("cut", pos, new THREE.Vector3(pt.x, pt.y, pt.z), mainToolDiam, mainFresa.nome, mainFresa.position);
+          pos = new THREE.Vector3(pt.x, pt.y, pt.z);
+        }
+
+        addSegment("retract", pos, new THREE.Vector3(pos.x, pos.y, zSafe), mainToolDiam, mainFresa.nome, mainFresa.position);
+        pos = new THREE.Vector3(pos.x, pos.y, zSafe);
+
       } else {
-        // Groove/channel/rectangular cutout — linear movement
+        // Canal/groove — linear movement
         const gLen = u.comprimento || u.largura;
         const endX = px + gLen;
         const endY = py;
