@@ -16,6 +16,7 @@ import { LayersDialog } from "@/components/cnc/dialogs/LayersDialog";
 import { ImportarPecasDialog } from "@/components/cnc/dialogs/ImportarPecasDialog";
 import { ImportarDXFDialog } from "@/components/cnc/dialogs/ImportarDXFDialog";
 import { SobrasDialog } from "@/components/cnc/dialogs/SobrasDialog";
+import { SimulacaoCNCDialog } from "@/components/cnc/dialogs/SimulacaoCNCDialog";
 import { OrcamentoDialog } from "@/components/cnc/dialogs/OrcamentoDialog";
 import { OptimizationResultDialog } from "@/components/cnc/dialogs/OptimizationResultDialog";
 import {
@@ -94,7 +95,7 @@ export default function Index() {
     importarChapa: false, materiais: false, configuracaoCorte: false,
     configGerais: false, layers: false, estrategias: false,
     configMaquinas: false, configBitmap: false, sobras: false,
-    optimizationResult: false, orcamento: false,
+    optimizationResult: false, orcamento: false, simulacaoCNC: false,
   });
 
   const openDialog = (key: keyof typeof dialogs) => setDialogs((prev) => ({ ...prev, [key]: true }));
@@ -271,6 +272,7 @@ export default function Index() {
       }
       case "exportarRelatorio": handleExportReport(); break;
       case "orcamento": openDialog("orcamento"); break;
+      case "simularCNC": openDialog("simulacaoCNC"); break;
       default: break;
     }
   };
@@ -292,7 +294,7 @@ export default function Index() {
           </ResizablePanel>
           <ResizableHandle withHandle />
           <ResizablePanel defaultSize={70} minSize={40}>
-            <NestingPreview layouts={layouts} selectedPieceId={selectedPieceId} onLayoutUpdate={handleLayoutUpdate} onReoptimize={handleOptimize} companyLogo={generalConfig.companyLogo} />
+            <NestingPreview layouts={layouts} selectedPieceId={selectedPieceId} onSelectPiece={setSelectedPieceId} onLayoutUpdate={handleLayoutUpdate} onReoptimize={handleOptimize} companyLogo={generalConfig.companyLogo} />
           </ResizablePanel>
         </ResizablePanelGroup>
       </div>
@@ -331,6 +333,12 @@ export default function Index() {
       <ImportarDXFDialog open={dialogs.importarDXF || dialogs.importarChapa} onOpenChange={(v) => { closeDialog("importarDXF"); closeDialog("importarChapa"); if (v) openDialog("importarDXF"); }} onImport={() => {}} />
       <SobrasDialog open={dialogs.sobras} onOpenChange={(v) => v ? openDialog("sobras") : closeDialog("sobras")} sobras={sobras} onSave={setSobras} />
       <OrcamentoDialog open={dialogs.orcamento} onOpenChange={(v) => v ? openDialog("orcamento") : closeDialog("orcamento")} layouts={layouts} companyLogo={generalConfig.companyLogo} />
+      <SimulacaoCNCDialog
+        open={dialogs.simulacaoCNC}
+        onOpenChange={(v) => v ? openDialog("simulacaoCNC") : closeDialog("simulacaoCNC")}
+        layout={layouts[0] || null}
+        machineConfig={machineConfig}
+      />
       {optimizationResult && (
         <OptimizationResultDialog
           open={dialogs.optimizationResult}

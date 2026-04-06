@@ -49,12 +49,12 @@ export function PartsTable({ pieces, selectedId, onSelect, onPiecesChange }: Par
                 onClick={() => onSelect(piece.id)}
                 className={`cursor-pointer border-b border-border/30 transition-colors text-[11px] ${
                   selectedId === piece.id
-                    ? "bg-primary/8 border-l-2 border-l-primary"
+                    ? "bg-yellow-500/20 border-l-2 border-l-yellow-400"
                     : "hover:bg-muted/30"
                 }`}
               >
                 <td className="px-2 py-1 text-muted-foreground">{piece.id}</td>
-                <td className={`px-2 py-1 truncate max-w-[120px] ${selectedId === piece.id ? "font-semibold text-primary" : "font-medium"}`}>
+                <td className={`px-2 py-1 truncate max-w-[120px] ${selectedId === piece.id ? "font-semibold text-yellow-400" : "font-medium"}`}>
                   {piece.descricao}
                 </td>
                 <td className="px-2 py-1 text-right font-mono text-[10px]">{piece.largura}</td>

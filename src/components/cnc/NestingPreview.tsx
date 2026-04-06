@@ -1,4 +1,4 @@
-import { NestingSheet, PlacedNestingPiece } from "@/types/promob";
+import { NestingSheet, PlacedNestingPiece, PromobHole } from "@/types/promob";
 import { useState, useRef, useCallback } from "react";
 import { Nesting3DView, Nesting3DViewHandle } from "./Nesting3DView";
 import {
@@ -17,6 +17,7 @@ import { toast } from "sonner";
 interface NestingPreviewProps {
   layouts: NestingSheet[];
   selectedPieceId: number | null;
+  onSelectPiece?: (id: number) => void;
   onLayoutUpdate?: (sheetIdx: number, pieces: PlacedNestingPiece[]) => void;
   onReoptimize?: () => void;
   companyLogo?: string;
@@ -46,7 +47,7 @@ function ViewToolButton({ icon: Icon, label, onClick, active, accent }: { icon: 
   );
 }
 
-export function NestingPreview({ layouts, selectedPieceId, onLayoutUpdate, onReoptimize, companyLogo }: NestingPreviewProps) {
+export function NestingPreview({ layouts, selectedPieceId, onSelectPiece, onLayoutUpdate, onReoptimize, companyLogo }: NestingPreviewProps) {
   const [viewMode, setViewMode] = useState<ViewMode>("2d");
   const [selectedSheetIdx, setSelectedSheetIdx] = useState(0);
   const [wireframe, setWireframe] = useState(false);
@@ -180,6 +181,16 @@ export function NestingPreview({ layouts, selectedPieceId, onLayoutUpdate, onReo
         if (piece.bordaInf) svgPieces += '<line x1="' + piece.x + '" y1="' + (piece.y + piece.height) + '" x2="' + (piece.x + piece.width) + '" y2="' + (piece.y + piece.height) + '" stroke="#D97706" stroke-width="3"/>';
         if (piece.bordaEsq) svgPieces += '<line x1="' + piece.x + '" y1="' + piece.y + '" x2="' + piece.x + '" y2="' + (piece.y + piece.height) + '" stroke="#D97706" stroke-width="3"/>';
         if (piece.bordaDir) svgPieces += '<line x1="' + (piece.x + piece.width) + '" y1="' + piece.y + '" x2="' + (piece.x + piece.width) + '" y2="' + (piece.y + piece.height) + '" stroke="#D97706" stroke-width="3"/>';
+        // Render holes/furos
+        if (piece.furos && piece.furos.length > 0) {
+          piece.furos.forEach((hole: PromobHole) => {
+            const cx = piece.x + hole.X;
+            const cy = piece.y + hole.Y;
+            const r = Math.max(hole.DIAM / 2, 2);
+            const holeColor = hole.DIAM >= 15 ? "#D97706" : hole.DIAM >= 5 ? "#3B82F6" : "#EF4444";
+            svgPieces += '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="' + holeColor + '" opacity="0.7"/>';
+          });
+        }
         if (piece.width > 50 && piece.height > 25) {
           const fs = Math.min(piece.width / 5, piece.height / 4, 28);
           const fs2 = Math.min(piece.width / 8, piece.height / 5, 11);
@@ -302,6 +313,7 @@ export function NestingPreview({ layouts, selectedPieceId, onLayoutUpdate, onReo
                   ref={view2DRef}
                   layout={layouts[selectedSheetIdx]}
                   selectedPieceId={selectedPieceId}
+                  onSelectPiece={onSelectPiece}
                   dragMode={dragMode}
                   onPiecesReorder={handlePiecesReorder}
                   onReoptimize={onReoptimize}
