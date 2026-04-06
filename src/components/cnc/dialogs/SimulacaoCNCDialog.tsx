@@ -268,6 +268,7 @@ function CameraControls({ sheetW, sheetH, cameraAction }: { sheetW: number; shee
 
   useEffect(() => {
     if (!cameraAction || !controlsRef.current) return;
+    const actionName = cameraAction.split("_")[0];
     const controls = controlsRef.current;
     const target = new THREE.Vector3(sheetW / 2, 0, sheetH / 2);
     
