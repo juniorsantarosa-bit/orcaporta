@@ -4,7 +4,7 @@
  * Supports SmartCut, Mach CNC, and Aspire post-processors.
  * Includes Common Cut optimization for shared edges between adjacent pieces.
  */
-import { NestingSheet } from "@/types/promob";
+import { NestingSheet, Usinagem } from "@/types/promob";
 import { ToolMagazine, getMainFresa, DEFAULT_TOOL_MAGAZINE } from "@/types/toolMagazine";
 import { PostProcessorConfig, SMARTCUT_CONFIG, POST_PROCESSORS, PostProcessorType } from "@/types/postProcessor";
 import { collectHoles, groupHolesByDiameter, generateDrillingBlock } from "./drilling";
@@ -93,6 +93,83 @@ export function generateGCode(
   
   for (const diam of sortedDiameters) {
     generateDrillingBlock(lines, holeGroups.get(diam)!, diam, sheet, magazine, pp, f, f1, f4);
+  }
+
+  // === MACHINING OPERATIONS (usinagens: grooves, circular cutouts) ===
+  // After drilling, before contour cuts — standard CNC workflow
+  const allUsinagens: { u: Usinagem; pieceX: number; pieceY: number; label: string }[] = [];
+  sheet.pieces.forEach(piece => {
+    if (piece.usinagens && piece.usinagens.length > 0) {
+      piece.usinagens.forEach(u => {
+        allUsinagens.push({ u, pieceX: piece.x, pieceY: piece.y, label: piece.label || "?" });
+      });
+    }
+  });
+
+  if (allUsinagens.length > 0) {
+    // Tool change for fresa (same tool for machining)
+    if (pp.tipo === "smartcut") {
+      lines.push("(#### TROCA DE FERRAMENTAS ####)");
+      lines.push(`(#### FERRAMENTA: ${fresa.nome} - ${f1(fresa.diametro)}mm ####)`);
+      lines.push(`M6 T${fresa.position}`);
+      lines.push(`M3 S${fresa.rpm}`);
+    } else if (pp.tipo === "mach_cnc") {
+      lines.push(`( FERRAMENTA: ${fresa.position} - ${fresa.nome} )`);
+      lines.push("");
+      lines.push(`M6 T${fresa.position}`);
+      lines.push(`M3 S${f4(fresa.rpm)}`);
+      lines.push("");
+    } else {
+      lines.push(`(########_Troca_de_Ferramentas_########)`);
+      lines.push(`(Numero_da_Ferramenta:${fresa.position})`);
+      lines.push(`(Descricao:${fresa.nome})`);
+      lines.push(` `);
+      lines.push(`M6 T${fresa.position}`);
+      lines.push(`M3 S${fresa.rpm}`);
+      lines.push(` `);
+    }
+
+    const zSeguroVal = pp.zSeguroAutoCalc ? sheet.espessura + pp.zSeguroOffset : pp.zSeguro;
+    const feedEntry = pp.avancoEntradaOverride || fresa.avancoEntrada;
+    const feedCut = pp.avancoCorteOverride || fresa.avancoCorte;
+
+    if (pp.tipo === "mach_cnc") lines.push(`( === USINAGENS: ${allUsinagens.length} operações === )`);
+    else lines.push(`(=== Usinagens ===)`);
+    lines.push("");
+
+    for (let ui = 0; ui < allUsinagens.length; ui++) {
+      const { u, pieceX, pieceY, label } = allUsinagens[ui];
+      const ux = -(pieceX + (u.x || 0)); // Mirror X for CNC
+      const uy = pieceY + (u.y || 0);
+      const depthZ = pp.passeFinal;
+
+      if (u.tipo === "recorte_circular") {
+        const r = (u.largura || 0) / 2;
+        lines.push(`( Recorte Circular Ø${u.largura}mm - Peça ${label} )`);
+        
+        // Move to entry point (edge of circle)
+        lines.push(`G0 X${f4(ux - r)} Y${f4(uy)} Z${f4(zSeguroVal)}`);
+        lines.push(`G1 Z${f4(depthZ)} F${f4(feedEntry)}`);
+        // Circular interpolation G2 (clockwise)
+        lines.push(`G2 X${f4(ux - r)} Y${f4(uy)} I${f4(r)} J0 F${f4(feedCut)}`);
+        lines.push(`G0 Z${f4(zSeguroVal)}`);
+        lines.push("");
+      } else {
+        // Groove/channel — linear cut
+        const gLen = u.comprimento || u.largura;
+        const endX = ux - gLen; // Mirror
+        const grooveDepth = Math.min(-(u.profundidade || 0), depthZ);
+        
+        const tipoLabel = u.tipo === "canal" ? "Canal" : u.tipo === "recorte_retangular" ? "Recorte" : u.tipo === "rebaixo" ? "Rebaixo" : "Usinagem";
+        lines.push(`( ${tipoLabel} ${u.largura}mm×${gLen}mm prof.${u.profundidade}mm - Peça ${label} )`);
+        
+        lines.push(`G0 X${f4(ux)} Y${f4(uy)} Z${f4(zSeguroVal)}`);
+        lines.push(`G1 Z${f4(grooveDepth)} F${f4(feedEntry)}`);
+        lines.push(`G1 X${f4(endX)} Y${f4(uy)} F${f4(feedCut)}`);
+        lines.push(`G0 Z${f4(zSeguroVal)}`);
+        lines.push("");
+      }
+    }
   }
 
   // === CONTOUR CUTTING ===

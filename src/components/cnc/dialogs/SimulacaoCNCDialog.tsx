@@ -1,6 +1,6 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { NestingSheet, PlacedNestingPiece, PromobHole } from "@/types/promob";
+import { NestingSheet, PlacedNestingPiece, PromobHole, Usinagem } from "@/types/promob";
 import { DEFAULT_TOOL_MAGAZINE, findToolByDiameter, getMainFresa, ToolSlot } from "@/types/toolMagazine";
 import { detectSharedEdges } from "@/lib/gcode/commonCut";
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
@@ -206,6 +206,98 @@ function generateToolpath(layout: NestingSheet, limits: SafetyLimits, useCommonC
 
       addSegment("retract", pos, new THREE.Vector3(drill.x, drill.y, zSafe), diam, toolSlot.nome, toolSlot.position);
       pos = new THREE.Vector3(drill.x, drill.y, zSafe);
+    }
+  }
+
+  // === MACHINING OPERATIONS (usinagens: grooves, circular cutouts, etc.) ===
+  // These come AFTER drilling, BEFORE contour cuts — matching real CNC workflow
+  interface UsinagemOp { u: Usinagem; px: number; py: number; piece: PlacedNestingPiece; }
+  const usinagemOps: UsinagemOp[] = [];
+
+  layout.pieces.forEach((piece) => {
+    if (!piece.usinagens || piece.usinagens.length === 0) return;
+    piece.usinagens.forEach(u => {
+      const px = piece.x + (u.x || 0);
+      const py = piece.y + (u.y || 0);
+      usinagemOps.push({ u, px, py, piece });
+    });
+  });
+
+  if (usinagemOps.length > 0) {
+    // Use fresa for machining operations — may need different tool for different groove widths
+    emitToolChange(mainFresa);
+
+    // Sort by nearest-neighbor
+    const sortedUsOps: UsinagemOp[] = [];
+    const remainUs = [...usinagemOps];
+    let uCur = { x: pos.x, y: pos.y };
+    while (remainUs.length > 0) {
+      let bestIdx = 0, bestDist = Infinity;
+      for (let i = 0; i < remainUs.length; i++) {
+        const d = Math.hypot(remainUs[i].px - uCur.x, remainUs[i].py - uCur.y);
+        if (d < bestDist) { bestDist = d; bestIdx = i; }
+      }
+      const picked = remainUs.splice(bestIdx, 1)[0];
+      sortedUsOps.push(picked);
+      uCur = { x: picked.px, y: picked.py };
+    }
+
+    for (const { u, px, py, piece } of sortedUsOps) {
+      const depthZ = Math.max(-(u.profundidade || layout.espessura), minAllowedZ);
+      const label = piece.label || "?";
+
+      if (u.tipo === "recorte_circular") {
+        // Circular cutout — move to center, plunge, then trace circle (simplified as 8 points)
+        const r = (u.largura || 0) / 2;
+        const start = validateAndClamp(px, py, zSafe, segments.length, `Pos. recorte circular Ø${u.largura}mm peça ${label}`);
+        addSegment("rapid", pos, new THREE.Vector3(start.x, start.y, start.z), mainToolDiam, mainFresa.nome, mainFresa.position);
+        pos = new THREE.Vector3(start.x, start.y, start.z);
+
+        // Entry at edge of circle
+        const entryX = px + r;
+        const entry = validateAndClamp(entryX, py, zSafe, segments.length, `Entrada circular peça ${label}`);
+        addSegment("rapid", pos, new THREE.Vector3(entry.x, entry.y, entry.z), mainToolDiam, mainFresa.nome, mainFresa.position);
+        pos = new THREE.Vector3(entry.x, entry.y, entry.z);
+
+        const plunge = validateAndClamp(entryX, py, depthZ, segments.length, `Mergulho circular peça ${label}`);
+        addSegment("cut", pos, new THREE.Vector3(plunge.x, plunge.y, plunge.z), mainToolDiam, mainFresa.nome, mainFresa.position);
+        pos = new THREE.Vector3(plunge.x, plunge.y, plunge.z);
+
+        // Trace circle in 16 segments
+        const numSeg = 16;
+        for (let s = 1; s <= numSeg; s++) {
+          const angle = (s / numSeg) * Math.PI * 2;
+          const cx = px + r * Math.cos(angle);
+          const cy = py + r * Math.sin(angle);
+          const pt = validateAndClamp(cx, cy, depthZ, segments.length, `Circular seg.${s} peça ${label}`);
+          addSegment("cut", pos, new THREE.Vector3(pt.x, pt.y, pt.z), mainToolDiam, mainFresa.nome, mainFresa.position);
+          pos = new THREE.Vector3(pt.x, pt.y, pt.z);
+        }
+
+        addSegment("retract", pos, new THREE.Vector3(pos.x, pos.y, zSafe), mainToolDiam, mainFresa.nome, mainFresa.position);
+        pos = new THREE.Vector3(pos.x, pos.y, zSafe);
+
+      } else {
+        // Groove/channel/rectangular cutout — linear movement
+        const gLen = u.comprimento || u.largura;
+        const endX = px + gLen;
+        const endY = py;
+
+        const start = validateAndClamp(px, py, zSafe, segments.length, `Pos. ${u.tipo} peça ${label}`);
+        addSegment("rapid", pos, new THREE.Vector3(start.x, start.y, start.z), mainToolDiam, mainFresa.nome, mainFresa.position);
+        pos = new THREE.Vector3(start.x, start.y, start.z);
+
+        const plunge = validateAndClamp(px, py, depthZ, segments.length, `Entrada ${u.tipo} peça ${label}`);
+        addSegment("cut", pos, new THREE.Vector3(plunge.x, plunge.y, plunge.z), mainToolDiam, mainFresa.nome, mainFresa.position);
+        pos = new THREE.Vector3(plunge.x, plunge.y, plunge.z);
+
+        const end = validateAndClamp(endX, endY, depthZ, segments.length, `Corte ${u.tipo} peça ${label}`);
+        addSegment("cut", pos, new THREE.Vector3(end.x, end.y, end.z), mainToolDiam, mainFresa.nome, mainFresa.position);
+        pos = new THREE.Vector3(end.x, end.y, end.z);
+
+        addSegment("retract", pos, new THREE.Vector3(pos.x, pos.y, zSafe), mainToolDiam, mainFresa.nome, mainFresa.position);
+        pos = new THREE.Vector3(pos.x, pos.y, zSafe);
+      }
     }
   }
 
