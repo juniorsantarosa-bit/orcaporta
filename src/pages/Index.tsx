@@ -333,6 +333,12 @@ export default function Index() {
       <ImportarDXFDialog open={dialogs.importarDXF || dialogs.importarChapa} onOpenChange={(v) => { closeDialog("importarDXF"); closeDialog("importarChapa"); if (v) openDialog("importarDXF"); }} onImport={() => {}} />
       <SobrasDialog open={dialogs.sobras} onOpenChange={(v) => v ? openDialog("sobras") : closeDialog("sobras")} sobras={sobras} onSave={setSobras} />
       <OrcamentoDialog open={dialogs.orcamento} onOpenChange={(v) => v ? openDialog("orcamento") : closeDialog("orcamento")} layouts={layouts} companyLogo={generalConfig.companyLogo} />
+      <SimulacaoCNCDialog
+        open={dialogs.simulacaoCNC}
+        onOpenChange={(v) => v ? openDialog("simulacaoCNC") : closeDialog("simulacaoCNC")}
+        layout={layouts[0] || null}
+        machineConfig={machineConfig}
+      />
       {optimizationResult && (
         <OptimizationResultDialog
           open={dialogs.optimizationResult}
