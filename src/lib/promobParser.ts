@@ -72,9 +72,58 @@ export function parsePromobCSV(csvText: string): PromobPiece[] {
 
   const header = lines[0].replace(/^\uFEFF/, "").split(";").map(h => h.trim());
 
-  const colIdx = (name: string) => {
-    const idx = header.indexOf(name);
-    return idx;
+  // Column name aliases: maps canonical names to possible CSV header variants
+  const COLUMN_ALIASES: Record<string, string[]> = {
+    "ID_UNICO": ["ID_UNICO", "COLUMN_ITEM_CODE"],
+    "CLIENTE": ["CLIENTE", "CLIENTE - DADOS DO CLIENTE"],
+    "AMBIENTE": ["AMBIENTE"],
+    "COMPRIMENTO": ["COMPRIMENTO", "ALTURA (X)"],
+    "PROFUNDIDADE": ["PROFUNDIDADE", "PROF (Y)"],
+    "QUANTIDADE": ["QUANTIDADE", "QUANTIDADE ITEM"],
+    "DESCRICAO": ["DESCRICAO", "PEÇA DESCRIÇÃO"],
+    "CHAPA": ["CHAPA", "DESCRIÇÃO DO MATERIAL"],
+    "ESP_CHAPA": ["ESP_CHAPA", "ESPESSURA DO MATERIAL"],
+    "COMP_CHAPA": ["COMP_CHAPA", "DIM_X_MATERIAL"],
+    "PROF_CHAPA": ["PROF_CHAPA", "DIM_Y_MATERIAL"],
+    "VEIO": ["VEIO"],
+    "CNC": ["CNC", "OPERAÇÕES"],
+    "ALINHAMENTO": ["ALINHAMENTO"],
+    "CNC_FUROS_TOTAL": ["CNC_FUROS_TOTAL"],
+    "COLUMN_POINT_X_ITEM": ["COLUMN_POINT_X_ITEM"],
+    "COLUMN_POINT_Y_ITEM": ["COLUMN_POINT_Y_ITEM"],
+    "COLUMN_POINTS_ANGLE": ["COLUMN_POINTS_ANGLE"],
+    "COLUMN_BORDER_DESCRIPTION": ["COLUMN_BORDER_DESCRIPTION"],
+    "COLUMN_BORDER_FINISHING": ["COLUMN_BORDER_FINISHING"],
+    "COD_CLIENTE": ["COD_CLIENTE", "CÓDIGO DO PROJETO"],
+    "ROTEIRO": ["ROTEIRO", "REFERÊNCIA"],
+    "CATEGORIA": ["CATEGORIA"],
+    "SETOR": ["SETOR"],
+    "ESTRUTURA": ["ESTRUTURA", "ID MÓDULO"],
+    "MODULO_DESC": ["MODULO_DESC", "REFERÊNCIA"],
+    "COD_CORTE": ["COD_CORTE", "CÓDIGO MATERIAL"],
+    "COR_1C": ["COR_1C"],
+    "COR_2C": ["COR_2C"],
+    "COR_1P": ["COR_1P"],
+    "COR_2P": ["COR_2P"],
+    "OBS": ["OBS"],
+    "COLUMN_ITEM_DEPTH": ["COLUMN_ITEM_DEPTH"],
+    "NOME_MATERIAL": ["NOME DO MATERIAL", "NOME_MATERIAL"],
+    "REFERENCIA_MATERIAL": ["REFERÊNCIA DO MATERIAL", "REFERENCIA_MATERIAL"],
+  };
+
+  const colIdx = (name: string): number => {
+    // Direct match first
+    const directIdx = header.indexOf(name);
+    if (directIdx >= 0) return directIdx;
+    // Try aliases
+    const aliases = COLUMN_ALIASES[name];
+    if (aliases) {
+      for (const alias of aliases) {
+        const idx = header.indexOf(alias);
+        if (idx >= 0) return idx;
+      }
+    }
+    return -1;
   };
 
   const hasCNC = colIdx("CNC") >= 0;
