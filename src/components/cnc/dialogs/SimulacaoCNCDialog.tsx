@@ -67,8 +67,10 @@ const MAX_PENETRATION = -0.1;
  * Clamp a value to safety limits, auto-correcting out-of-bounds values
  */
 function clampToLimits(x: number, y: number, z: number, layout: NestingSheet, limits: SafetyLimits) {
-  const safeX = Math.max(limits.mesaMinX, Math.min(x, limits.mesaMaxX));
-  const safeY = Math.max(limits.mesaMinY, Math.min(y, limits.mesaMaxY));
+  // Allow small negative offsets for fresa edge cuts (contour offset beyond sheet edge)
+  const edgeMargin = 10; // generous margin for fresa offset
+  const safeX = Math.max(limits.mesaMinX - edgeMargin, Math.min(x, limits.mesaMaxX + edgeMargin));
+  const safeY = Math.max(limits.mesaMinY - edgeMargin, Math.min(y, limits.mesaMaxY + edgeMargin));
   // Z: never go below -(espessura + 0.1mm) to protect the sacrifice table
   const minZ = -(layout.espessura + Math.abs(MAX_PENETRATION));
   const safeZ = Math.max(minZ, Math.min(z, limits.zMax));
