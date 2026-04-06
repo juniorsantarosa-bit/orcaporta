@@ -272,6 +272,7 @@ export default function Index() {
       }
       case "exportarRelatorio": handleExportReport(); break;
       case "orcamento": openDialog("orcamento"); break;
+      case "simularCNC": openDialog("simulacaoCNC"); break;
       default: break;
     }
   };
