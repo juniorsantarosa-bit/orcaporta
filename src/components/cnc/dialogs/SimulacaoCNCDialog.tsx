@@ -1089,11 +1089,28 @@ export function SimulacaoCNCDialog({ open, onOpenChange, layouts, machineConfig 
             {(progress * 100).toFixed(1)}%
           </span>
 
-          <div className="flex gap-2 text-[9px] text-muted-foreground">
+          <div className="flex gap-3 text-[9px] text-muted-foreground items-center">
             <span>{segments.length} mov.</span>
+            <span>Rápido: {(rapidDistance / 1000).toFixed(1)}m</span>
+            <span>Corte: {(cutDistance / 1000).toFixed(1)}m</span>
             <span className={alerts.length > 0 ? "text-yellow-600 font-bold" : "text-green-600"}>
               {alerts.length > 0 ? `⚠ ${alerts.length} corrigidos` : "✓ OK"}
             </span>
+            {comparison && (
+              <span className="border-l border-border pl-2">
+                {useCommonCutSim ? "CC" : "Normal"} vs {!useCommonCutSim ? "CC" : "Normal"}:
+                {" "}{comparison.altSegments} mov. / Rápido: {(comparison.altRapidDist / 1000).toFixed(1)}m
+                {rapidDistance < comparison.altRapidDist ? (
+                  <span className="text-green-600 font-bold ml-1">
+                    ↓{((1 - rapidDistance / comparison.altRapidDist) * 100).toFixed(0)}% menos deslocamento
+                  </span>
+                ) : rapidDistance > comparison.altRapidDist ? (
+                  <span className="text-destructive font-bold ml-1">
+                    ↑{((rapidDistance / comparison.altRapidDist - 1) * 100).toFixed(0)}% mais deslocamento
+                  </span>
+                ) : null}
+              </span>
+            )}
           </div>
         </div>
       </DialogContent>
