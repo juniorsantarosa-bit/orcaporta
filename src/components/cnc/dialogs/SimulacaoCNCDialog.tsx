@@ -847,10 +847,22 @@ export function SimulacaoCNCDialog({ open, onOpenChange, layouts, machineConfig 
     zMax: machineConfig.zSeguro,
   }), [machineConfig, layout]);
 
-  const { segments, alerts } = useMemo(() =>
-    layout ? generateToolpath(layout, limits) : { segments: [], alerts: [] },
-    [layout, limits]
+  const { segments, alerts, totalDistance, cutDistance, rapidDistance } = useMemo(() =>
+    layout ? generateToolpath(layout, limits, useCommonCutSim) : { segments: [], alerts: [], totalDistance: 0, cutDistance: 0, rapidDistance: 0 },
+    [layout, limits, useCommonCutSim]
   );
+
+  // Compare: generate stats for the opposite mode
+  const comparison = useMemo(() => {
+    if (!layout) return null;
+    const alt = generateToolpath(layout, limits, !useCommonCutSim);
+    return {
+      altSegments: alt.segments.length,
+      altTotalDist: alt.totalDistance,
+      altRapidDist: alt.rapidDistance,
+      altCutDist: alt.cutDistance,
+    };
+  }, [layout, limits, useCommonCutSim]);
 
   // Reset on sheet change
   useEffect(() => {
