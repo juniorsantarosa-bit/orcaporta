@@ -355,6 +355,7 @@ export function parsePromobCSV(csvText: string): PromobPiece[] {
       ALINHAMENTO: alinhamento,
       FRESAS: fresas,
       FUROS: furos,
+      USINAGENS: usinagens,
       CONTORNO: contorno,
       HAS_FRESAS_SUP: fresas.length > 0,
       HAS_FRESAS_INF: false,

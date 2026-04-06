@@ -45,6 +45,7 @@ export interface PromobPiece {
   ALINHAMENTO: "NORMAL" | "INVERSO";
   FRESAS: any[];
   FUROS: PromobHole[];
+  USINAGENS: Usinagem[];
   CONTORNO: PromobContourPoint[];
   HAS_FRESAS_SUP: boolean;
   HAS_FRESAS_INF: boolean;
