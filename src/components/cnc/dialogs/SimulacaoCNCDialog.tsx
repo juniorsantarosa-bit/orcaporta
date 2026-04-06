@@ -390,7 +390,7 @@ function SimulationScene3D({ segments, progress, layout, cameraAction }: { segme
   return (
     <>
       <PerspectiveCamera makeDefault position={[sheetW / 2 + 15, 12, sheetH / 2 + 15]} fov={45} />
-      <CameraControls sheetW={sheetW} sheetH={sheetH} />
+      <CameraControls sheetW={sheetW} sheetH={sheetH} cameraAction={cameraAction} />
 
       <ambientLight intensity={0.6} />
       <directionalLight position={[15, 25, 15]} intensity={0.8} castShadow />
