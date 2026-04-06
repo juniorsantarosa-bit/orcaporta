@@ -307,7 +307,7 @@ function CameraControls({ sheetW, sheetH, cameraAction }: { sheetW: number; shee
 
 // ============ 3D Simulation Scene ============
 
-function SimulationScene3D({ segments, progress, layout }: { segments: ToolpathSegment[]; progress: number; layout: NestingSheet }) {
+function SimulationScene3D({ segments, progress, layout, cameraAction }: { segments: ToolpathSegment[]; progress: number; layout: NestingSheet; cameraAction: string }) {
   const toolRef = useRef<THREE.Group>(null);
   const scale = 0.01;
   const totalSegments = segments.length;
