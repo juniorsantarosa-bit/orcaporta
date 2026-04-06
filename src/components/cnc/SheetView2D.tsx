@@ -112,10 +112,13 @@ interface SheetView2DProps {
 export const SheetView2D = forwardRef<SheetView2DHandle, SheetView2DProps>(({ layout, selectedPieceId, onSelectPiece, dragMode = false, onPiecesReorder, onReoptimize }, ref) => {
   const [hoveredPiece, setHoveredPiece] = useState<number | null>(null);
   const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
   const [internalDragMode, setInternalDragMode] = useState(false);
   const [draggingIdx, setDraggingIdx] = useState<number | null>(null);
   const [dragOffset, setDragOffset] = useState<{ dx: number; dy: number }>({ dx: 0, dy: 0 });
   const [tempPieces, setTempPieces] = useState<PlacedNestingPiece[] | null>(null);
+  const [isPanning, setIsPanning] = useState(false);
+  const lastPanPos = useRef({ x: 0, y: 0 });
   const svgRef = useRef<SVGSVGElement>(null);
 
   const isDragActive = dragMode || internalDragMode;
@@ -124,7 +127,7 @@ export const SheetView2D = forwardRef<SheetView2DHandle, SheetView2DProps>(({ la
   useImperativeHandle(ref, () => ({
     zoomIn: () => setZoom(z => Math.min(z * 1.3, 5)),
     zoomOut: () => setZoom(z => Math.max(z / 1.3, 0.3)),
-    zoomFit: () => setZoom(1),
+    zoomFit: () => { setZoom(1); setPan({ x: 0, y: 0 }); },
     toggleDragMode: () => {
       const next = !internalDragMode;
       setInternalDragMode(next);
