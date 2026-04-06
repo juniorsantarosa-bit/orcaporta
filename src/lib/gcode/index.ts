@@ -2,12 +2,14 @@
  * Main G-code generator orchestrator.
  * Combines drilling + contour operations with proper tool sequencing.
  * Supports SmartCut, Mach CNC, and Aspire post-processors.
+ * Includes Common Cut optimization for shared edges between adjacent pieces.
  */
 import { NestingSheet } from "@/types/promob";
 import { ToolMagazine, getMainFresa, DEFAULT_TOOL_MAGAZINE } from "@/types/toolMagazine";
 import { PostProcessorConfig, SMARTCUT_CONFIG, POST_PROCESSORS, PostProcessorType } from "@/types/postProcessor";
 import { collectHoles, groupHolesByDiameter, generateDrillingBlock } from "./drilling";
 import { generatePieceContour } from "./contour";
+import { detectSharedEdges, generateCommonCutGCode, generatePartialContour } from "./commonCut";
 
 const f = (n: number) => n.toFixed(3);
 const f1 = (n: number) => n.toFixed(1);
@@ -16,6 +18,10 @@ const f4 = (n: number) => n.toFixed(4);
 export interface GenerateOptions {
   postProcessor?: PostProcessorType;
   magazine?: ToolMagazine;
+  /** Enable common cut optimization (default: true) */
+  useCommonCut?: boolean;
+  /** Gap between pieces in mm (for common cut detection) */
+  gap?: number;
 }
 
 /**
@@ -28,9 +34,17 @@ export function generateGCode(
   const ppType = options.postProcessor || "smartcut";
   const pp = POST_PROCESSORS[ppType];
   const magazine = options.magazine || DEFAULT_TOOL_MAGAZINE;
+  const useCommonCut = options.useCommonCut !== false; // default true
+  const gap = options.gap || 6;
   const lines: string[] = [];
 
   const zSeguro = pp.zSeguroAutoCalc ? sheet.espessura + pp.zSeguroOffset : pp.zSeguro;
+
+  // === DETECT COMMON CUTS ===
+  const fresa = getMainFresa(magazine);
+  const { sharedEdges, skippableEdges } = useCommonCut
+    ? detectSharedEdges(sheet.pieces, gap, fresa.diametro)
+    : { sharedEdges: [], skippableEdges: new Set<string>() };
 
   // === METADATA HEADER (Mach CNC only) ===
   if (pp.includeMetadata) {
@@ -39,6 +53,10 @@ export function generateGCode(
     lines.push(`( Pos processador:  ${pp.nome} )`);
     lines.push(`( Material:  ${sheet.material} )`);
     lines.push(`( Dimensoes:  X:${f4(sheet.sheetWidth)} Y:${f4(sheet.sheetHeight)} Z:${f4(sheet.espessura)} )`);
+    
+    if (useCommonCut && sharedEdges.length > 0) {
+      lines.push(`( Common Cut: ${sharedEdges.length} cortes compartilhados )`);
+    }
     
     // List tools that will be used
     const usedTools = new Set<number>();
@@ -50,7 +68,6 @@ export function generateGCode(
       if (tool) usedTools.add(tool.position);
     }
     
-    const fresa = getMainFresa(magazine);
     usedTools.add(fresa.position);
     
     lines.push(`( Ferramentas para execucao: )`);
@@ -79,8 +96,6 @@ export function generateGCode(
   }
 
   // === CONTOUR CUTTING ===
-  const fresa = getMainFresa(magazine);
-
   // Tool change for fresa
   if (pp.tipo === "smartcut") {
     lines.push("(#### TROCA DE FERRAMENTAS ####)");
@@ -103,6 +118,12 @@ export function generateGCode(
     lines.push(` `);
   }
 
+  // === COMMON CUT LINES (before individual contours) ===
+  if (useCommonCut && sharedEdges.length > 0) {
+    generateCommonCutGCode(lines, sharedEdges, sheet.pieces, fresa, pp, sheet.espessura, f, f1, f4);
+  }
+
+  // === INDIVIDUAL CONTOURS (with shared edges skipped) ===
   // Classify pieces as small or large for two-pass strategy
   const smallPieces = pp.usarDoisPasses
     ? sheet.pieces.filter(p =>
@@ -115,15 +136,32 @@ export function generateGCode(
       )
     : sheet.pieces;
 
+  // Helper to generate contour for a piece, using partial if it has shared edges
+  const generateContourForPiece = (piece: typeof sheet.pieces[0], zDepth: number, passLabel: string) => {
+    const pieceIdx = sheet.pieces.indexOf(piece);
+    const hasSkippable = useCommonCut && (
+      skippableEdges.has(`${pieceIdx}-right`) ||
+      skippableEdges.has(`${pieceIdx}-left`) ||
+      skippableEdges.has(`${pieceIdx}-top`) ||
+      skippableEdges.has(`${pieceIdx}-bottom`)
+    );
+
+    if (hasSkippable) {
+      generatePartialContour(lines, piece, pieceIdx, skippableEdges, fresa, pp, zDepth, passLabel, f, f1, f4, sheet.espessura);
+    } else {
+      generatePieceContour(lines, piece, fresa, pp, zDepth, passLabel, f, f1, f4, sheet.espessura);
+    }
+  };
+
   // Two-pass for small pieces
   if (pp.usarDoisPasses && smallPieces.length > 0) {
     if (pp.tipo === "smartcut") lines.push("(#### Corte Small P1 ####)");
     for (const piece of smallPieces) {
-      generatePieceContour(lines, piece, fresa, pp, pp.passePreCorte, "PECA_P1", f, f1, f4, sheet.espessura);
+      generateContourForPiece(piece, pp.passePreCorte, "PECA_P1");
     }
     if (pp.tipo === "smartcut") lines.push("(#### Corte Small ####)");
     for (const piece of smallPieces) {
-      generatePieceContour(lines, piece, fresa, pp, pp.passeFinal, "PECA", f, f1, f4, sheet.espessura);
+      generateContourForPiece(piece, pp.passeFinal, "PECA");
     }
   }
 
@@ -131,7 +169,7 @@ export function generateGCode(
   if (largePieces.length > 0) {
     if (pp.tipo === "smartcut") lines.push("(#### Corte ####)");
     for (const piece of largePieces) {
-      generatePieceContour(lines, piece, fresa, pp, pp.passeFinal, "PECA", f, f1, f4, sheet.espessura);
+      generateContourForPiece(piece, pp.passeFinal, "PECA");
     }
   }
 
