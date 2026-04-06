@@ -1,5 +1,5 @@
 import { Canvas, useThree } from "@react-three/fiber";
-import { OrbitControls, PerspectiveCamera, Environment, ContactShadows, Html } from "@react-three/drei";
+import { OrbitControls, PerspectiveCamera, ContactShadows, Html } from "@react-three/drei";
 import { NestingSheet, PlacedNestingPiece } from "@/types/promob";
 import { useMemo, useState, useRef, useImperativeHandle, forwardRef, useEffect } from "react";
 import * as THREE from "three";
