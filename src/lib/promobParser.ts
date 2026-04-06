@@ -150,12 +150,107 @@ export function parsePromobCSV(csvText: string): PromobPiece[] {
 }
 
 /**
- * Parse Promob JSON (already processed format from optimizer)
+ * Parse Promob JSON (supports both legacy array format and new Smart Cabinets format)
  */
 export function parsePromobJSON(jsonText: string): PromobPiece[] {
   const data = JSON.parse(jsonText);
-  if (!Array.isArray(data)) return [];
-  return data as PromobPiece[];
+  
+  // Legacy format: direct array of PromobPiece
+  if (Array.isArray(data)) return data as PromobPiece[];
+  
+  // New Smart Cabinets format: { TRABALHO, CHAPAS, PECAS }
+  if (data.PECAS && Array.isArray(data.PECAS)) {
+    return parseSmartFormat(data);
+  }
+  
+  return [];
+}
+
+/**
+ * Parse the new Smart Cabinets JSON format
+ * Structure: { TRABALHO: [...], CHAPAS: [...], PECAS: [...] }
+ */
+function parseSmartFormat(data: any): PromobPiece[] {
+  const trabalho = data.TRABALHO?.[0] || {};
+  const chapasMap = new Map<string, any>();
+  
+  if (Array.isArray(data.CHAPAS)) {
+    for (const ch of data.CHAPAS) {
+      chapasMap.set(String(ch.Codigo), ch);
+    }
+  }
+
+  return data.PECAS.map((p: any) => {
+    const chapa = chapasMap.get(String(p.Chapa)) || {};
+    const etiqueta = p.ETIQUETA?.[0] || {};
+    
+    // Convert holes from new format (Face/Diametro) to legacy (FACE/DIAM)
+    const furos: PromobHole[] = (p.FUROS || []).map((f: any) => ({
+      FACE: (f.Face || f.FACE || "SUP").toUpperCase() === "SUP" ? "SUP" as const : "INF" as const,
+      X: f.X || 0,
+      Y: f.Y || 0,
+      DIAM: f.Diametro || f.DIAM || 0,
+      Z: f.Z || 0,
+    }));
+
+    // Convert contour points
+    const contorno: PromobContourPoint[] = (p.CONTORNO || []).map((c: any) => ({
+      X: c.X || 0,
+      Y: c.Y || 0,
+      ANG: c.Reta ? "NAO" : (c.ANG || "NAO"),
+    }));
+
+    // Edge bands from Fita_ fields
+    const bordaSup = !!(p.Fita_Frontal && p.Fita_Frontal.trim());
+    const bordaInf = !!(p.Fita_Traseira && p.Fita_Traseira.trim());
+    const bordaEsq = !!(p.Fita_Esquerda && p.Fita_Esquerda.trim());
+    const bordaDir = !!(p.Fita_Direita && p.Fita_Direita.trim());
+
+    const al = (etiqueta.Alinhamento || "NORMAL").toUpperCase();
+
+    return {
+      CLIENTE: etiqueta.Cliente || trabalho.Cliente || "",
+      COD_CLIENTE: null,
+      AMBIENTE: etiqueta.Ambiente || trabalho.Ambiente || "",
+      ID_UNICO: parseInt(p.ID) || 0,
+      QUANTIDADE: p.Quantidade || 1,
+      DESCRICAO: p.Nome || "",
+      COMPRIMENTO: p.Corte_X || 0,
+      PROFUNDIDADE: p.Corte_Y || 0,
+      CHAPA: etiqueta.Chapa || chapa.Acabamento || "",
+      COR_1C: null,
+      COR_2C: null,
+      COR_1P: null,
+      COR_2P: null,
+      ROTEIRO: etiqueta.Roteiro || "",
+      CATEGORIA: etiqueta.Categoria || "",
+      SETOR: etiqueta.Setor || "",
+      ESTRUTURA: parseInt(etiqueta.Estrutura) || 0,
+      MODULO_DESC: etiqueta.Estrutura || "",
+      COD_CORTE: parseInt(p.Chapa) || 0,
+      COMP_CHAPA: chapa.Comprimento || 2750,
+      PROF_CHAPA: chapa.Profundidade || 1840,
+      ESP_CHAPA: chapa.Espessura || 15,
+      VEIO: chapa.Veio ? 1 : 0,
+      CNC_A: etiqueta.CNC_A || "",
+      CNC_B: etiqueta.CNC_B || "",
+      CNC_FUROS_TOTAL: furos.length > 0 ? "SIM" : "NAO",
+      OBS: etiqueta.Observacoes || null,
+      ALINHAMENTO: al === "INVERSO" ? "INVERSO" as const : "NORMAL" as const,
+      FRESAS: p.FRESAS || [],
+      FUROS: furos,
+      CONTORNO: contorno,
+      HAS_FRESAS_SUP: false,
+      HAS_FRESAS_INF: false,
+      HAS_FUROS_SUP: furos.some((f: PromobHole) => f.FACE === "SUP"),
+      HAS_FUROS_INF: furos.some((f: PromobHole) => f.FACE === "INF"),
+      HAS_FUROS_TOPOS: false,
+      bordaSup,
+      bordaInf,
+      bordaEsq,
+      bordaDir,
+    } as PromobPiece;
+  });
 }
 
 /**
