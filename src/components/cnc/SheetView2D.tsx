@@ -290,9 +290,10 @@ export const SheetView2D = forwardRef<SheetView2DHandle, SheetView2DProps>(({ la
           ref={svgRef}
           width={(layout.sheetWidth + 4) * 0.22 * zoom}
           height={(layout.sheetHeight + 4) * 0.22 * zoom}
-          viewBox={`-2 -2 ${layout.sheetWidth + 4} ${layout.sheetHeight + 4}`}
+          viewBox={`${-2 + pan.x} ${-2 + pan.y} ${layout.sheetWidth + 4} ${layout.sheetHeight + 4}`}
           className="rounded-lg shadow-md bg-card border border-border"
           style={{ transform: `scale(${zoom})`, transformOrigin: 'center center' }}
+          onMouseDown={handleBgMouseDown}
         >
           <defs>
             <filter id="pieceShadow" x="-2%" y="-2%" width="104%" height="104%">

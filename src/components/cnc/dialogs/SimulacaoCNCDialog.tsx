@@ -770,7 +770,7 @@ function SimulationView2D({ segments, progress, layout }: { segments: ToolpathSe
   }, []);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (e.button === 1) { // middle button
+    if (e.button === 0 || e.button === 1) { // left or middle button
       e.preventDefault();
       isPanning.current = true;
       lastMouse.current = { x: e.clientX, y: e.clientY };
