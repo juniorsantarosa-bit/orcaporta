@@ -563,18 +563,23 @@ function SimulationScene3D({ segments, progress, layout, cameraAction }: { segme
   const totalSegments = segments.length;
   const currentIdx = Math.min(Math.floor(progress * totalSegments), totalSegments - 1);
 
-  const completedCuts = useMemo(() => {
-    const cuts: { x: number; y: number; w: number; h: number }[] = [];
-    const drills: { x: number; y: number; r: number; depth: number }[] = [];
+  const completedOps = useMemo(() => {
+    const throughCuts: { x: number; y: number; w: number; h: number }[] = [];
+    const partialCuts: { x: number; y: number; w: number; h: number }[] = [];
+    const throughDrills: { x: number; y: number; r: number }[] = [];
+    const partialDrills: { x: number; y: number; r: number; depth: number }[] = [];
 
     for (let i = 0; i <= currentIdx && i < segments.length; i++) {
       const seg = segments[i];
+      const isThrough = Math.abs(seg.to.z) >= layout.espessura - 0.5;
+
       if (seg.type === "drill") {
-        drills.push({
-          x: seg.to.x * scale, y: seg.to.y * scale,
-          r: Math.max(seg.toolDiam / 2, 1.5) * scale,
-          depth: Math.abs(seg.to.z) * scale,
-        });
+        const r = Math.max(seg.toolDiam / 2, 1.5) * scale;
+        if (isThrough) {
+          throughDrills.push({ x: seg.to.x * scale, y: seg.to.y * scale, r });
+        } else {
+          partialDrills.push({ x: seg.to.x * scale, y: seg.to.y * scale, r, depth: Math.abs(seg.to.z) * scale });
+        }
       }
       if (seg.type === "cut") {
         const minX = Math.min(seg.from.x, seg.to.x) * scale;
@@ -584,12 +589,14 @@ function SimulationScene3D({ segments, progress, layout, cameraAction }: { segme
         const w = maxX - minX + seg.toolDiam * scale;
         const h = maxY - minY + seg.toolDiam * scale;
         if (w > 0.001 || h > 0.001) {
-          cuts.push({ x: (minX + maxX) / 2, y: (minY + maxY) / 2, w: Math.max(w, seg.toolDiam * scale), h: Math.max(h, seg.toolDiam * scale) });
+          const entry = { x: (minX + maxX) / 2, y: (minY + maxY) / 2, w: Math.max(w, seg.toolDiam * scale), h: Math.max(h, seg.toolDiam * scale) };
+          if (isThrough) throughCuts.push(entry);
+          else partialCuts.push(entry);
         }
       }
     }
-    return { cuts, drills };
-  }, [currentIdx, segments, scale]);
+    return { throughCuts, partialCuts, throughDrills, partialDrills };
+  }, [currentIdx, segments, scale, layout.espessura]);
 
   let toolPos = new THREE.Vector3(0, 50 * scale, 0);
   if (segments.length > 0 && currentIdx >= 0) {
