@@ -498,6 +498,7 @@ export function promobToCuttingPieces(promobPieces: PromobPiece[]): CuttingPiece
     veio: p.VEIO === 1,
     observacao: p.OBS || "",
     furos: p.FUROS,
+    usinagens: p.USINAGENS,
   }));
 }
 
