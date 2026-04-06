@@ -258,14 +258,38 @@ function generateToolpath(layout: NestingSheet, limits: SafetyLimits): { segment
 }
 
 // ============ 3D Camera Controls Component ============
-function CameraControls({ sheetW, sheetH }: { sheetW: number; sheetH: number }) {
-  const { camera } = useThree();
+function CameraControls({ sheetW, sheetH, cameraAction }: { sheetW: number; sheetH: number; cameraAction: string }) {
+  const { camera, gl } = useThree();
   const controlsRef = useRef<any>(null);
 
   useEffect(() => {
-    // Set initial camera position
     camera.position.set(sheetW / 2 + 15, 12, sheetH / 2 + 15);
   }, [camera, sheetW, sheetH]);
+
+  useEffect(() => {
+    if (!cameraAction || !controlsRef.current) return;
+    const controls = controlsRef.current;
+    const target = new THREE.Vector3(sheetW / 2, 0, sheetH / 2);
+    
+    if (cameraAction === "zoomIn") {
+      camera.position.lerp(target, 0.2);
+      camera.updateProjectionMatrix();
+    } else if (cameraAction === "zoomOut") {
+      const dir = camera.position.clone().sub(target).normalize();
+      camera.position.add(dir.multiplyScalar(3));
+      camera.updateProjectionMatrix();
+    } else if (cameraAction === "fit") {
+      camera.position.set(sheetW / 2, Math.max(sheetW, sheetH) * 0.8, sheetH / 2 + 0.1);
+      camera.lookAt(target);
+      camera.updateProjectionMatrix();
+      if (controls.target) controls.target.copy(target);
+    } else if (cameraAction === "home") {
+      camera.position.set(sheetW / 2 + 15, 12, sheetH / 2 + 15);
+      camera.updateProjectionMatrix();
+      if (controls.target) controls.target.copy(target);
+    }
+    controls.update?.();
+  }, [cameraAction, camera, sheetW, sheetH]);
 
   return (
     <OrbitControls
