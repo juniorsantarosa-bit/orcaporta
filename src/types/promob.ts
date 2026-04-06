@@ -85,6 +85,18 @@ export interface NestingPiece {
   observacao: string;
 }
 
+/** Machining operation (groove, circular cutout, channel) */
+export interface Usinagem {
+  tipo: "canal" | "recorte_circular" | "recorte_retangular" | "rebaixo" | "contorno";
+  x: number;
+  y: number;
+  largura: number;  // width of groove or diameter of circle
+  profundidade: number; // depth of cut
+  comprimento: number; // length of groove
+  face: "SUP" | "INF";
+  passante: boolean; // goes all the way through
+}
+
 // Placed piece on sheet with full info
 export interface PlacedNestingPiece {
   pieceId: number;
@@ -96,6 +108,7 @@ export interface PlacedNestingPiece {
   label: string;
   descricao: string;
   furos: PromobHole[];
+  usinagens: Usinagem[];
   bordaSup: boolean;
   bordaInf: boolean;
   bordaEsq: boolean;
