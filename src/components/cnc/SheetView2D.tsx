@@ -112,10 +112,13 @@ interface SheetView2DProps {
 export const SheetView2D = forwardRef<SheetView2DHandle, SheetView2DProps>(({ layout, selectedPieceId, onSelectPiece, dragMode = false, onPiecesReorder, onReoptimize }, ref) => {
   const [hoveredPiece, setHoveredPiece] = useState<number | null>(null);
   const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
   const [internalDragMode, setInternalDragMode] = useState(false);
   const [draggingIdx, setDraggingIdx] = useState<number | null>(null);
   const [dragOffset, setDragOffset] = useState<{ dx: number; dy: number }>({ dx: 0, dy: 0 });
   const [tempPieces, setTempPieces] = useState<PlacedNestingPiece[] | null>(null);
+  const [isPanning, setIsPanning] = useState(false);
+  const lastPanPos = useRef({ x: 0, y: 0 });
   const svgRef = useRef<SVGSVGElement>(null);
 
   const isDragActive = dragMode || internalDragMode;
@@ -124,7 +127,7 @@ export const SheetView2D = forwardRef<SheetView2DHandle, SheetView2DProps>(({ la
   useImperativeHandle(ref, () => ({
     zoomIn: () => setZoom(z => Math.min(z * 1.3, 5)),
     zoomOut: () => setZoom(z => Math.max(z / 1.3, 0.3)),
-    zoomFit: () => setZoom(1),
+    zoomFit: () => { setZoom(1); setPan({ x: 0, y: 0 }); },
     toggleDragMode: () => {
       const next = !internalDragMode;
       setInternalDragMode(next);
@@ -179,7 +182,33 @@ export const SheetView2D = forwardRef<SheetView2DHandle, SheetView2DProps>(({ la
     setDragOffset({ dx: svgPt.x - piece.x, dy: svgPt.y - piece.y });
   }, [isDragActive, tempPieces, getSVGPoint]);
 
+  // Left-click pan on the SVG background (not on pieces)
+  const handleBgMouseDown = useCallback((e: React.MouseEvent) => {
+    if (isDragActive) return; // Don't pan when in drag mode
+    if (e.button === 0) { // left click
+      e.preventDefault();
+      setIsPanning(true);
+      lastPanPos.current = { x: e.clientX, y: e.clientY };
+    }
+  }, [isDragActive]);
+
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (isPanning) {
+      const dx = e.clientX - lastPanPos.current.x;
+      const dy = e.clientY - lastPanPos.current.y;
+      // Convert screen pixels to SVG units based on current zoom
+      const svgEl = svgRef.current;
+      if (svgEl) {
+        const rect = svgEl.getBoundingClientRect();
+        const vbW = layout.sheetWidth + 4;
+        const vbH = layout.sheetHeight + 4;
+        const scaleX = vbW / rect.width;
+        const scaleY = vbH / rect.height;
+        setPan(p => ({ x: p.x - dx * scaleX, y: p.y - dy * scaleY }));
+      }
+      lastPanPos.current = { x: e.clientX, y: e.clientY };
+      return;
+    }
     if (draggingIdx === null || !tempPieces) return;
     const svgPt = getSVGPoint(e.clientX, e.clientY);
     const newX = Math.max(0, Math.min(svgPt.x - dragOffset.dx, layout.sheetWidth - tempPieces[draggingIdx].width));
@@ -191,9 +220,13 @@ export const SheetView2D = forwardRef<SheetView2DHandle, SheetView2DProps>(({ la
       updated[draggingIdx] = { ...updated[draggingIdx], x: newX, y: newY };
       return updated;
     });
-  }, [draggingIdx, tempPieces, dragOffset, getSVGPoint, layout.sheetWidth, layout.sheetHeight]);
+  }, [isPanning, draggingIdx, tempPieces, dragOffset, getSVGPoint, layout.sheetWidth, layout.sheetHeight]);
 
   const handleMouseUp = useCallback(() => {
+    if (isPanning) {
+      setIsPanning(false);
+      return;
+    }
     if (draggingIdx === null || !tempPieces) return;
     
     const sorted = [...tempPieces].sort((a, b) => {
@@ -207,7 +240,7 @@ export const SheetView2D = forwardRef<SheetView2DHandle, SheetView2DProps>(({ la
     
     setTempPieces(packed);
     setDraggingIdx(null);
-  }, [draggingIdx, tempPieces, layout.sheetWidth, layout.sheetHeight]);
+  }, [isPanning, draggingIdx, tempPieces, layout.sheetWidth, layout.sheetHeight]);
 
   const displayEfficiency = (() => {
     const totalArea = layout.sheetWidth * layout.sheetHeight;
@@ -257,9 +290,10 @@ export const SheetView2D = forwardRef<SheetView2DHandle, SheetView2DProps>(({ la
           ref={svgRef}
           width={(layout.sheetWidth + 4) * 0.22 * zoom}
           height={(layout.sheetHeight + 4) * 0.22 * zoom}
-          viewBox={`-2 -2 ${layout.sheetWidth + 4} ${layout.sheetHeight + 4}`}
+          viewBox={`${-2 + pan.x} ${-2 + pan.y} ${layout.sheetWidth + 4} ${layout.sheetHeight + 4}`}
           className="rounded-lg shadow-md bg-card border border-border"
           style={{ transform: `scale(${zoom})`, transformOrigin: 'center center' }}
+          onMouseDown={handleBgMouseDown}
         >
           <defs>
             <filter id="pieceShadow" x="-2%" y="-2%" width="104%" height="104%">

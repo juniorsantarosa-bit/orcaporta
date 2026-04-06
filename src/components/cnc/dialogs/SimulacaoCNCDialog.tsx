@@ -313,6 +313,38 @@ function generateToolpath(layout: NestingSheet, limits: SafetyLimits, useCommonC
         addSegment("retract", pos, new THREE.Vector3(pos.x, pos.y, zSafe), mainToolDiam, mainFresa.nome, mainFresa.position);
         pos = new THREE.Vector3(pos.x, pos.y, zSafe);
 
+      } else if (u.tipo === "rebaixo") {
+        // Rebaixo (pocket) — rectangular area with partial depth, trace 4 sides
+        const w = u.comprimento || u.largura;
+        const h = u.largura;
+        const pieceX2 = piece.x + piece.width;
+        const pieceY2 = piece.y + piece.height;
+        const x1 = Math.max(px, piece.x), y1 = Math.max(py, piece.y);
+        const x2 = Math.min(px + w, pieceX2), y2 = Math.min(py + h, pieceY2);
+
+        const start = validateAndClamp(x1, y1, zSafe, segments.length, `Pos. rebaixo peça ${label}`);
+        addSegment("rapid", pos, new THREE.Vector3(start.x, start.y, start.z), mainToolDiam, mainFresa.nome, mainFresa.position);
+        pos = new THREE.Vector3(start.x, start.y, start.z);
+
+        const plunge = validateAndClamp(x1, y1, depthZ, segments.length, `Entrada rebaixo peça ${label}`);
+        addSegment("cut", pos, new THREE.Vector3(plunge.x, plunge.y, plunge.z), mainToolDiam, mainFresa.nome, mainFresa.position);
+        pos = new THREE.Vector3(plunge.x, plunge.y, plunge.z);
+
+        const corners = [
+          { x: x2, y: y1 },
+          { x: x2, y: y2 },
+          { x: x1, y: y2 },
+          { x: x1, y: y1 },
+        ];
+        for (const corner of corners) {
+          const pt = validateAndClamp(corner.x, corner.y, depthZ, segments.length, `Rebaixo peça ${label}`);
+          addSegment("cut", pos, new THREE.Vector3(pt.x, pt.y, pt.z), mainToolDiam, mainFresa.nome, mainFresa.position);
+          pos = new THREE.Vector3(pt.x, pt.y, pt.z);
+        }
+
+        addSegment("retract", pos, new THREE.Vector3(pos.x, pos.y, zSafe), mainToolDiam, mainFresa.nome, mainFresa.position);
+        pos = new THREE.Vector3(pos.x, pos.y, zSafe);
+
       } else {
         // Canal/groove — linear movement
         const gLen = u.comprimento || u.largura;
@@ -738,7 +770,7 @@ function SimulationView2D({ segments, progress, layout }: { segments: ToolpathSe
   }, []);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (e.button === 1) { // middle button
+    if (e.button === 0 || e.button === 1) { // left or middle button
       e.preventDefault();
       isPanning.current = true;
       lastMouse.current = { x: e.clientX, y: e.clientY };
