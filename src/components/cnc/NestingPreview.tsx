@@ -17,6 +17,7 @@ import { toast } from "sonner";
 interface NestingPreviewProps {
   layouts: NestingSheet[];
   selectedPieceId: number | null;
+  onSelectPiece?: (id: number) => void;
   onLayoutUpdate?: (sheetIdx: number, pieces: PlacedNestingPiece[]) => void;
   onReoptimize?: () => void;
   companyLogo?: string;
