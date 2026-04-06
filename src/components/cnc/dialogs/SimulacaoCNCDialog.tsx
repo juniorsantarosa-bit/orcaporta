@@ -706,7 +706,14 @@ export function SimulacaoCNCDialog({ open, onOpenChange, layouts, machineConfig 
   const [viewMode, setViewMode] = useState<"3d" | "2d">("3d");
   const [showAlerts, setShowAlerts] = useState(false);
   const [selectedSheetIdx, setSelectedSheetIdx] = useState(0);
+  const [cameraAction, setCameraAction] = useState("");
+  const cameraActionCounter = useRef(0);
   const animRef = useRef<number>(0);
+
+  const triggerCameraAction = (action: string) => {
+    cameraActionCounter.current++;
+    setCameraAction(`${action}_${cameraActionCounter.current}`);
+  };
 
   const layout = layouts[selectedSheetIdx] || null;
 
