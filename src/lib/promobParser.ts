@@ -66,6 +66,12 @@ function parseCNCJson(raw: string): { furos: PromobHole[]; fresas: any[]; alinha
  * 
  * Also handles CSVs WITHOUT the CNC column (older/different exports).
  */
+/** Parse number handling both dot and comma as decimal separator */
+function parseNum(val: string | undefined): number {
+  if (!val) return 0;
+  return parseFloat(val.replace(",", ".")) || 0;
+}
+
 export function parsePromobCSV(csvText: string): PromobPiece[] {
   const lines = csvText.split("\n").filter(l => l.trim());
   if (lines.length < 2) return [];
@@ -210,9 +216,14 @@ export function parsePromobCSV(csvText: string): PromobPiece[] {
 
     // Determine edge bands from contour segments
     let bordaSup = false, bordaInf = false, bordaEsq = false, bordaDir = false;
-    const comp = parseFloat(firstRow[colIdx("COMPRIMENTO")]) || 0;
-    const prof = parseFloat(firstRow[colIdx("PROFUNDIDADE")]) || 0;
+    const comp = parseNum(firstRow[colIdx("COMPRIMENTO")]);
+    const prof = parseNum(firstRow[colIdx("PROFUNDIDADE")]);
     const tol = 2.0;
+
+    // Parse espessura from ESP_CHAPA or COLUMN_ITEM_DEPTH
+    const espIdx = colIdx("ESP_CHAPA");
+    const depthIdx = colIdx("COLUMN_ITEM_DEPTH");
+    const espChapa = espIdx >= 0 ? parseNum(firstRow[espIdx]) : (depthIdx >= 0 ? parseNum(firstRow[depthIdx]) : 15);
 
     // Check from border rows
     for (const row of rows) {
