@@ -1,4 +1,4 @@
-import { NestingSheet, PlacedNestingPiece, PromobHole } from "@/types/promob";
+import { NestingSheet, PlacedNestingPiece, PromobHole, Usinagem } from "@/types/promob";
 import { useState, forwardRef, useImperativeHandle, useCallback, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
@@ -302,6 +302,11 @@ export const SheetView2D = forwardRef<SheetView2DHandle, SheetView2DProps>(({ la
 
                 {piece.furos?.map((hole, hi) => (
                   <DrillHoleSVG key={hi} hole={hole} pieceX={piece.x} pieceY={piece.y} />
+                ))}
+
+                {/* Machining operations (grooves, circular cutouts, etc.) */}
+                {piece.usinagens?.map((u, ui) => (
+                  <UsinagemSVG key={`u-${ui}`} usinagem={u} pieceX={piece.x} pieceY={piece.y} />
                 ))}
 
                 {showDetail && (
