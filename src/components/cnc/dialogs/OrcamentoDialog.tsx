@@ -95,8 +95,9 @@ function calcEdgeTapeMeters(sheet: NestingSheet): number {
 function calcMachiningMeters(sheet: NestingSheet): number {
   let totalMm = 0;
   for (const p of sheet.pieces) {
-    if (p.usinagens) {
-      for (const u of p.usinagens) {
+    const usinagens = (p as any).usinagens;
+    if (usinagens && Array.isArray(usinagens)) {
+      for (const u of usinagens) {
         if (u.tipo === "canal" || u.tipo === "rebaixo" || u.tipo === "contorno") {
           totalMm += u.comprimento || 0;
         }
