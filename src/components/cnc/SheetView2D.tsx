@@ -1,7 +1,8 @@
 import { NestingSheet, PlacedNestingPiece, PromobHole, Usinagem } from "@/types/promob";
 import { useState, forwardRef, useImperativeHandle, useCallback, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Drill } from "lucide-react";
+import { UsinagensDialog } from "@/components/cnc/dialogs/UsinagensDialog";
 
 export interface SheetView2DHandle {
   zoomIn: () => void;
@@ -111,6 +112,7 @@ interface SheetView2DProps {
 
 export const SheetView2D = forwardRef<SheetView2DHandle, SheetView2DProps>(({ layout, selectedPieceId, onSelectPiece, dragMode = false, onPiecesReorder, onReoptimize }, ref) => {
   const [hoveredPiece, setHoveredPiece] = useState<number | null>(null);
+  const [showUsinagens, setShowUsinagens] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [internalDragMode, setInternalDragMode] = useState(false);
@@ -276,6 +278,15 @@ export const SheetView2D = forwardRef<SheetView2DHandle, SheetView2DProps>(({ la
         >
           <RefreshCw className="h-3 w-3" />
           OTIMIZAR
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => setShowUsinagens(true)}
+          className="h-6 px-3 text-[10px] font-bold gap-1"
+        >
+          <Drill className="h-3 w-3" />
+          USINAGENS
         </Button>
       </div>
 
@@ -472,6 +483,7 @@ export const SheetView2D = forwardRef<SheetView2DHandle, SheetView2DProps>(({ la
           <span className="w-3 h-3 rounded-sm inline-block border-2" style={{ borderColor: "hsl(var(--selected-stroke))" }} /> Selecionada
         </span>
       </div>
+      <UsinagensDialog open={showUsinagens} onOpenChange={setShowUsinagens} pieces={pieces} />
     </div>
   );
 });
