@@ -1,5 +1,5 @@
 import { Canvas, useThree } from "@react-three/fiber";
-import { OrbitControls, PerspectiveCamera, Environment, ContactShadows, Html } from "@react-three/drei";
+import { OrbitControls, PerspectiveCamera, ContactShadows, Html } from "@react-three/drei";
 import { NestingSheet, PlacedNestingPiece } from "@/types/promob";
 import { useMemo, useState, useRef, useImperativeHandle, forwardRef, useEffect } from "react";
 import * as THREE from "three";
@@ -176,7 +176,8 @@ const Scene3D = forwardRef<Nesting3DViewHandle, Nesting3DViewProps>(({ layout, s
         </group>
       ))}
       <ContactShadows position={[centerX, -0.04, centerZ]} opacity={0.25} scale={40} blur={2} />
-      <Environment preset="studio" />
+      <ambientLight intensity={0.6} />
+      <directionalLight position={[10, 20, 10]} intensity={0.8} />
     </>
   );
 });
