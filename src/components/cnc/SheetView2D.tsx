@@ -112,6 +112,7 @@ interface SheetView2DProps {
 
 export const SheetView2D = forwardRef<SheetView2DHandle, SheetView2DProps>(({ layout, selectedPieceId, onSelectPiece, dragMode = false, onPiecesReorder, onReoptimize }, ref) => {
   const [hoveredPiece, setHoveredPiece] = useState<number | null>(null);
+  const [showUsinagens, setShowUsinagens] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [internalDragMode, setInternalDragMode] = useState(false);
