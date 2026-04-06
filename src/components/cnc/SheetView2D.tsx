@@ -182,7 +182,33 @@ export const SheetView2D = forwardRef<SheetView2DHandle, SheetView2DProps>(({ la
     setDragOffset({ dx: svgPt.x - piece.x, dy: svgPt.y - piece.y });
   }, [isDragActive, tempPieces, getSVGPoint]);
 
+  // Left-click pan on the SVG background (not on pieces)
+  const handleBgMouseDown = useCallback((e: React.MouseEvent) => {
+    if (isDragActive) return; // Don't pan when in drag mode
+    if (e.button === 0) { // left click
+      e.preventDefault();
+      setIsPanning(true);
+      lastPanPos.current = { x: e.clientX, y: e.clientY };
+    }
+  }, [isDragActive]);
+
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (isPanning) {
+      const dx = e.clientX - lastPanPos.current.x;
+      const dy = e.clientY - lastPanPos.current.y;
+      // Convert screen pixels to SVG units based on current zoom
+      const svgEl = svgRef.current;
+      if (svgEl) {
+        const rect = svgEl.getBoundingClientRect();
+        const vbW = layout.sheetWidth + 4;
+        const vbH = layout.sheetHeight + 4;
+        const scaleX = vbW / rect.width;
+        const scaleY = vbH / rect.height;
+        setPan(p => ({ x: p.x - dx * scaleX, y: p.y - dy * scaleY }));
+      }
+      lastPanPos.current = { x: e.clientX, y: e.clientY };
+      return;
+    }
     if (draggingIdx === null || !tempPieces) return;
     const svgPt = getSVGPoint(e.clientX, e.clientY);
     const newX = Math.max(0, Math.min(svgPt.x - dragOffset.dx, layout.sheetWidth - tempPieces[draggingIdx].width));
@@ -194,9 +220,13 @@ export const SheetView2D = forwardRef<SheetView2DHandle, SheetView2DProps>(({ la
       updated[draggingIdx] = { ...updated[draggingIdx], x: newX, y: newY };
       return updated;
     });
-  }, [draggingIdx, tempPieces, dragOffset, getSVGPoint, layout.sheetWidth, layout.sheetHeight]);
+  }, [isPanning, draggingIdx, tempPieces, dragOffset, getSVGPoint, layout.sheetWidth, layout.sheetHeight]);
 
   const handleMouseUp = useCallback(() => {
+    if (isPanning) {
+      setIsPanning(false);
+      return;
+    }
     if (draggingIdx === null || !tempPieces) return;
     
     const sorted = [...tempPieces].sort((a, b) => {
@@ -210,7 +240,7 @@ export const SheetView2D = forwardRef<SheetView2DHandle, SheetView2DProps>(({ la
     
     setTempPieces(packed);
     setDraggingIdx(null);
-  }, [draggingIdx, tempPieces, layout.sheetWidth, layout.sheetHeight]);
+  }, [isPanning, draggingIdx, tempPieces, layout.sheetWidth, layout.sheetHeight]);
 
   const displayEfficiency = (() => {
     const totalArea = layout.sheetWidth * layout.sheetHeight;
