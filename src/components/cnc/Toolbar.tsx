@@ -118,13 +118,6 @@ export function Toolbar({ config, onConfigChange, onOptimize, onAction, isOptimi
             >
               Remover Usadas
             </DropdownMenuCheckboxItem>
-            <DropdownMenuCheckboxItem
-              checked={config.useCommonCut ?? true}
-              onCheckedChange={(v) => onConfigChange("useCommonCut", !!v)}
-              className="text-xs"
-            >
-              ✂️ Corte Comum (Common Cut)
-            </DropdownMenuCheckboxItem>
           </DropdownMenuContent>
         </DropdownMenu>
 
