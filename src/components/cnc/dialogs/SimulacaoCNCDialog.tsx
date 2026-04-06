@@ -1,6 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { NestingSheet, PlacedNestingPiece, PromobHole } from "@/types/promob";
+import { DEFAULT_TOOL_MAGAZINE, findToolByDiameter, getMainFresa, ToolSlot } from "@/types/toolMagazine";
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import {
   Play, Pause, RotateCcw, AlertTriangle, CheckCircle2,
