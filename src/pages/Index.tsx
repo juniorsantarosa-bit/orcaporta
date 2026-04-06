@@ -291,7 +291,7 @@ export default function Index() {
       <div className="flex-1 min-h-0">
         <ResizablePanelGroup direction="horizontal">
           <ResizablePanel defaultSize={30} minSize={20}>
-            <PartsTable pieces={pieces} selectedId={selectedPieceId} onSelect={setSelectedPieceId} onPiecesChange={setPieces} />
+            <PartsTable pieces={pieces} selectedId={selectedPieceId} onSelect={setSelectedPieceId} onPiecesChange={setPieces} layouts={layouts} />
           </ResizablePanel>
           <ResizableHandle withHandle />
           <ResizablePanel defaultSize={70} minSize={40}>

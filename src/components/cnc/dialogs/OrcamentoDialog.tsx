@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { NestingSheet } from "@/types/promob";
 import { Separator } from "@/components/ui/separator";
-import { Calculator, FileText } from "lucide-react";
+import { Calculator, Printer } from "lucide-react";
 import { toast } from "sonner";
 
 interface Props {
@@ -18,8 +18,10 @@ interface Props {
 interface PricingConfig {
   corteModo: "metro" | "tempo";
   corteValorMetro: number;
-  corteVelocidade: number; // mm/s
+  corteVelocidade: number;
   corteValorHora: number;
+  fitaValorMetro: number;
+  usinagemValorMetro: number;
   furo3mm: number;
   furo5mm: number;
   furo8mm: number;
@@ -34,10 +36,14 @@ interface SheetBudget {
   material: string;
   corteMm: number;
   corteMetros: number;
+  fitaMetros: number;
+  usinagemMetros: number;
   tempoCorteMin: number;
   furos: Record<string, number>;
   totalFuros: number;
   valorCorte: number;
+  valorFita: number;
+  valorUsinagem: number;
   valorFuros: number;
   valorTotal: number;
 }
@@ -53,24 +59,18 @@ function classifyHole(diam: number): string {
 }
 
 function calcCuttingPerimeter(sheet: NestingSheet): number {
-  // Calculate total unique cutting perimeter considering shared edges
   let totalPerimeter = 0;
   const pieces = sheet.pieces;
-
   for (let i = 0; i < pieces.length; i++) {
     const p = pieces[i];
     let perim = 2 * (p.width + p.height);
-
-    // Subtract shared edges with other pieces
     for (let j = 0; j < pieces.length; j++) {
       if (i === j) continue;
       const q = pieces[j];
-      // Check for shared vertical edge
       if (Math.abs(p.x + p.width - q.x) < 10) {
         const overlapY = Math.max(0, Math.min(p.y + p.height, q.y + q.height) - Math.max(p.y, q.y));
-        if (overlapY > 0) perim -= overlapY; // Only subtract once
+        if (overlapY > 0) perim -= overlapY;
       }
-      // Check for shared horizontal edge
       if (Math.abs(p.y + p.height - q.y) < 10) {
         const overlapX = Math.max(0, Math.min(p.x + p.width, q.x + q.width) - Math.max(p.x, q.x));
         if (overlapX > 0) perim -= overlapX;
@@ -78,16 +78,42 @@ function calcCuttingPerimeter(sheet: NestingSheet): number {
     }
     totalPerimeter += Math.max(perim, 0);
   }
-
   return totalPerimeter;
+}
+
+function calcEdgeTapeMeters(sheet: NestingSheet): number {
+  let totalMm = 0;
+  for (const p of sheet.pieces) {
+    if (p.bordaSup) totalMm += p.width;
+    if (p.bordaInf) totalMm += p.width;
+    if (p.bordaEsq) totalMm += p.height;
+    if (p.bordaDir) totalMm += p.height;
+  }
+  return totalMm / 1000;
+}
+
+function calcMachiningMeters(sheet: NestingSheet): number {
+  let totalMm = 0;
+  for (const p of sheet.pieces) {
+    if (p.usinagens) {
+      for (const u of p.usinagens) {
+        if (u.tipo === "canal" || u.tipo === "rebaixo" || u.tipo === "contorno") {
+          totalMm += u.comprimento || 0;
+        }
+      }
+    }
+  }
+  return totalMm / 1000;
 }
 
 export function OrcamentoDialog({ open, onOpenChange, layouts, companyLogo }: Props) {
   const [pricing, setPricing] = useState<PricingConfig>({
     corteModo: "metro",
     corteValorMetro: 2.50,
-    corteVelocidade: 80, // mm/s
+    corteVelocidade: 80,
     corteValorHora: 150,
+    fitaValorMetro: 1.50,
+    usinagemValorMetro: 3.00,
     furo3mm: 0.50,
     furo5mm: 0.80,
     furo8mm: 1.00,
@@ -101,6 +127,8 @@ export function OrcamentoDialog({ open, onOpenChange, layouts, companyLogo }: Pr
 
   const update = (key: keyof PricingConfig, value: number | string) => {
     setPricing(prev => ({ ...prev, [key]: value }));
+    // Clear calculated when pricing changes so user recalculates
+    setCalculated(null);
   };
 
   const holePrice = (type: string): number => {
@@ -115,9 +143,10 @@ export function OrcamentoDialog({ open, onOpenChange, layouts, companyLogo }: Pr
     const budgets: SheetBudget[] = layouts.map(sheet => {
       const corteMm = calcCuttingPerimeter(sheet);
       const corteMetros = corteMm / 1000;
+      const fitaMetros = calcEdgeTapeMeters(sheet);
+      const usinagemMetros = calcMachiningMeters(sheet);
       const tempoCorteMin = pricing.corteVelocidade > 0 ? (corteMm / pricing.corteVelocidade) / 60 : 0;
 
-      // Count holes by type
       const furos: Record<string, number> = {};
       sheet.pieces.forEach(p => {
         (p.furos || []).forEach(h => {
@@ -132,6 +161,8 @@ export function OrcamentoDialog({ open, onOpenChange, layouts, companyLogo }: Pr
         ? corteMetros * pricing.corteValorMetro
         : (tempoCorteMin / 60) * pricing.corteValorHora;
 
+      const valorFita = fitaMetros * pricing.fitaValorMetro;
+      const valorUsinagem = usinagemMetros * pricing.usinagemValorMetro;
       const valorFuros = Object.entries(furos).reduce((sum, [tipo, qtd]) => sum + qtd * holePrice(tipo), 0);
 
       return {
@@ -139,25 +170,36 @@ export function OrcamentoDialog({ open, onOpenChange, layouts, companyLogo }: Pr
         material: sheet.material,
         corteMm,
         corteMetros,
+        fitaMetros,
+        usinagemMetros,
         tempoCorteMin,
         furos,
         totalFuros,
         valorCorte,
+        valorFita,
+        valorUsinagem,
         valorFuros,
-        valorTotal: valorCorte + valorFuros,
+        valorTotal: valorCorte + valorFita + valorUsinagem + valorFuros,
       };
     });
 
     setCalculated(budgets);
     toast.success("Orçamento calculado!");
+  };
 
-    // Open print window with budget summary
-    printBudget(budgets);
+  const handlePrint = () => {
+    if (!calculated) {
+      toast.error("Calcule o orçamento primeiro!");
+      return;
+    }
+    printBudget(calculated);
   };
 
   const printBudget = (budgets: SheetBudget[]) => {
     const totalGeral = budgets.reduce((a, b) => a + b.valorTotal, 0);
-    const totalMetros = budgets.reduce((a, b) => a + b.corteMetros, 0);
+    const totalMetrosCorte = budgets.reduce((a, b) => a + b.corteMetros, 0);
+    const totalMetrosFita = budgets.reduce((a, b) => a + b.fitaMetros, 0);
+    const totalMetrosUsinagem = budgets.reduce((a, b) => a + b.usinagemMetros, 0);
     const totalFurosAll = budgets.reduce((a, b) => a + b.totalFuros, 0);
     const today = new Date().toLocaleDateString("pt-BR");
     const clientes = [...new Set(layouts.flatMap(s => s.pieces.map(p => p.cliente)))].filter(Boolean).join(", ") || "—";
@@ -179,15 +221,15 @@ export function OrcamentoDialog({ open, onOpenChange, layouts, companyLogo }: Pr
       ".meta-item { display:flex; gap:4px; }",
       ".lbl { color:#888; }",
       ".bld { font-weight:600; }",
-      "table { width:100%; border-collapse:collapse; font-size:11px; margin-bottom:16px; }",
+      "table { width:100%; border-collapse:collapse; font-size:10px; margin-bottom:16px; }",
       "thead tr { background:#f0f0f0; }",
-      "th { padding:6px 8px; text-align:left; font-weight:700; color:#333; border-bottom:2px solid #ccc; font-size:10px; text-transform:uppercase; }",
-      "td { padding:5px 8px; border-bottom:1px solid #eee; }",
+      "th { padding:5px 6px; text-align:left; font-weight:700; color:#333; border-bottom:2px solid #ccc; font-size:9px; text-transform:uppercase; }",
+      "td { padding:4px 6px; border-bottom:1px solid #eee; }",
       ".r { text-align:right; }",
       ".c { text-align:center; }",
       ".m { font-family:'JetBrains Mono',monospace; }",
       ".total-row { background:#f0f0f0; font-weight:700; border-top:2px solid #333; }",
-      ".total-row td { padding:8px; }",
+      ".total-row td { padding:8px 6px; }",
       ".grand-total { font-size:20px; font-weight:800; text-align:right; margin-top:20px; padding:12px; border:2px solid #333; border-radius:4px; }",
       ".footer { margin-top:24px; font-size:9px; color:#888; text-align:center; border-top:1px solid #ddd; padding-top:8px; }",
     ].join("\n");
@@ -202,12 +244,15 @@ export function OrcamentoDialog({ open, onOpenChange, layouts, companyLogo }: Pr
       rows += "<tr>" +
         '<td class="m" style="font-weight:600">#' + b.sheetId + "</td>" +
         "<td>" + b.material + "</td>" +
-        '<td class="c m">' + (sheet ? sheet.sheetWidth + "×" + sheet.sheetHeight : "—") + "</td>" +
-        '<td class="c m">' + (sheet ? sheet.espessura + "mm" : "—") + "</td>" +
-        '<td class="c m">' + (sheet ? sheet.pieces.length : 0) + "</td>" +
         '<td class="r m">' + b.corteMetros.toFixed(2) + "m</td>" +
+        '<td class="r m">' + b.fitaMetros.toFixed(2) + "m</td>" +
+        '<td class="r m">' + b.usinagemMetros.toFixed(2) + "m</td>" +
         '<td class="c m">' + b.totalFuros + "</td>" +
-        '<td class="r m" style="font-weight:600">R$ ' + b.valorTotal.toFixed(2) + "</td>" +
+        '<td class="r m">R$' + b.valorCorte.toFixed(2) + "</td>" +
+        '<td class="r m">R$' + b.valorFita.toFixed(2) + "</td>" +
+        '<td class="r m">R$' + b.valorUsinagem.toFixed(2) + "</td>" +
+        '<td class="r m">R$' + b.valorFuros.toFixed(2) + "</td>" +
+        '<td class="r m" style="font-weight:600">R$' + b.valorTotal.toFixed(2) + "</td>" +
         "</tr>";
     });
 
@@ -225,13 +270,19 @@ export function OrcamentoDialog({ open, onOpenChange, layouts, companyLogo }: Pr
       '<div class="meta-item"><span class="lbl">Total Peças: </span><span class="bld m">' + layouts.reduce((a, s) => a + s.pieces.length, 0) + "</span></div>" +
       "</div>" +
       "<table><thead><tr>" +
-      "<th>Chapa</th><th>Material</th><th class='c'>Dimensão</th><th class='c'>Espessura</th><th class='c'>Peças</th><th class='r'>Corte</th><th class='c'>Furos</th><th class='r'>Valor</th>" +
+      "<th>Chapa</th><th>Material</th><th class='r'>M. Corte</th><th class='r'>M. Fita</th><th class='r'>M. Usin.</th><th class='c'>Furos</th><th class='r'>R$ Corte</th><th class='r'>R$ Fita</th><th class='r'>R$ Usin.</th><th class='r'>R$ Furos</th><th class='r'>Total</th>" +
       "</tr></thead><tbody>" + rows +
       '<tr class="total-row">' +
-      '<td colspan="5" class="r">TOTAIS</td>' +
-      '<td class="r m">' + totalMetros.toFixed(2) + "m</td>" +
+      '<td colspan="2" class="r">TOTAIS</td>' +
+      '<td class="r m">' + totalMetrosCorte.toFixed(2) + "m</td>" +
+      '<td class="r m">' + totalMetrosFita.toFixed(2) + "m</td>" +
+      '<td class="r m">' + totalMetrosUsinagem.toFixed(2) + "m</td>" +
       '<td class="c m">' + totalFurosAll + "</td>" +
-      '<td class="r m">R$ ' + totalGeral.toFixed(2) + "</td>" +
+      '<td class="r m">R$' + budgets.reduce((a, b) => a + b.valorCorte, 0).toFixed(2) + "</td>" +
+      '<td class="r m">R$' + budgets.reduce((a, b) => a + b.valorFita, 0).toFixed(2) + "</td>" +
+      '<td class="r m">R$' + budgets.reduce((a, b) => a + b.valorUsinagem, 0).toFixed(2) + "</td>" +
+      '<td class="r m">R$' + budgets.reduce((a, b) => a + b.valorFuros, 0).toFixed(2) + "</td>" +
+      '<td class="r m">R$' + totalGeral.toFixed(2) + "</td>" +
       "</tr></tbody></table>" +
       '<div class="grand-total">VALOR TOTAL: R$ ' + totalGeral.toFixed(2) + "</div>" +
       '<div class="footer">Orçamento gerado em ' + today + " — Válido por 30 dias</div>" +
@@ -247,19 +298,14 @@ export function OrcamentoDialog({ open, onOpenChange, layouts, companyLogo }: Pr
     return calculated.reduce((a, b) => a + b.valorTotal, 0);
   }, [calculated]);
 
-  const totalMetros = useMemo(() => {
-    if (!calculated) return 0;
-    return calculated.reduce((a, b) => a + b.corteMetros, 0);
-  }, [calculated]);
-
-  const totalFuros = useMemo(() => {
-    if (!calculated) return 0;
-    return calculated.reduce((a, b) => a + b.totalFuros, 0);
-  }, [calculated]);
+  const totalMetrosCorte = useMemo(() => calculated?.reduce((a, b) => a + b.corteMetros, 0) ?? 0, [calculated]);
+  const totalMetrosFita = useMemo(() => calculated?.reduce((a, b) => a + b.fitaMetros, 0) ?? 0, [calculated]);
+  const totalMetrosUsinagem = useMemo(() => calculated?.reduce((a, b) => a + b.usinagemMetros, 0) ?? 0, [calculated]);
+  const totalFuros = useMemo(() => calculated?.reduce((a, b) => a + b.totalFuros, 0) ?? 0, [calculated]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[950px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-[1000px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl font-normal flex items-center gap-2">
             <Calculator className="h-5 w-5 text-primary" />
@@ -309,6 +355,26 @@ export function OrcamentoDialog({ open, onOpenChange, layouts, companyLogo }: Pr
             </fieldset>
 
             <fieldset className="border border-border rounded p-3">
+              <legend className="text-xs font-medium px-1">Valor da Fita de Borda</legend>
+              <div className="flex items-center gap-2">
+                <label className="text-xs w-24">R$/metro</label>
+                <Input type="number" step="0.01" value={pricing.fitaValorMetro}
+                  onChange={e => update("fitaValorMetro", parseFloat(e.target.value) || 0)}
+                  className="h-7 text-xs" />
+              </div>
+            </fieldset>
+
+            <fieldset className="border border-border rounded p-3">
+              <legend className="text-xs font-medium px-1">Valor de Usinagem (LED, recortes)</legend>
+              <div className="flex items-center gap-2">
+                <label className="text-xs w-24">R$/metro</label>
+                <Input type="number" step="0.01" value={pricing.usinagemValorMetro}
+                  onChange={e => update("usinagemValorMetro", parseFloat(e.target.value) || 0)}
+                  className="h-7 text-xs" />
+              </div>
+            </fieldset>
+
+            <fieldset className="border border-border rounded p-3">
               <legend className="text-xs font-medium px-1">Valor por Tipo de Furo</legend>
               <div className="grid grid-cols-2 gap-2">
                 {([
@@ -326,10 +392,16 @@ export function OrcamentoDialog({ open, onOpenChange, layouts, companyLogo }: Pr
               </div>
             </fieldset>
 
-            <Button onClick={handleCalculate} className="w-full" disabled={layouts.length === 0}>
-              <Calculator className="h-4 w-4 mr-2" />
-              Calcular Orçamento
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={handleCalculate} className="flex-1" disabled={layouts.length === 0}>
+                <Calculator className="h-4 w-4 mr-2" />
+                Calcular Orçamento
+              </Button>
+              <Button onClick={handlePrint} variant="outline" disabled={!calculated}>
+                <Printer className="h-4 w-4 mr-2" />
+                Imprimir
+              </Button>
+            </div>
           </div>
 
           {/* Right: Results */}
@@ -341,9 +413,13 @@ export function OrcamentoDialog({ open, onOpenChange, layouts, companyLogo }: Pr
                     <thead>
                       <tr className="bg-muted/50">
                         <th className="text-left px-2 py-1 font-semibold">Chapa</th>
-                        <th className="text-right px-2 py-1 font-semibold">Metros</th>
+                        <th className="text-right px-2 py-1 font-semibold">M. Corte</th>
+                        <th className="text-right px-2 py-1 font-semibold">M. Fita</th>
+                        <th className="text-right px-2 py-1 font-semibold">M. Usin.</th>
                         <th className="text-right px-2 py-1 font-semibold">Furos</th>
                         <th className="text-right px-2 py-1 font-semibold">R$ Corte</th>
+                        <th className="text-right px-2 py-1 font-semibold">R$ Fita</th>
+                        <th className="text-right px-2 py-1 font-semibold">R$ Usin.</th>
                         <th className="text-right px-2 py-1 font-semibold">R$ Furos</th>
                         <th className="text-right px-2 py-1 font-semibold font-bold">Total</th>
                       </tr>
@@ -352,10 +428,14 @@ export function OrcamentoDialog({ open, onOpenChange, layouts, companyLogo }: Pr
                       {calculated.map(b => (
                         <tr key={b.sheetId} className="border-t border-border">
                           <td className="px-2 py-1 font-medium">#{b.sheetId}</td>
-                          <td className="px-2 py-1 text-right font-mono">{b.corteMetros.toFixed(2)}m</td>
-                          <td className="px-2 py-1 text-right font-mono">{b.totalFuros}</td>
-                          <td className="px-2 py-1 text-right font-mono">R${b.valorCorte.toFixed(2)}</td>
-                          <td className="px-2 py-1 text-right font-mono">R${b.valorFuros.toFixed(2)}</td>
+                          <td className="px-2 py-1 text-right font-mono text-[10px]">{b.corteMetros.toFixed(2)}m</td>
+                          <td className="px-2 py-1 text-right font-mono text-[10px]">{b.fitaMetros.toFixed(2)}m</td>
+                          <td className="px-2 py-1 text-right font-mono text-[10px]">{b.usinagemMetros.toFixed(2)}m</td>
+                          <td className="px-2 py-1 text-right font-mono text-[10px]">{b.totalFuros}</td>
+                          <td className="px-2 py-1 text-right font-mono text-[10px]">R${b.valorCorte.toFixed(2)}</td>
+                          <td className="px-2 py-1 text-right font-mono text-[10px]">R${b.valorFita.toFixed(2)}</td>
+                          <td className="px-2 py-1 text-right font-mono text-[10px]">R${b.valorUsinagem.toFixed(2)}</td>
+                          <td className="px-2 py-1 text-right font-mono text-[10px]">R${b.valorFuros.toFixed(2)}</td>
                           <td className="px-2 py-1 text-right font-mono font-bold text-primary">R${b.valorTotal.toFixed(2)}</td>
                         </tr>
                       ))}
@@ -368,7 +448,15 @@ export function OrcamentoDialog({ open, onOpenChange, layouts, companyLogo }: Pr
                 <div className="bg-muted/30 rounded p-3 space-y-1">
                   <div className="flex justify-between text-xs">
                     <span className="text-muted-foreground">Total metros de corte:</span>
-                    <span className="font-mono font-semibold">{totalMetros.toFixed(2)}m</span>
+                    <span className="font-mono font-semibold">{totalMetrosCorte.toFixed(2)}m</span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">Total metros de fita:</span>
+                    <span className="font-mono font-semibold">{totalMetrosFita.toFixed(2)}m</span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">Total metros de usinagem:</span>
+                    <span className="font-mono font-semibold">{totalMetrosUsinagem.toFixed(2)}m</span>
                   </div>
                   <div className="flex justify-between text-xs">
                     <span className="text-muted-foreground">Total de furos:</span>
@@ -385,7 +473,6 @@ export function OrcamentoDialog({ open, onOpenChange, layouts, companyLogo }: Pr
                   </div>
                 </div>
 
-                {/* Detail breakdown per hole type */}
                 {calculated.some(b => b.totalFuros > 0) && (
                   <fieldset className="border border-border rounded p-2">
                     <legend className="text-[10px] font-medium px-1">Detalhamento Furos</legend>
@@ -406,7 +493,7 @@ export function OrcamentoDialog({ open, onOpenChange, layouts, companyLogo }: Pr
               </>
             ) : (
               <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-2 py-12">
-                <FileText className="h-10 w-10 opacity-30" />
+                <Calculator className="h-10 w-10 opacity-30" />
                 <p className="text-xs">Configure os valores e clique em Calcular</p>
                 <p className="text-[10px]">{layouts.length} chapas disponíveis</p>
               </div>
