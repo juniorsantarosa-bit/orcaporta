@@ -767,53 +767,110 @@ function SimulationView2D({ segments, progress, layout }: { segments: ToolpathSe
     const ox = 40 + pan.x;
     const oy = 40 + pan.y;
 
-    ctx.clearRect(0, 0, w, h);
-    // White background
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, w, h);
-
-    // Sheet background
-    ctx.fillStyle = "#e8dcc8";
-    ctx.fillRect(ox, oy, layout.sheetWidth * sc, layout.sheetHeight * sc);
-    ctx.strokeStyle = "#666";
-    ctx.lineWidth = 1;
-    ctx.strokeRect(ox, oy, layout.sheetWidth * sc, layout.sheetHeight * sc);
-
+    const espessura = layout.espessura;
     const totalSegments = segments.length;
     const currentIdx = Math.min(Math.floor(progress * totalSegments), totalSegments - 1);
 
-    // Draw completed cuts
+    // Clear to white background
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, w, h);
+
+    // Sheet background (MDF tone)
+    const sheetColor = "#e8dcc8";
+    const sheetDarker = "#c4b49a"; // partial depth (rebaixo/canal)
+    ctx.fillStyle = sheetColor;
+    ctx.fillRect(ox, oy, layout.sheetWidth * sc, layout.sheetHeight * sc);
+    ctx.strokeStyle = "#888";
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(ox, oy, layout.sheetWidth * sc, layout.sheetHeight * sc);
+
+    // ===== PASS 1: Draw material removal effects (before trails) =====
     for (let i = 0; i <= currentIdx && i < segments.length; i++) {
       const seg = segments[i];
+
       if (seg.type === "cut") {
-        ctx.strokeStyle = "#3a2a18";
-        ctx.lineWidth = Math.max(seg.toolDiam * sc, 2);
-        ctx.lineCap = "round";
-        ctx.beginPath();
-        ctx.moveTo(ox + seg.from.x * sc, oy + seg.from.y * sc);
-        ctx.lineTo(ox + seg.to.x * sc, oy + seg.to.y * sc);
-        ctx.stroke();
+        const isThrough = Math.abs(seg.to.z) >= espessura - 0.5;
+        const toolR = Math.max(seg.toolDiam / 2 * sc, 1);
+
+        if (isThrough) {
+          // Through-cut: white background shows through (material fully removed)
+          ctx.strokeStyle = "#ffffff";
+          ctx.lineWidth = toolR * 2;
+          ctx.lineCap = "round";
+          ctx.beginPath();
+          ctx.moveTo(ox + seg.from.x * sc, oy + seg.from.y * sc);
+          ctx.lineTo(ox + seg.to.x * sc, oy + seg.to.y * sc);
+          ctx.stroke();
+          // Dark edge along cut
+          ctx.strokeStyle = "rgba(80,60,40,0.5)";
+          ctx.lineWidth = Math.max(toolR * 2 + 2, 3);
+          ctx.beginPath();
+          ctx.moveTo(ox + seg.from.x * sc, oy + seg.from.y * sc);
+          ctx.lineTo(ox + seg.to.x * sc, oy + seg.to.y * sc);
+          ctx.stroke();
+          // White center again (over the edge)
+          ctx.strokeStyle = "#ffffff";
+          ctx.lineWidth = Math.max(toolR * 2 - 1, 1.5);
+          ctx.beginPath();
+          ctx.moveTo(ox + seg.from.x * sc, oy + seg.from.y * sc);
+          ctx.lineTo(ox + seg.to.x * sc, oy + seg.to.y * sc);
+          ctx.stroke();
+        } else {
+          // Partial depth (canal de LED, rebaixo): darker shade of sheet
+          ctx.strokeStyle = sheetDarker;
+          ctx.lineWidth = toolR * 2;
+          ctx.lineCap = "round";
+          ctx.beginPath();
+          ctx.moveTo(ox + seg.from.x * sc, oy + seg.from.y * sc);
+          ctx.lineTo(ox + seg.to.x * sc, oy + seg.to.y * sc);
+          ctx.stroke();
+        }
       }
+
       if (seg.type === "drill") {
-        ctx.fillStyle = "#2a1a0a";
         const r = Math.max(seg.toolDiam / 2 * sc, 2);
-        ctx.beginPath();
-        ctx.arc(ox + seg.to.x * sc, oy + seg.to.y * sc, r, 0, Math.PI * 2);
-        ctx.fill();
+        const isThrough = Math.abs(seg.to.z) >= espessura - 0.5;
+
+        if (isThrough) {
+          // Through-hole: white circle (material removed)
+          ctx.fillStyle = "#ffffff";
+          ctx.beginPath();
+          ctx.arc(ox + seg.to.x * sc, oy + seg.to.y * sc, r, 0, Math.PI * 2);
+          ctx.fill();
+          // Dark rim
+          ctx.strokeStyle = "rgba(80,60,40,0.6)";
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.arc(ox + seg.to.x * sc, oy + seg.to.y * sc, r, 0, Math.PI * 2);
+          ctx.stroke();
+        } else {
+          // Partial hole (shelf hole, hinge): darker shade
+          ctx.fillStyle = sheetDarker;
+          ctx.beginPath();
+          ctx.arc(ox + seg.to.x * sc, oy + seg.to.y * sc, r, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = "rgba(100,80,60,0.5)";
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.arc(ox + seg.to.x * sc, oy + seg.to.y * sc, r, 0, Math.PI * 2);
+          ctx.stroke();
+        }
       }
     }
 
-    // Draw trail - RED for rapid, GREEN for cuts/drills
+    // ===== PASS 2: Draw movement trails =====
     ctx.lineWidth = 1.5;
     for (let i = 0; i <= currentIdx && i < segments.length; i++) {
       const seg = segments[i];
       if (seg.type === "rapid" || seg.type === "retract") {
-        ctx.strokeStyle = "rgba(255,50,50,0.5)";
+        ctx.strokeStyle = "rgba(255,50,50,0.45)";
         ctx.setLineDash([4, 4]);
       } else {
-        ctx.strokeStyle = "rgba(0,200,68,0.7)";
+        ctx.strokeStyle = "rgba(0,180,60,0.6)";
         ctx.setLineDash([]);
       }
+      ctx.lineCap = "butt";
       ctx.beginPath();
       ctx.moveTo(ox + seg.from.x * sc, oy + seg.from.y * sc);
       ctx.lineTo(ox + seg.to.x * sc, oy + seg.to.y * sc);
@@ -821,41 +878,55 @@ function SimulationView2D({ segments, progress, layout }: { segments: ToolpathSe
     }
     ctx.setLineDash([]);
 
-    // Draw tool position
+    // ===== PASS 3: Tool position =====
     if (currentIdx >= 0 && currentIdx < segments.length) {
       const seg = segments[currentIdx];
       const frac = Math.min((progress * totalSegments) - currentIdx, 1);
       const tx = seg.from.x + (seg.to.x - seg.from.x) * frac;
       const ty = seg.from.y + (seg.to.y - seg.from.y) * frac;
       const isCut = seg.type === "cut" || seg.type === "drill";
+      const toolR = Math.max(seg.toolDiam / 2 * sc, 3);
 
+      // Tool footprint circle
+      ctx.globalAlpha = 0.25;
       ctx.fillStyle = isCut ? "#00cc44" : "#ff3333";
       ctx.beginPath();
-      ctx.arc(ox + tx * sc, oy + ty * sc, 5, 0, Math.PI * 2);
+      ctx.arc(ox + tx * sc, oy + ty * sc, toolR, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+
+      // Tool center dot
+      ctx.fillStyle = isCut ? "#00cc44" : "#ff3333";
+      ctx.beginPath();
+      ctx.arc(ox + tx * sc, oy + ty * sc, 4, 0, Math.PI * 2);
       ctx.fill();
 
       ctx.strokeStyle = isCut ? "#00aa33" : "#cc0000";
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.arc(ox + tx * sc, oy + ty * sc, 9, 0, Math.PI * 2);
+      ctx.arc(ox + tx * sc, oy + ty * sc, 8, 0, Math.PI * 2);
       ctx.stroke();
     }
 
-    // Legend
+    // ===== Legend =====
+    const ly = oy + layout.sheetHeight * sc + 16;
     ctx.font = "11px monospace";
     ctx.fillStyle = "#666";
-    ctx.fillText(`${layout.sheetWidth} × ${layout.sheetHeight} mm · ${layout.material} · ${layout.espessura}mm`, ox + 4, oy + layout.sheetHeight * sc + 16);
+    ctx.fillText(`${layout.sheetWidth} × ${layout.sheetHeight} mm · ${layout.material} · ${layout.espessura}mm`, ox + 4, ly);
 
-    // Legend colors
-    ctx.fillStyle = "#ff3333";
-    ctx.fillRect(ox + layout.sheetWidth * sc - 160, oy + layout.sheetHeight * sc + 6, 10, 10);
-    ctx.fillStyle = "#666";
-    ctx.fillText("Rápido (vazio)", ox + layout.sheetWidth * sc - 145, oy + layout.sheetHeight * sc + 16);
+    // Legend icons
+    const lx = ox + layout.sheetWidth * sc;
+    ctx.fillStyle = "#ff3333"; ctx.fillRect(lx - 260, ly - 10, 10, 10);
+    ctx.fillStyle = "#666"; ctx.fillText("Rápido (vazio)", lx - 245, ly);
 
-    ctx.fillStyle = "#00cc44";
-    ctx.fillRect(ox + layout.sheetWidth * sc - 60, oy + layout.sheetHeight * sc + 6, 10, 10);
-    ctx.fillStyle = "#666";
-    ctx.fillText("Corte", ox + layout.sheetWidth * sc - 45, oy + layout.sheetHeight * sc + 16);
+    ctx.fillStyle = "#00cc44"; ctx.fillRect(lx - 150, ly - 10, 10, 10);
+    ctx.fillStyle = "#666"; ctx.fillText("Corte", lx - 135, ly);
+
+    ctx.fillStyle = "#ffffff"; ctx.fillRect(lx - 90, ly - 10, 10, 10);
+    ctx.strokeStyle = "#999"; ctx.lineWidth = 1; ctx.strokeRect(lx - 90, ly - 10, 10, 10);
+    ctx.fillStyle = "#666"; ctx.fillText("Passante", lx - 75, ly);
+
+    ctx.fillStyle = sheetDarker; ctx.fillRect(lx - 15, ly - 10, 10, 10);
   }, [segments, progress, layout, pan, zoom]);
 
   return (
