@@ -818,7 +818,7 @@ export function SimulacaoCNCDialog({ open, onOpenChange, layouts, machineConfig 
             {layout && segments.length > 0 ? (
               viewMode === "3d" ? (
                 <Canvas shadows gl={{ alpha: false }} style={{ background: "#f5f5f5" }}>
-                  <SimulationScene3D segments={segments} progress={progress} layout={layout} />
+                  <SimulationScene3D segments={segments} progress={progress} layout={layout} cameraAction={cameraAction} />
                 </Canvas>
               ) : (
                 <SimulationView2D segments={segments} progress={progress} layout={layout} />
@@ -883,7 +883,7 @@ export function SimulacaoCNCDialog({ open, onOpenChange, layouts, machineConfig 
 
           {/* Right toolbar (similar to cutting view) */}
           <div className="w-9 border-l border-border bg-card flex flex-col items-center py-2 gap-0.5 mr-4">
-            <SimToolButton icon={Home} label="Resetar Vista" onClick={reset} />
+            <SimToolButton icon={Home} label="Resetar Vista" onClick={() => { reset(); triggerCameraAction("home"); }} />
             <Separator className="my-1 w-5" />
             {viewMode === "3d" && (
               <>
@@ -895,9 +895,9 @@ export function SimulacaoCNCDialog({ open, onOpenChange, layouts, machineConfig 
               <SimToolButton icon={Move} label="Pan (botão central)" active />
             )}
             <Separator className="my-1 w-5" />
-            <SimToolButton icon={ZoomIn} label="Zoom +" onClick={() => {}} />
-            <SimToolButton icon={ZoomOut} label="Zoom -" onClick={() => {}} />
-            <SimToolButton icon={Maximize2} label="Zoom Fit" onClick={() => {}} />
+            <SimToolButton icon={ZoomIn} label="Zoom +" onClick={() => triggerCameraAction("zoomIn")} />
+            <SimToolButton icon={ZoomOut} label="Zoom -" onClick={() => triggerCameraAction("zoomOut")} />
+            <SimToolButton icon={Maximize2} label="Zoom Fit" onClick={() => triggerCameraAction("fit")} />
             <Separator className="my-1 w-5" />
             {alerts.length > 0 ? (
               <SimToolButton icon={AlertTriangle} label={`${alerts.length} avisos`} onClick={() => setShowAlerts(!showAlerts)} active={showAlerts} />
