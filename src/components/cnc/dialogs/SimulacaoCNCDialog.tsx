@@ -666,19 +666,35 @@ function SimulationScene3D({ segments, progress, layout, cameraAction }: { segme
         <meshStandardMaterial color="#e8dcc8" roughness={0.4} metalness={0.05} />
       </mesh>
 
-      {/* Cut grooves */}
-      {completedCuts.cuts.map((cut, i) => (
-        <mesh key={`cut-${i}`} position={[cut.x, 0.001, cut.y]}>
+      {/* Through-cuts (white — material fully removed) */}
+      {completedOps.throughCuts.map((cut, i) => (
+        <mesh key={`tcut-${i}`} position={[cut.x, 0.001, cut.y]}>
           <boxGeometry args={[cut.w, thickness + 0.002, cut.h]} />
-          <meshStandardMaterial color="#3a3020" roughness={0.8} transparent opacity={0.85} />
+          <meshStandardMaterial color="#ffffff" roughness={0.9} transparent opacity={0.95} />
         </mesh>
       ))}
 
-      {/* Drilled holes */}
-      {completedCuts.drills.map((drill, i) => (
-        <mesh key={`drill-${i}`} position={[drill.x, thickness / 2 + 0.001, drill.y]} rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[drill.r, drill.r, drill.depth, 16]} />
-          <meshStandardMaterial color="#2a2015" roughness={0.9} />
+      {/* Partial-depth cuts (darker shade — rebaixo/canal) */}
+      {completedOps.partialCuts.map((cut, i) => (
+        <mesh key={`pcut-${i}`} position={[cut.x, thickness / 2 + 0.001, cut.y]}>
+          <boxGeometry args={[cut.w, 0.01, cut.h]} />
+          <meshStandardMaterial color="#b09878" roughness={0.8} transparent opacity={0.9} />
+        </mesh>
+      ))}
+
+      {/* Through-drills (white holes) */}
+      {completedOps.throughDrills.map((drill, i) => (
+        <mesh key={`tdrill-${i}`} position={[drill.x, 0.001, drill.y]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[drill.r, drill.r, thickness + 0.002, 24]} />
+          <meshStandardMaterial color="#ffffff" roughness={0.9} />
+        </mesh>
+      ))}
+
+      {/* Partial-depth drills (darker shade) */}
+      {completedOps.partialDrills.map((drill, i) => (
+        <mesh key={`pdrill-${i}`} position={[drill.x, thickness / 2 + 0.001, drill.y]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[drill.r, drill.r, drill.depth, 24]} />
+          <meshStandardMaterial color="#b09878" roughness={0.9} />
         </mesh>
       ))}
 
