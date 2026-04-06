@@ -183,6 +183,8 @@ export function optimizeNesting(
     byMaterial.get(key)!.push(piece);
   }
 
+  console.log(`[Nesting] ${byMaterial.size} grupo(s) de material:`, [...byMaterial.entries()].map(([k, v]) => `${k} (${v.length} peças)`));
+
   const allSheets: NestingSheet[] = [];
   let sheetIdCounter = 1;
 
