@@ -1,4 +1,4 @@
-import { PromobPiece, PromobHole, PromobContourPoint, NestingPiece } from "@/types/promob";
+import { PromobPiece, PromobHole, PromobContourPoint, NestingPiece, Usinagem } from "@/types/promob";
 import { CuttingPiece } from "@/types/cutting";
 
 /**
@@ -6,41 +6,87 @@ import { CuttingPiece } from "@/types/cutting";
  * Handles both compact and pretty-printed JSON.
  * Structure: { Holes: [...], Grooves: [...], AligmentFaceNormal: {...} }
  */
-function parseCNCJson(raw: string): { furos: PromobHole[]; fresas: any[]; alinhamento: "NORMAL" | "INVERSO" } {
+function parseCNCJson(raw: string, espessura: number): { furos: PromobHole[]; fresas: any[]; usinagens: Usinagem[]; alinhamento: "NORMAL" | "INVERSO" } {
   let furos: PromobHole[] = [];
   let fresas: any[] = [];
+  let usinagens: Usinagem[] = [];
   let alinhamento: "NORMAL" | "INVERSO" = "NORMAL";
 
   const trimmed = raw.trim();
-  if (!trimmed || trimmed === "NAO" || trimmed === "") return { furos, fresas, alinhamento };
+  if (!trimmed || trimmed === "NAO" || trimmed === "") return { furos, fresas, usinagens, alinhamento };
 
   try {
     const cncData = JSON.parse(trimmed);
 
     if (Array.isArray(cncData.Holes)) {
-      furos = cncData.Holes.map((h: any) => {
-        // FaceNormal.C: 1.0 = face superior, -1.0 = face inferior
+      for (const h of cncData.Holes) {
         const face = h.FaceNormal?.C === -1.0 ? "INF" : "SUP";
-        return {
-          FACE: face as "SUP" | "INF",
-          X: h.X ?? 0,
-          Y: h.Y ?? 0,
-          DIAM: h.Diameter ?? h.Diametro ?? 0,
-          Z: h.Depth ?? h.Z ?? 0,
-        };
-      });
+        const diam = h.Diameter ?? h.Diametro ?? 0;
+        const depth = h.Depth ?? h.Z ?? 0;
+        const isPassante = depth >= espessura;
+
+        // Large diameter holes (> 40mm) are circular cutouts, not drill holes
+        if (diam > 40) {
+          usinagens.push({
+            tipo: "recorte_circular",
+            x: h.X ?? 0,
+            y: h.Y ?? 0,
+            largura: diam, // diameter
+            profundidade: depth,
+            comprimento: Math.PI * diam, // perimeter for metering
+            face: face as "SUP" | "INF",
+            passante: isPassante,
+          });
+        } else {
+          furos.push({
+            FACE: face as "SUP" | "INF",
+            X: h.X ?? 0,
+            Y: h.Y ?? 0,
+            DIAM: diam,
+            Z: depth,
+          });
+        }
+      }
     }
 
     if (Array.isArray(cncData.Grooves)) {
       fresas = cncData.Grooves;
+      for (const g of cncData.Grooves) {
+        const face = g.FaceNormal?.C === -1.0 ? "INF" : "SUP";
+        const depth = g.Depth ?? 0;
+        const width = g.Width ?? 0;
+        const length = g.Length ?? 0;
+        const isPassante = depth >= espessura;
+
+        // Classify groove type
+        let tipo: Usinagem["tipo"] = "canal";
+        if (isPassante && width > 50) {
+          tipo = "recorte_retangular";
+        } else if (isPassante) {
+          tipo = "contorno";
+        } else if (depth < espessura * 0.5) {
+          tipo = "canal"; // shallow = LED channel
+        } else {
+          tipo = "rebaixo";
+        }
+
+        usinagens.push({
+          tipo,
+          x: g.X ?? 0,
+          y: g.Y ?? 0,
+          largura: width,
+          profundidade: depth,
+          comprimento: length,
+          face: face as "SUP" | "INF",
+          passante: isPassante,
+        });
+      }
     }
 
-    // AligmentFaceNormal.B: 1.0 = NORMAL, -1.0 = INVERSO
     if (cncData.AligmentFaceNormal?.B === -1.0) {
       alinhamento = "INVERSO";
     }
   } catch {
-    // Try to extract holes with regex as fallback
     try {
       const holesMatch = trimmed.match(/"Holes"\s*:\s*\[([\s\S]*?)\]\s*,\s*"Grooves"/);
       if (holesMatch) {
@@ -56,7 +102,7 @@ function parseCNCJson(raw: string): { furos: PromobHole[]; fresas: any[]; alinha
     } catch { /* unable to parse */ }
   }
 
-  return { furos, fresas, alinhamento };
+  return { furos, fresas, usinagens, alinhamento };
 }
 
 /**
@@ -165,29 +211,34 @@ export function parsePromobCSV(csvText: string): PromobPiece[] {
       console.log(`[PromobParser] Peça ID ${idUnico} ignorada: dimensões inválidas (${comp}x${prof})`);
       continue;
     }
+    // Parse espessura early (needed for CNC classification)
+    const espIdx = colIdx("ESP_CHAPA");
+    const depthIdx = colIdx("COLUMN_ITEM_DEPTH");
+    const espChapa = espIdx >= 0 ? parseNum(firstRow[espIdx]) : (depthIdx >= 0 ? parseNum(firstRow[depthIdx]) : 15);
 
     // Parse CNC JSON - try the CNC column first, then try joining remaining columns
     let furos: PromobHole[] = [];
     let fresas: any[] = [];
+    let usinagens: Usinagem[] = [];
     let alinhamento: "NORMAL" | "INVERSO" = "NORMAL";
 
     if (hasCNC) {
       const cncIdx = colIdx("CNC");
-      // The CNC JSON might span multiple "columns" if it contains semicolons
-      // Join everything from CNC column index to end
       const cncRaw = firstRow.slice(cncIdx).join(";");
-      const parsed = parseCNCJson(cncRaw);
+      const parsed = parseCNCJson(cncRaw, espChapa);
       furos = parsed.furos;
       fresas = parsed.fresas;
+      usinagens = parsed.usinagens;
       alinhamento = parsed.alinhamento;
     }
 
-    // Also check CNC_FUROS_TOTAL field for older formats that embed hole data differently
-    if (furos.length === 0) {
+    // Also check CNC_FUROS_TOTAL field for older formats
+    if (furos.length === 0 && usinagens.length === 0) {
       const cncFurosTotal = firstRow[colIdx("CNC_FUROS_TOTAL")] || "";
       if (cncFurosTotal.trim().startsWith("{")) {
-        const parsed = parseCNCJson(cncFurosTotal);
+        const parsed = parseCNCJson(cncFurosTotal, espChapa);
         furos = parsed.furos;
+        usinagens = parsed.usinagens;
       }
     }
 
@@ -228,10 +279,7 @@ export function parsePromobCSV(csvText: string): PromobPiece[] {
     let bordaSup = false, bordaInf = false, bordaEsq = false, bordaDir = false;
     const tol = 2.0;
 
-    // Parse espessura from ESP_CHAPA or COLUMN_ITEM_DEPTH
-    const espIdx = colIdx("ESP_CHAPA");
-    const depthIdx = colIdx("COLUMN_ITEM_DEPTH");
-    const espChapa = espIdx >= 0 ? parseNum(firstRow[espIdx]) : (depthIdx >= 0 ? parseNum(firstRow[depthIdx]) : 15);
+    // espChapa already parsed above
 
     // Check from border rows
     for (const row of rows) {
@@ -307,6 +355,7 @@ export function parsePromobCSV(csvText: string): PromobPiece[] {
       ALINHAMENTO: alinhamento,
       FRESAS: fresas,
       FUROS: furos,
+      USINAGENS: usinagens,
       CONTORNO: contorno,
       HAS_FRESAS_SUP: fresas.length > 0,
       HAS_FRESAS_INF: false,
@@ -320,7 +369,7 @@ export function parsePromobCSV(csvText: string): PromobPiece[] {
     });
   }
 
-  console.log(`[PromobParser] CSV parsed: ${pieces.length} peças, ${pieces.reduce((a, p) => a + p.FUROS.length, 0)} furos total`);
+  console.log(`[PromobParser] CSV parsed: ${pieces.length} peças, ${pieces.reduce((a, p) => a + p.FUROS.length, 0)} furos, ${pieces.reduce((a, p) => a + p.USINAGENS.length, 0)} usinagens total`);
   return pieces;
 }
 
@@ -414,6 +463,7 @@ function parseSmartFormat(data: any): PromobPiece[] {
       ALINHAMENTO: al === "INVERSO" ? "INVERSO" as const : "NORMAL" as const,
       FRESAS: p.FRESAS || [],
       FUROS: furos,
+      USINAGENS: [],
       CONTORNO: contorno,
       HAS_FRESAS_SUP: false,
       HAS_FRESAS_INF: false,
@@ -449,6 +499,7 @@ export function promobToCuttingPieces(promobPieces: PromobPiece[]): CuttingPiece
     veio: p.VEIO === 1,
     observacao: p.OBS || "",
     furos: p.FUROS,
+    usinagens: p.USINAGENS,
   }));
 }
 

@@ -1,4 +1,4 @@
-import { PromobHole } from "./promob";
+import { PromobHole, Usinagem } from "./promob";
 
 export interface CuttingPiece {
   id: number;
@@ -17,6 +17,7 @@ export interface CuttingPiece {
   veio: boolean;
   observacao: string;
   furos?: PromobHole[];
+  usinagens?: Usinagem[];
 }
 
 export interface SheetLayout {

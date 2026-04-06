@@ -1,4 +1,4 @@
-import { NestingSheet, PlacedNestingPiece, PromobHole } from "@/types/promob";
+import { NestingSheet, PlacedNestingPiece, PromobHole, Usinagem } from "@/types/promob";
 import { useState, forwardRef, useImperativeHandle, useCallback, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
@@ -54,6 +54,50 @@ function EdgeBandIndicator({ piece, side }: { piece: PlacedNestingPiece; side: "
     case "right": x = piece.x + piece.width - thickness; w = thickness; h = piece.height; break;
   }
   return <rect x={x} y={y} width={w} height={h} fill="hsl(var(--warning))" opacity={0.85} rx={1} />;
+}
+
+function UsinagemSVG({ usinagem, pieceX, pieceY }: { usinagem: Usinagem; pieceX: number; pieceY: number }) {
+  const x = pieceX + (usinagem.x || 0);
+  const y = pieceY + (usinagem.y || 0);
+
+  if (usinagem.tipo === "recorte_circular") {
+    const r = usinagem.largura / 2;
+    return (
+      <g>
+        <circle cx={x} cy={y} r={r} fill="none" stroke="hsl(120 60% 40%)" strokeWidth={1.5} strokeDasharray="4,2" />
+        <circle cx={x} cy={y} r={r - 2} fill="hsl(120 60% 40% / 0.1)" />
+        <line x1={x - r * 0.3} y1={y} x2={x + r * 0.3} y2={y} stroke="hsl(120 60% 40%)" strokeWidth={0.8} />
+        <line x1={x} y1={y - r * 0.3} x2={x} y2={y + r * 0.3} stroke="hsl(120 60% 40%)" strokeWidth={0.8} />
+      </g>
+    );
+  }
+
+  if (usinagem.tipo === "canal") {
+    // Horizontal groove
+    const gw = usinagem.comprimento || usinagem.largura;
+    const gh = usinagem.largura || 12;
+    return (
+      <rect x={x} y={y - gh / 2} width={gw} height={gh}
+        fill="hsl(200 70% 50% / 0.2)" stroke="hsl(200 70% 50%)" strokeWidth={1} strokeDasharray="3,2" rx={1} />
+    );
+  }
+
+  if (usinagem.tipo === "recorte_retangular") {
+    const rw = usinagem.comprimento || usinagem.largura;
+    const rh = usinagem.largura;
+    return (
+      <rect x={x} y={y - rh / 2} width={rw} height={rh}
+        fill="hsl(30 80% 50% / 0.15)" stroke="hsl(30 80% 50%)" strokeWidth={1.5} strokeDasharray="5,3" rx={1} />
+    );
+  }
+
+  // Generic: rebaixo / contorno
+  const w = usinagem.comprimento || usinagem.largura;
+  const h = usinagem.largura;
+  return (
+    <rect x={x} y={y - h / 2} width={w} height={h}
+      fill="hsl(280 60% 50% / 0.15)" stroke="hsl(280 60% 50%)" strokeWidth={1} strokeDasharray="4,2" rx={1} />
+  );
 }
 
 interface SheetView2DProps {
@@ -302,6 +346,11 @@ export const SheetView2D = forwardRef<SheetView2DHandle, SheetView2DProps>(({ la
 
                 {piece.furos?.map((hole, hi) => (
                   <DrillHoleSVG key={hi} hole={hole} pieceX={piece.x} pieceY={piece.y} />
+                ))}
+
+                {/* Machining operations (grooves, circular cutouts, etc.) */}
+                {piece.usinagens?.map((u, ui) => (
+                  <UsinagemSVG key={`u-${ui}`} usinagem={u} pieceX={piece.x} pieceY={piece.y} />
                 ))}
 
                 {showDetail && (

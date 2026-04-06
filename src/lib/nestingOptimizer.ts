@@ -262,6 +262,7 @@ export function optimizeNesting(
             label,
             descricao: p.ep.piece.descricao,
             furos: holes,
+            usinagens: (p.ep.piece as any).usinagens || [],
             bordaSup: p.ep.piece.bordaSup,
             bordaInf: p.ep.piece.bordaInf,
             bordaEsq: p.ep.piece.bordaEsq,
