@@ -483,6 +483,7 @@ export const SheetView2D = forwardRef<SheetView2DHandle, SheetView2DProps>(({ la
           <span className="w-3 h-3 rounded-sm inline-block border-2" style={{ borderColor: "hsl(var(--selected-stroke))" }} /> Selecionada
         </span>
       </div>
+      <UsinagensDialog open={showUsinagens} onOpenChange={setShowUsinagens} pieces={pieces} />
     </div>
   );
 });
