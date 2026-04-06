@@ -97,11 +97,11 @@ export function generateGCode(
 
   // === MACHINING OPERATIONS (usinagens: grooves, circular cutouts) ===
   // After drilling, before contour cuts — standard CNC workflow
-  const allUsinagens: { u: Usinagem; pieceX: number; pieceY: number; label: string }[] = [];
+  const allUsinagens: { u: Usinagem; pieceX: number; pieceY: number; label: string; rotated: boolean }[] = [];
   sheet.pieces.forEach(piece => {
     if (piece.usinagens && piece.usinagens.length > 0) {
       piece.usinagens.forEach(u => {
-        allUsinagens.push({ u, pieceX: piece.x, pieceY: piece.y, label: piece.label || "?" });
+        allUsinagens.push({ u, pieceX: piece.x, pieceY: piece.y, label: piece.label || "?", rotated: piece.rotated });
       });
     }
   });
@@ -138,9 +138,10 @@ export function generateGCode(
     lines.push("");
 
     for (let ui = 0; ui < allUsinagens.length; ui++) {
-      const { u, pieceX, pieceY, label } = allUsinagens[ui];
-      const ux = -(pieceX + (u.x || 0)); // Mirror X for CNC
-      const uy = pieceY + (u.y || 0);
+      const { u, pieceX, pieceY, label, rotated } = allUsinagens[ui];
+      // Handle rotation: swap X/Y coordinates for rotated pieces
+      const ux = rotated ? -(pieceX + (u.y || 0)) : -(pieceX + (u.x || 0));
+      const uy = rotated ? pieceY + (u.x || 0) : pieceY + (u.y || 0);
       const depthZ = pp.passeFinal;
 
       if (u.tipo === "recorte_circular") {
