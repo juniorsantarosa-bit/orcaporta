@@ -829,6 +829,7 @@ export function SimulacaoCNCDialog({ open, onOpenChange, layouts, machineConfig 
   const [cameraAction, setCameraAction] = useState("");
   const cameraActionCounter = useRef(0);
   const animRef = useRef<number>(0);
+  const [useCommonCutSim, setUseCommonCutSim] = useState(true);
 
   const triggerCameraAction = (action: string) => {
     cameraActionCounter.current++;
