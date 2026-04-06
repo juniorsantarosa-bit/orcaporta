@@ -156,6 +156,16 @@ export function parsePromobCSV(csvText: string): PromobPiece[] {
   for (const [idUnico, { rows }] of pieceMap) {
     const firstRow = rows[0];
 
+    // Parse dimensions first to validate
+    const comp = parseNum(firstRow[colIdx("COMPRIMENTO")]);
+    const prof = parseNum(firstRow[colIdx("PROFUNDIDADE")]);
+
+    // SKIP invalid pieces: must have both dimensions > 0
+    if (comp <= 0 || prof <= 0) {
+      console.log(`[PromobParser] Peça ID ${idUnico} ignorada: dimensões inválidas (${comp}x${prof})`);
+      continue;
+    }
+
     // Parse CNC JSON - try the CNC column first, then try joining remaining columns
     let furos: PromobHole[] = [];
     let fresas: any[] = [];
@@ -216,8 +226,6 @@ export function parsePromobCSV(csvText: string): PromobPiece[] {
 
     // Determine edge bands from contour segments
     let bordaSup = false, bordaInf = false, bordaEsq = false, bordaDir = false;
-    const comp = parseNum(firstRow[colIdx("COMPRIMENTO")]);
-    const prof = parseNum(firstRow[colIdx("PROFUNDIDADE")]);
     const tol = 2.0;
 
     // Parse espessura from ESP_CHAPA or COLUMN_ITEM_DEPTH
@@ -257,15 +265,23 @@ export function parsePromobCSV(csvText: string): PromobPiece[] {
       else if (Math.abs(midX - comp) < tol && Math.abs(curr.x - next.x) < tol) bordaDir = true;
     }
 
-    // Try to get a better material name: NOME_MATERIAL or CHAPA
-    const materialName = firstRow[colIdx("NOME_MATERIAL")] || firstRow[colIdx("CHAPA")] || "";
+    // Try to get a better material name: NOME_MATERIAL, CHAPA, or REFERENCIA_MATERIAL
+    const materialName = (firstRow[colIdx("NOME_MATERIAL")] || firstRow[colIdx("CHAPA")] || firstRow[colIdx("REFERENCIA_MATERIAL")] || "").trim();
+
+    // SKIP pieces without material name (likely phantom/invalid entries)
+    if (!materialName) {
+      console.log(`[PromobParser] Peça ID ${idUnico} "${firstRow[colIdx("DESCRICAO")] || "?"}" ignorada: sem material definido`);
+      continue;
+    }
+
+    const qty = parseInt(firstRow[colIdx("QUANTIDADE")]) || 1;
 
     pieces.push({
       CLIENTE: firstRow[colIdx("CLIENTE")] || "",
       COD_CLIENTE: firstRow[colIdx("COD_CLIENTE")] || null,
       AMBIENTE: firstRow[colIdx("AMBIENTE")] || "",
       ID_UNICO: idUnico,
-      QUANTIDADE: parseInt(firstRow[colIdx("QUANTIDADE")]) || 1,
+      QUANTIDADE: qty,
       DESCRICAO: firstRow[colIdx("DESCRICAO")] || "",
       COMPRIMENTO: comp,
       PROFUNDIDADE: prof,
