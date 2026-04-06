@@ -279,10 +279,7 @@ export function parsePromobCSV(csvText: string): PromobPiece[] {
     let bordaSup = false, bordaInf = false, bordaEsq = false, bordaDir = false;
     const tol = 2.0;
 
-    // Parse espessura from ESP_CHAPA or COLUMN_ITEM_DEPTH
-    const espIdx = colIdx("ESP_CHAPA");
-    const depthIdx = colIdx("COLUMN_ITEM_DEPTH");
-    const espChapa = espIdx >= 0 ? parseNum(firstRow[espIdx]) : (depthIdx >= 0 ? parseNum(firstRow[depthIdx]) : 15);
+    // espChapa already parsed above
 
     // Check from border rows
     for (const row of rows) {
