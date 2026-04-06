@@ -935,6 +935,16 @@ export function SimulacaoCNCDialog({ open, onOpenChange, layouts, machineConfig 
                 </div>
               )}
 
+              {/* Common Cut toggle */}
+              <Button
+                variant={useCommonCutSim ? "default" : "outline"}
+                size="sm"
+                className="h-7 text-[10px] gap-1"
+                onClick={() => { setUseCommonCutSim(!useCommonCutSim); setProgress(0); setPlaying(false); }}
+              >
+                ✂️ {useCommonCutSim ? "CC ON" : "CC OFF"}
+              </Button>
+
               <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "3d" | "2d")}>
                 <TabsList className="h-7">
                   <TabsTrigger value="3d" className="text-[10px] h-5 px-2">3D</TabsTrigger>
