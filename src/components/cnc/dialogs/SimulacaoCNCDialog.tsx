@@ -49,12 +49,14 @@ interface SafetyAlert {
 }
 
 interface ToolpathSegment {
-  type: "rapid" | "cut" | "drill" | "retract";
+  type: "rapid" | "cut" | "drill" | "retract" | "toolchange";
   from: THREE.Vector3;
   to: THREE.Vector3;
   toolDiam: number;
   safe: boolean;
   alertIdx?: number;
+  toolName?: string;
+  toolPosition?: number;
 }
 
 // Maximum penetration depth below sheet surface
