@@ -59,12 +59,13 @@ function EdgeBandIndicator({ piece, side }: { piece: PlacedNestingPiece; side: "
 interface SheetView2DProps {
   layout: NestingSheet;
   selectedPieceId: number | null;
+  onSelectPiece?: (id: number) => void;
   dragMode?: boolean;
   onPiecesReorder?: (pieces: PlacedNestingPiece[]) => void;
   onReoptimize?: () => void;
 }
 
-export const SheetView2D = forwardRef<SheetView2DHandle, SheetView2DProps>(({ layout, selectedPieceId, dragMode = false, onPiecesReorder, onReoptimize }, ref) => {
+export const SheetView2D = forwardRef<SheetView2DHandle, SheetView2DProps>(({ layout, selectedPieceId, onSelectPiece, dragMode = false, onPiecesReorder, onReoptimize }, ref) => {
   const [hoveredPiece, setHoveredPiece] = useState<number | null>(null);
   const [zoom, setZoom] = useState(1);
   const [internalDragMode, setInternalDragMode] = useState(false);
