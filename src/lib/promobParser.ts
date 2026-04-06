@@ -22,7 +22,10 @@ function parseCNCJson(raw: string, espessura: number): { furos: PromobHole[]; fr
       for (const h of cncData.Holes) {
         const face = h.FaceNormal?.C === -1.0 ? "INF" : "SUP";
         const diam = h.Diameter ?? h.Diametro ?? 0;
-        const depth = h.Depth ?? h.Z ?? 0;
+        const rawDepth = h.Depth ?? h.Z ?? 0;
+        // SAFETY CLAMP: never exceed espessura + 0.1mm
+        const maxDepth = espessura + 0.1;
+        const depth = Math.min(rawDepth, maxDepth);
         const isPassante = depth >= espessura;
 
         // Large diameter holes (> 40mm) are circular cutouts, not drill holes
@@ -53,7 +56,10 @@ function parseCNCJson(raw: string, espessura: number): { furos: PromobHole[]; fr
       fresas = cncData.Grooves;
       for (const g of cncData.Grooves) {
         const face = g.FaceNormal?.C === -1.0 ? "INF" : "SUP";
-        const depth = g.Depth ?? 0;
+        const rawDepth = g.Depth ?? 0;
+        // SAFETY CLAMP: never exceed espessura + 0.1mm
+        const maxDepth = espessura + 0.1;
+        const depth = Math.min(rawDepth, maxDepth);
         const width = g.Width ?? 0;
         const length = g.Length ?? 0;
         const isPassante = depth >= espessura;
