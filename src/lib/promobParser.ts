@@ -2,26 +2,94 @@ import { PromobPiece, PromobHole, PromobContourPoint, NestingPiece } from "@/typ
 import { CuttingPiece } from "@/types/cutting";
 
 /**
- * Parse Promob CSV (semicolon-separated) exported from PromobCut
- * The CSV has multiple rows per piece (one per contour vertex + edge bands)
- * The CNC column contains JSON with Holes, Grooves, etc.
+ * Parse CNC JSON blob from Promob Cut CSV.
+ * Handles both compact and pretty-printed JSON.
+ * Structure: { Holes: [...], Grooves: [...], AligmentFaceNormal: {...} }
+ */
+function parseCNCJson(raw: string): { furos: PromobHole[]; fresas: any[]; alinhamento: "NORMAL" | "INVERSO" } {
+  let furos: PromobHole[] = [];
+  let fresas: any[] = [];
+  let alinhamento: "NORMAL" | "INVERSO" = "NORMAL";
+
+  const trimmed = raw.trim();
+  if (!trimmed || trimmed === "NAO" || trimmed === "") return { furos, fresas, alinhamento };
+
+  try {
+    const cncData = JSON.parse(trimmed);
+
+    if (Array.isArray(cncData.Holes)) {
+      furos = cncData.Holes.map((h: any) => {
+        // FaceNormal.C: 1.0 = face superior, -1.0 = face inferior
+        const face = h.FaceNormal?.C === -1.0 ? "INF" : "SUP";
+        return {
+          FACE: face as "SUP" | "INF",
+          X: h.X ?? 0,
+          Y: h.Y ?? 0,
+          DIAM: h.Diameter ?? h.Diametro ?? 0,
+          Z: h.Depth ?? h.Z ?? 0,
+        };
+      });
+    }
+
+    if (Array.isArray(cncData.Grooves)) {
+      fresas = cncData.Grooves;
+    }
+
+    // AligmentFaceNormal.B: 1.0 = NORMAL, -1.0 = INVERSO
+    if (cncData.AligmentFaceNormal?.B === -1.0) {
+      alinhamento = "INVERSO";
+    }
+  } catch {
+    // Try to extract holes with regex as fallback
+    try {
+      const holesMatch = trimmed.match(/"Holes"\s*:\s*\[([\s\S]*?)\]\s*,\s*"Grooves"/);
+      if (holesMatch) {
+        const holesJson = JSON.parse(`[${holesMatch[1]}]`);
+        furos = holesJson.map((h: any) => ({
+          FACE: (h.FaceNormal?.C === -1.0 ? "INF" : "SUP") as "SUP" | "INF",
+          X: h.X ?? 0,
+          Y: h.Y ?? 0,
+          DIAM: h.Diameter ?? 0,
+          Z: h.Depth ?? 0,
+        }));
+      }
+    } catch { /* unable to parse */ }
+  }
+
+  return { furos, fresas, alinhamento };
+}
+
+/**
+ * Parse Promob CSV (semicolon-separated) exported from PromobCut.
+ * The CSV has multiple rows per piece (one per contour vertex + edge bands).
+ * The CNC column (last column) contains JSON with Holes, Grooves, etc.
+ * 
+ * Also handles CSVs WITHOUT the CNC column (older/different exports).
  */
 export function parsePromobCSV(csvText: string): PromobPiece[] {
   const lines = csvText.split("\n").filter(l => l.trim());
   if (lines.length < 2) return [];
 
-  const header = lines[0].replace(/^\uFEFF/, "").split(";");
-  
-  const colIdx = (name: string) => header.indexOf(name);
-  
+  const header = lines[0].replace(/^\uFEFF/, "").split(";").map(h => h.trim());
+
+  const colIdx = (name: string) => {
+    const idx = header.indexOf(name);
+    return idx;
+  };
+
+  const hasCNC = colIdx("CNC") >= 0;
+  const hasAlinhamento = colIdx("ALINHAMENTO") >= 0;
+
   // Group rows by ID_UNICO - multiple rows per piece (contour points + edges)
   const pieceMap = new Map<number, { rows: string[][]; }>();
-  
+
   for (let i = 1; i < lines.length; i++) {
+    // For lines with CNC JSON, the JSON may contain semicolons in string values
+    // but standard Promob JSON uses commas, so simple split works
     const cols = lines[i].split(";");
     const idUnico = parseInt(cols[colIdx("ID_UNICO")]) || 0;
     if (!idUnico) continue;
-    
+
     if (!pieceMap.has(idUnico)) {
       pieceMap.set(idUnico, { rows: [] });
     }
@@ -32,38 +100,45 @@ export function parsePromobCSV(csvText: string): PromobPiece[] {
 
   for (const [idUnico, { rows }] of pieceMap) {
     const firstRow = rows[0];
-    
-    // Parse CNC JSON from the last column
-    const cncRaw = firstRow[colIdx("CNC")] || "";
+
+    // Parse CNC JSON - try the CNC column first, then try joining remaining columns
     let furos: PromobHole[] = [];
     let fresas: any[] = [];
     let alinhamento: "NORMAL" | "INVERSO" = "NORMAL";
-    
-    if (cncRaw.trim()) {
-      try {
-        const cncData = JSON.parse(cncRaw);
-        if (cncData.Holes) {
-          furos = cncData.Holes.map((h: any) => ({
-            FACE: h.FaceNormal?.C === 1.0 ? "SUP" : "INF",
-            X: h.X,
-            Y: h.Y,
-            DIAM: h.Diameter,
-            Z: h.Depth,
-          }));
-        }
-        if (cncData.Grooves) {
-          fresas = cncData.Grooves;
-        }
-      } catch {}
+
+    if (hasCNC) {
+      const cncIdx = colIdx("CNC");
+      // The CNC JSON might span multiple "columns" if it contains semicolons
+      // Join everything from CNC column index to end
+      const cncRaw = firstRow.slice(cncIdx).join(";");
+      const parsed = parseCNCJson(cncRaw);
+      furos = parsed.furos;
+      fresas = parsed.fresas;
+      alinhamento = parsed.alinhamento;
+    }
+
+    // Also check CNC_FUROS_TOTAL field for older formats that embed hole data differently
+    if (furos.length === 0) {
+      const cncFurosTotal = firstRow[colIdx("CNC_FUROS_TOTAL")] || "";
+      if (cncFurosTotal.trim().startsWith("{")) {
+        const parsed = parseCNCJson(cncFurosTotal);
+        furos = parsed.furos;
+      }
+    }
+
+    // Override alinhamento from dedicated column if present
+    if (hasAlinhamento) {
+      const al = (firstRow[colIdx("ALINHAMENTO")] || "").trim().toUpperCase();
+      if (al === "INVERSO") alinhamento = "INVERSO";
     }
 
     // Build ordered contour with border info for edge detection
     const contorno: PromobContourPoint[] = [];
     const seenPoints = new Set<string>();
-    
-    interface ContourRow { x: number; y: number; hasBorder: boolean; }
+
+    interface ContourRow { x: number; y: number; hasBorder: boolean; borderDesc: string; }
     const contourRows: ContourRow[] = [];
-    
+
     for (const row of rows) {
       const px = parseFloat(row[colIdx("COLUMN_POINT_X_ITEM")]);
       const py = parseFloat(row[colIdx("COLUMN_POINT_Y_ITEM")]);
@@ -73,10 +148,13 @@ export function parsePromobCSV(csvText: string): PromobPiece[] {
         if (!seenPoints.has(key)) {
           seenPoints.add(key);
           contorno.push({ X: px, Y: py, ANG: row[colIdx("COLUMN_POINTS_ANGLE")] || "NAO" });
-          contourRows.push({ x: px, y: py, hasBorder: borderDesc.length > 0 });
+          contourRows.push({ x: px, y: py, hasBorder: borderDesc.length > 0, borderDesc });
         } else if (borderDesc.length > 0) {
           const existing = contourRows.find(c => c.x === px && c.y === py);
-          if (existing) existing.hasBorder = true;
+          if (existing) {
+            existing.hasBorder = true;
+            existing.borderDesc = borderDesc;
+          }
         }
       }
     }
@@ -85,22 +163,39 @@ export function parsePromobCSV(csvText: string): PromobPiece[] {
     let bordaSup = false, bordaInf = false, bordaEsq = false, bordaDir = false;
     const comp = parseFloat(firstRow[colIdx("COMPRIMENTO")]) || 0;
     const prof = parseFloat(firstRow[colIdx("PROFUNDIDADE")]) || 0;
-    const tol = 1.0;
-    
+    const tol = 2.0;
+
+    // Check from border rows
+    for (const row of rows) {
+      const borderDesc = (row[colIdx("COLUMN_BORDER_DESCRIPTION")] || "").trim();
+      if (!borderDesc) continue;
+
+      const borderFinishing = (row[colIdx("COLUMN_BORDER_FINISHING")] || "").trim();
+      const px = parseFloat(row[colIdx("COLUMN_POINT_X_ITEM")]);
+      const py = parseFloat(row[colIdx("COLUMN_POINT_Y_ITEM")]);
+
+      if (!isNaN(px) && !isNaN(py)) {
+        // Detect which edge by the contour point position
+        if (Math.abs(py - prof) < tol) bordaSup = true;
+        else if (Math.abs(py) < tol) bordaInf = true;
+        if (Math.abs(px) < tol) bordaEsq = true;
+        else if (Math.abs(px - comp) < tol) bordaDir = true;
+      }
+    }
+
+    // Also check contour segments method
     for (let ci = 0; ci < contourRows.length; ci++) {
       if (!contourRows[ci].hasBorder) continue;
       const curr = contourRows[ci];
       const next = contourRows[(ci + 1) % contourRows.length];
       const midX = (curr.x + next.x) / 2;
       const midY = (curr.y + next.y) / 2;
-      
+
       if (Math.abs(midY - prof) < tol && Math.abs(curr.y - next.y) < tol) bordaSup = true;
       else if (Math.abs(midY) < tol && Math.abs(curr.y - next.y) < tol) bordaInf = true;
       else if (Math.abs(midX) < tol && Math.abs(curr.x - next.x) < tol) bordaEsq = true;
       else if (Math.abs(midX - comp) < tol && Math.abs(curr.x - next.x) < tol) bordaDir = true;
     }
-
-    const al = firstRow[colIdx("ALINHAMENTO")] || "NORMAL";
 
     pieces.push({
       CLIENTE: firstRow[colIdx("CLIENTE")] || "",
@@ -109,8 +204,8 @@ export function parsePromobCSV(csvText: string): PromobPiece[] {
       ID_UNICO: idUnico,
       QUANTIDADE: parseInt(firstRow[colIdx("QUANTIDADE")]) || 1,
       DESCRICAO: firstRow[colIdx("DESCRICAO")] || "",
-      COMPRIMENTO: parseFloat(firstRow[colIdx("COMPRIMENTO")]) || 0,
-      PROFUNDIDADE: parseFloat(firstRow[colIdx("PROFUNDIDADE")]) || 0,
+      COMPRIMENTO: comp,
+      PROFUNDIDADE: prof,
       CHAPA: firstRow[colIdx("CHAPA")] || "",
       COR_1C: firstRow[colIdx("COR_1C")] || null,
       COR_2C: firstRow[colIdx("COR_2C")] || null,
@@ -130,11 +225,11 @@ export function parsePromobCSV(csvText: string): PromobPiece[] {
       CNC_B: firstRow[colIdx("CNC_B")] || "",
       CNC_FUROS_TOTAL: firstRow[colIdx("CNC_FUROS_TOTAL")] || "NAO",
       OBS: firstRow[colIdx("OBS")] || null,
-      ALINHAMENTO: al === "INVERSO" ? "INVERSO" : "NORMAL",
+      ALINHAMENTO: alinhamento,
       FRESAS: fresas,
       FUROS: furos,
       CONTORNO: contorno,
-      HAS_FRESAS_SUP: false,
+      HAS_FRESAS_SUP: fresas.length > 0,
       HAS_FRESAS_INF: false,
       HAS_FUROS_SUP: furos.some(f => f.FACE === "SUP"),
       HAS_FUROS_INF: furos.some(f => f.FACE === "INF"),
@@ -146,6 +241,7 @@ export function parsePromobCSV(csvText: string): PromobPiece[] {
     });
   }
 
+  console.log(`[PromobParser] CSV parsed: ${pieces.length} peças, ${pieces.reduce((a, p) => a + p.FUROS.length, 0)} furos total`);
   return pieces;
 }
 
@@ -154,15 +250,15 @@ export function parsePromobCSV(csvText: string): PromobPiece[] {
  */
 export function parsePromobJSON(jsonText: string): PromobPiece[] {
   const data = JSON.parse(jsonText);
-  
+
   // Legacy format: direct array of PromobPiece
   if (Array.isArray(data)) return data as PromobPiece[];
-  
+
   // New Smart Cabinets format: { TRABALHO, CHAPAS, PECAS }
   if (data.PECAS && Array.isArray(data.PECAS)) {
     return parseSmartFormat(data);
   }
-  
+
   return [];
 }
 
@@ -173,7 +269,7 @@ export function parsePromobJSON(jsonText: string): PromobPiece[] {
 function parseSmartFormat(data: any): PromobPiece[] {
   const trabalho = data.TRABALHO?.[0] || {};
   const chapasMap = new Map<string, any>();
-  
+
   if (Array.isArray(data.CHAPAS)) {
     for (const ch of data.CHAPAS) {
       chapasMap.set(String(ch.Codigo), ch);
@@ -183,7 +279,7 @@ function parseSmartFormat(data: any): PromobPiece[] {
   return data.PECAS.map((p: any) => {
     const chapa = chapasMap.get(String(p.Chapa)) || {};
     const etiqueta = p.ETIQUETA?.[0] || {};
-    
+
     // Convert holes from new format (Face/Diametro) to legacy (FACE/DIAM)
     const furos: PromobHole[] = (p.FUROS || []).map((f: any) => ({
       FACE: (f.Face || f.FACE || "SUP").toUpperCase() === "SUP" ? "SUP" as const : "INF" as const,
