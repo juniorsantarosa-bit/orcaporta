@@ -16,6 +16,7 @@ import { LayersDialog } from "@/components/cnc/dialogs/LayersDialog";
 import { ImportarPecasDialog } from "@/components/cnc/dialogs/ImportarPecasDialog";
 import { ImportarDXFDialog } from "@/components/cnc/dialogs/ImportarDXFDialog";
 import { SobrasDialog } from "@/components/cnc/dialogs/SobrasDialog";
+import { SimulacaoCNCDialog } from "@/components/cnc/dialogs/SimulacaoCNCDialog";
 import { OrcamentoDialog } from "@/components/cnc/dialogs/OrcamentoDialog";
 import { OptimizationResultDialog } from "@/components/cnc/dialogs/OptimizationResultDialog";
 import {
