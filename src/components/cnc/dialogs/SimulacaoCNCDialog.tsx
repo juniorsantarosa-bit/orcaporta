@@ -841,7 +841,11 @@ export function SimulacaoCNCDialog({ open, onOpenChange, layouts, machineConfig 
                 <span className="font-semibold text-foreground">{layout.material}</span>
                 <span className="text-muted-foreground ml-1">{layout.sheetWidth}×{layout.sheetHeight}mm</span>
                 <span className="text-muted-foreground ml-1">Esp: {layout.espessura}mm</span>
-                <span className="text-muted-foreground ml-1">Ø fresa: 6mm</span>
+                {currentSeg && (
+                  <span className="ml-1 text-blue-500 font-semibold">
+                    | T{currentSeg.toolPosition || '?'} {currentSeg.toolName || `Ø${currentSeg.toolDiam}mm`}
+                  </span>
+                )}
               </div>
             )}
           </div>
