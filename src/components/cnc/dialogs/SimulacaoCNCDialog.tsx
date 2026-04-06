@@ -569,7 +569,7 @@ function CameraControls({ sheetW, sheetH, cameraAction }: { sheetW: number; shee
   );
 }
 
-// ============ 3D Simulation Scene ============
+// ============ 3D Simulation Scene (Heightmap-based like Aspire) ============
 
 function SimulationScene3D({ segments, progress, layout, cameraAction }: { segments: ToolpathSegment[]; progress: number; layout: NestingSheet; cameraAction: string }) {
   const toolRef = useRef<THREE.Group>(null);
@@ -577,41 +577,161 @@ function SimulationScene3D({ segments, progress, layout, cameraAction }: { segme
   const totalSegments = segments.length;
   const currentIdx = Math.min(Math.floor(progress * totalSegments), totalSegments - 1);
 
-  const completedOps = useMemo(() => {
-    const throughCuts: { x: number; y: number; w: number; h: number }[] = [];
-    const partialCuts: { x: number; y: number; w: number; h: number }[] = [];
-    const throughDrills: { x: number; y: number; r: number }[] = [];
-    const partialDrills: { x: number; y: number; r: number; depth: number }[] = [];
+  const sheetW = layout.sheetWidth * scale;
+  const sheetH = layout.sheetHeight * scale;
+  const thickness = layout.espessura * scale;
 
-    for (let i = 0; i <= currentIdx && i < segments.length; i++) {
+  // Canvas heightmap resolution (1px ≈ 2mm)
+  const CS = 0.5;
+  const cw = Math.ceil(layout.sheetWidth * CS);
+  const ch = Math.ceil(layout.sheetHeight * CS);
+
+  // Wood colors
+  const WOOD_BASE = "#ddd0b8";
+  const WOOD_DARK = "#a08868"; // partial depth (rebaixo/canal)
+  const WOOD_CUT_BG = "#f0ece4"; // through-cut reveals lighter sacrifice table
+
+  // Create canvas & texture synchronously via useMemo
+  const { hmCanvas, hmTexture } = useMemo(() => {
+    const c = document.createElement("canvas");
+    c.width = cw;
+    c.height = ch;
+    const ctx = c.getContext("2d")!;
+
+    // Draw wood grain base
+    ctx.fillStyle = WOOD_BASE;
+    ctx.fillRect(0, 0, cw, ch);
+
+    // Subtle wood grain lines
+    ctx.strokeStyle = "rgba(160,130,90,0.08)";
+    ctx.lineWidth = 1;
+    for (let i = 0; i < ch; i += 3) {
+      const wobble = Math.sin(i * 0.05) * 2;
+      ctx.beginPath();
+      ctx.moveTo(0, i + wobble);
+      ctx.lineTo(cw, i + wobble + Math.sin(i * 0.02) * 3);
+      ctx.stroke();
+    }
+    // Occasional darker grain bands
+    ctx.strokeStyle = "rgba(140,110,70,0.06)";
+    ctx.lineWidth = 3;
+    for (let i = 0; i < ch; i += 12 + Math.random() * 8) {
+      ctx.beginPath();
+      ctx.moveTo(0, i);
+      ctx.bezierCurveTo(cw * 0.3, i + 2, cw * 0.7, i - 2, cw, i + 1);
+      ctx.stroke();
+    }
+
+    const tex = new THREE.CanvasTexture(c);
+    tex.minFilter = THREE.LinearFilter;
+    tex.magFilter = THREE.LinearFilter;
+    return { hmCanvas: c, hmTexture: tex };
+  }, [cw, ch]);
+
+  // Track last rendered segment for progressive painting
+  const lastRenderedIdx = useRef(-1);
+
+  // Progressive rendering of material removal onto the canvas
+  useEffect(() => {
+    const ctx = hmCanvas.getContext("2d")!;
+    const esp = layout.espessura;
+
+    // If progress went backwards (slider dragged back), repaint from scratch
+    if (currentIdx < lastRenderedIdx.current) {
+      ctx.fillStyle = WOOD_BASE;
+      ctx.fillRect(0, 0, cw, ch);
+      // Re-draw grain
+      ctx.strokeStyle = "rgba(160,130,90,0.08)";
+      ctx.lineWidth = 1;
+      for (let i = 0; i < ch; i += 3) {
+        const wobble = Math.sin(i * 0.05) * 2;
+        ctx.beginPath();
+        ctx.moveTo(0, i + wobble);
+        ctx.lineTo(cw, i + wobble + Math.sin(i * 0.02) * 3);
+        ctx.stroke();
+      }
+      ctx.strokeStyle = "rgba(140,110,70,0.06)";
+      ctx.lineWidth = 3;
+      for (let i = 0; i < ch; i += 12 + Math.random() * 8) {
+        ctx.beginPath();
+        ctx.moveTo(0, i);
+        ctx.bezierCurveTo(cw * 0.3, i + 2, cw * 0.7, i - 2, cw, i + 1);
+        ctx.stroke();
+      }
+      lastRenderedIdx.current = -1;
+    }
+
+    for (let i = lastRenderedIdx.current + 1; i <= currentIdx && i < segments.length; i++) {
       const seg = segments[i];
-      const isThrough = Math.abs(seg.to.z) >= layout.espessura - 0.5;
 
-      if (seg.type === "drill") {
-        const r = Math.max(seg.toolDiam / 2, 1.5) * scale;
+      if (seg.type === "cut") {
+        const isThrough = Math.abs(seg.to.z) >= esp - 0.5;
+        const toolR = Math.max(seg.toolDiam / 2 * CS, 0.8);
+
+        // Edge shadow for depth effect
+        ctx.strokeStyle = "rgba(60,40,20,0.35)";
+        ctx.lineWidth = toolR * 2 + 2;
+        ctx.lineCap = "round";
+        ctx.beginPath();
+        ctx.moveTo(seg.from.x * CS, seg.from.y * CS);
+        ctx.lineTo(seg.to.x * CS, seg.to.y * CS);
+        ctx.stroke();
+
+        // Main cut
+        ctx.strokeStyle = isThrough ? WOOD_CUT_BG : WOOD_DARK;
+        ctx.lineWidth = toolR * 2;
+        ctx.beginPath();
+        ctx.moveTo(seg.from.x * CS, seg.from.y * CS);
+        ctx.lineTo(seg.to.x * CS, seg.to.y * CS);
+        ctx.stroke();
+
+        // Inner highlight for through-cuts (lighter center)
         if (isThrough) {
-          throughDrills.push({ x: seg.to.x * scale, y: seg.to.y * scale, r });
-        } else {
-          partialDrills.push({ x: seg.to.x * scale, y: seg.to.y * scale, r, depth: Math.abs(seg.to.z) * scale });
+          ctx.strokeStyle = "rgba(255,255,255,0.4)";
+          ctx.lineWidth = Math.max(toolR * 1.2, 1);
+          ctx.beginPath();
+          ctx.moveTo(seg.from.x * CS, seg.from.y * CS);
+          ctx.lineTo(seg.to.x * CS, seg.to.y * CS);
+          ctx.stroke();
         }
       }
-      if (seg.type === "cut") {
-        const minX = Math.min(seg.from.x, seg.to.x) * scale;
-        const minY = Math.min(seg.from.y, seg.to.y) * scale;
-        const maxX = Math.max(seg.from.x, seg.to.x) * scale;
-        const maxY = Math.max(seg.from.y, seg.to.y) * scale;
-        const w = maxX - minX + seg.toolDiam * scale;
-        const h = maxY - minY + seg.toolDiam * scale;
-        if (w > 0.001 || h > 0.001) {
-          const entry = { x: (minX + maxX) / 2, y: (minY + maxY) / 2, w: Math.max(w, seg.toolDiam * scale), h: Math.max(h, seg.toolDiam * scale) };
-          if (isThrough) throughCuts.push(entry);
-          else partialCuts.push(entry);
+
+      if (seg.type === "drill") {
+        const r = Math.max(seg.toolDiam / 2 * CS, 1);
+        const isThrough = Math.abs(seg.to.z) >= esp - 0.5;
+
+        // Shadow ring
+        ctx.fillStyle = "rgba(60,40,20,0.35)";
+        ctx.beginPath();
+        ctx.arc(seg.to.x * CS, seg.to.y * CS, r + 1.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Hole
+        ctx.fillStyle = isThrough ? WOOD_CUT_BG : WOOD_DARK;
+        ctx.beginPath();
+        ctx.arc(seg.to.x * CS, seg.to.y * CS, r, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Inner highlight
+        if (isThrough) {
+          ctx.fillStyle = "rgba(255,255,255,0.3)";
+          ctx.beginPath();
+          ctx.arc(seg.to.x * CS, seg.to.y * CS, r * 0.5, 0, Math.PI * 2);
+          ctx.fill();
         }
       }
     }
-    return { throughCuts, partialCuts, throughDrills, partialDrills };
-  }, [currentIdx, segments, scale, layout.espessura]);
 
+    lastRenderedIdx.current = currentIdx;
+    hmTexture.needsUpdate = true;
+  }, [currentIdx, segments, layout.espessura, cw, ch, hmCanvas, hmTexture]);
+
+  // Cleanup texture on unmount
+  useEffect(() => {
+    return () => { hmTexture.dispose(); };
+  }, [hmTexture]);
+
+  // Tool position
   let toolPos = new THREE.Vector3(0, 50 * scale, 0);
   if (segments.length > 0 && currentIdx >= 0) {
     const seg = segments[currentIdx];
@@ -621,7 +741,10 @@ function SimulationScene3D({ segments, progress, layout, cameraAction }: { segme
     toolPos = fromS.clone().lerp(toS, frac);
   }
 
-  // Trail: green for cuts/drills, red for rapid/retract
+  const currentSeg = currentIdx >= 0 && currentIdx < segments.length ? segments[currentIdx] : null;
+  const isCutting = currentSeg && (currentSeg.type === "cut" || currentSeg.type === "drill");
+
+  // Trail lines
   const cutTrailPoints = useMemo(() => {
     const pts: number[] = [];
     for (let i = 0; i <= currentIdx && i < segments.length; i++) {
@@ -647,16 +770,8 @@ function SimulationScene3D({ segments, progress, layout, cameraAction }: { segme
   }, [currentIdx, segments, scale]);
 
   useFrame(() => {
-    if (toolRef.current) {
-      toolRef.current.position.copy(toolPos);
-    }
+    if (toolRef.current) toolRef.current.position.copy(toolPos);
   });
-
-  const sheetW = layout.sheetWidth * scale;
-  const sheetH = layout.sheetHeight * scale;
-  const thickness = layout.espessura * scale;
-  const currentSeg = currentIdx >= 0 && currentIdx < segments.length ? segments[currentIdx] : null;
-  const isCutting = currentSeg && (currentSeg.type === "cut" || currentSeg.type === "drill");
 
   return (
     <>
@@ -668,49 +783,27 @@ function SimulationScene3D({ segments, progress, layout, cameraAction }: { segme
       <directionalLight position={[-10, 15, -10]} intensity={0.3} />
       <hemisphereLight args={["#ddeeff", "#c0b090", 0.3]} />
 
-      {/* Mesa de sacrifício */}
-      <mesh position={[sheetW / 2, -thickness - 0.02, sheetH / 2]} receiveShadow>
-        <boxGeometry args={[sheetW + 2, 0.04, sheetH + 2]} />
-        <meshStandardMaterial color="#8a7a6a" roughness={0.9} />
+      {/* Mesa de sacrifício (white background under sheet) */}
+      <mesh position={[sheetW / 2, -thickness - 0.01, sheetH / 2]} receiveShadow>
+        <boxGeometry args={[sheetW + 2, 0.02, sheetH + 2]} />
+        <meshStandardMaterial color="#c8c0b0" roughness={0.9} />
       </mesh>
 
-      {/* Sheet (chapa) */}
+      {/* Sheet body (sides visible when viewing from angle) */}
       <mesh position={[sheetW / 2, -thickness / 2, sheetH / 2]} castShadow receiveShadow>
         <boxGeometry args={[sheetW, thickness, sheetH]} />
-        <meshStandardMaterial color="#e8dcc8" roughness={0.4} metalness={0.05} />
+        <meshStandardMaterial color={WOOD_BASE} roughness={0.45} metalness={0.02} />
       </mesh>
 
-      {/* Through-cuts (white — material fully removed) */}
-      {completedOps.throughCuts.map((cut, i) => (
-        <mesh key={`tcut-${i}`} position={[cut.x, 0.001, cut.y]}>
-          <boxGeometry args={[cut.w, thickness + 0.002, cut.h]} />
-          <meshStandardMaterial color="#ffffff" roughness={0.9} transparent opacity={0.95} />
-        </mesh>
-      ))}
-
-      {/* Partial-depth cuts (darker shade — rebaixo/canal) */}
-      {completedOps.partialCuts.map((cut, i) => (
-        <mesh key={`pcut-${i}`} position={[cut.x, thickness / 2 + 0.001, cut.y]}>
-          <boxGeometry args={[cut.w, 0.01, cut.h]} />
-          <meshStandardMaterial color="#b09878" roughness={0.8} transparent opacity={0.9} />
-        </mesh>
-      ))}
-
-      {/* Through-drills (white holes) */}
-      {completedOps.throughDrills.map((drill, i) => (
-        <mesh key={`tdrill-${i}`} position={[drill.x, 0.001, drill.y]} rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[drill.r, drill.r, thickness + 0.002, 24]} />
-          <meshStandardMaterial color="#ffffff" roughness={0.9} />
-        </mesh>
-      ))}
-
-      {/* Partial-depth drills (darker shade) */}
-      {completedOps.partialDrills.map((drill, i) => (
-        <mesh key={`pdrill-${i}`} position={[drill.x, thickness / 2 + 0.001, drill.y]} rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[drill.r, drill.r, drill.depth, 24]} />
-          <meshStandardMaterial color="#b09878" roughness={0.9} />
-        </mesh>
-      ))}
+      {/* Sheet top surface — canvas heightmap texture */}
+      <mesh position={[sheetW / 2, 0.002, sheetH / 2]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[sheetW, sheetH]} />
+        <meshStandardMaterial
+          map={hmTexture}
+          roughness={0.35}
+          metalness={0.02}
+        />
+      </mesh>
 
       {/* Tool */}
       <group ref={toolRef} position={toolPos}>
@@ -734,7 +827,7 @@ function SimulationScene3D({ segments, progress, layout, cameraAction }: { segme
           <bufferGeometry>
             <bufferAttribute attach="attributes-position" args={[cutTrailPoints, 3]} count={cutTrailPoints.length / 3} />
           </bufferGeometry>
-          <lineBasicMaterial color="#00cc44" linewidth={1} transparent opacity={0.8} />
+          <lineBasicMaterial color="#00cc44" linewidth={1} transparent opacity={0.7} />
         </lineSegments>
       )}
 
@@ -744,12 +837,12 @@ function SimulationScene3D({ segments, progress, layout, cameraAction }: { segme
           <bufferGeometry>
             <bufferAttribute attach="attributes-position" args={[rapidTrailPoints, 3]} count={rapidTrailPoints.length / 3} />
           </bufferGeometry>
-          <lineBasicMaterial color="#ff3333" linewidth={1} transparent opacity={0.4} />
+          <lineBasicMaterial color="#ff3333" linewidth={1} transparent opacity={0.3} />
         </lineSegments>
       )}
 
       {/* Grid */}
-      <gridHelper args={[40, 40, "#cccccc", "#dddddd"]} position={[sheetW / 2, -thickness - 0.03, sheetH / 2]} />
+      <gridHelper args={[40, 40, "#cccccc", "#dddddd"]} position={[sheetW / 2, -thickness - 0.02, sheetH / 2]} />
     </>
   );
 }
