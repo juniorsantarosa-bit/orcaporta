@@ -413,10 +413,11 @@ function generateToolpath(layout: NestingSheet, limits: SafetyLimits, useCommonC
       const skipTop = skippableEdges.has(`${origIdx}-top`);
       const skipBottom = skippableEdges.has(`${origIdx}-bottom`);
 
-      const cx1 = Math.max(piece.x - offset, 0);
-      const cy1 = Math.max(piece.y - offset, 0);
-      const cx2 = Math.min(piece.x + piece.width + offset, layout.sheetWidth);
-      const cy2 = Math.min(piece.y + piece.height + offset, layout.sheetHeight);
+      // Allow offset beyond sheet edges for proper through-cuts on edge pieces
+      const cx1 = piece.x - offset;
+      const cy1 = piece.y - offset;
+      const cx2 = piece.x + piece.width + offset;
+      const cy2 = piece.y + piece.height + offset;
 
       const edges = [
         { name: "inferior",  skip: skipBottom, from: { x: cx1, y: cy1 }, to: { x: cx2, y: cy1 } },
