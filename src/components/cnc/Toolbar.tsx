@@ -18,6 +18,7 @@ interface ToolbarProps {
     usarDisponiveis: boolean;
     cadastrarNovas: boolean;
     removerUsadas: boolean;
+    useCommonCut?: boolean;
   };
   onConfigChange: (key: string, value: boolean) => void;
   onOptimize: () => void;
@@ -95,7 +96,7 @@ export function Toolbar({ config, onConfigChange, onOptimize, onAction, isOptimi
               Opções <ChevronDown className="h-3 w-3" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-44">
+          <DropdownMenuContent align="start" className="w-52">
             <DropdownMenuCheckboxItem
               checked={config.usarDisponiveis}
               onCheckedChange={(v) => onConfigChange("usarDisponiveis", !!v)}
@@ -116,6 +117,13 @@ export function Toolbar({ config, onConfigChange, onOptimize, onAction, isOptimi
               className="text-xs"
             >
               Remover Usadas
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem
+              checked={config.useCommonCut ?? true}
+              onCheckedChange={(v) => onConfigChange("useCommonCut", !!v)}
+              className="text-xs"
+            >
+              ✂️ Corte Comum (Common Cut)
             </DropdownMenuCheckboxItem>
           </DropdownMenuContent>
         </DropdownMenu>
