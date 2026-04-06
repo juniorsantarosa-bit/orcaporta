@@ -369,7 +369,7 @@ export function parsePromobCSV(csvText: string): PromobPiece[] {
     });
   }
 
-  console.log(`[PromobParser] CSV parsed: ${pieces.length} peças, ${pieces.reduce((a, p) => a + p.FUROS.length, 0)} furos total`);
+  console.log(`[PromobParser] CSV parsed: ${pieces.length} peças, ${pieces.reduce((a, p) => a + p.FUROS.length, 0)} furos, ${pieces.reduce((a, p) => a + p.USINAGENS.length, 0)} usinagens total`);
   return pieces;
 }
 
