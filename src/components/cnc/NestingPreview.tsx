@@ -313,6 +313,7 @@ export function NestingPreview({ layouts, selectedPieceId, onSelectPiece, onLayo
                   ref={view2DRef}
                   layout={layouts[selectedSheetIdx]}
                   selectedPieceId={selectedPieceId}
+                  onSelectPiece={onSelectPiece}
                   dragMode={dragMode}
                   onPiecesReorder={handlePiecesReorder}
                   onReoptimize={onReoptimize}
