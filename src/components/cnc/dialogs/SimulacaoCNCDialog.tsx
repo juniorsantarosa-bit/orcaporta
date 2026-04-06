@@ -2,7 +2,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { NestingSheet, PlacedNestingPiece, PromobHole, Usinagem } from "@/types/promob";
 import { DEFAULT_TOOL_MAGAZINE, findToolByDiameter, getMainFresa, ToolSlot } from "@/types/toolMagazine";
-import { detectSharedEdges } from "@/lib/gcode/commonCut";
+import { detectSharedEdges, getRemainingContourSegments } from "@/lib/gcode/commonCut";
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import {
   Play, Pause, RotateCcw, AlertTriangle, CheckCircle2,
@@ -407,26 +407,7 @@ function generateToolpath(layout: NestingSheet, limits: SafetyLimits, useCommonC
     if (op.type === "contour" && op.piece && op.origIdx !== undefined) {
       const piece = op.piece;
       const origIdx = op.origIdx;
-
-      const skipRight = skippableEdges.has(`${origIdx}-right`);
-      const skipLeft = skippableEdges.has(`${origIdx}-left`);
-      const skipTop = skippableEdges.has(`${origIdx}-top`);
-      const skipBottom = skippableEdges.has(`${origIdx}-bottom`);
-
-      // Allow offset beyond sheet edges for proper through-cuts on edge pieces
-      const cx1 = piece.x - offset;
-      const cy1 = piece.y - offset;
-      const cx2 = piece.x + piece.width + offset;
-      const cy2 = piece.y + piece.height + offset;
-
-      const edges = [
-        { name: "inferior",  skip: skipBottom, from: { x: cx1, y: cy1 }, to: { x: cx2, y: cy1 } },
-        { name: "direita",   skip: skipRight,  from: { x: cx2, y: cy1 }, to: { x: cx2, y: cy2 } },
-        { name: "superior",  skip: skipTop,    from: { x: cx2, y: cy2 }, to: { x: cx1, y: cy2 } },
-        { name: "esquerda",  skip: skipLeft,   from: { x: cx1, y: cy2 }, to: { x: cx1, y: cy1 } },
-      ];
-
-      const activeEdges = edges.filter(e => !e.skip);
+      const activeEdges = getRemainingContourSegments(piece, origIdx, sharedEdges, mainToolDiam);
       if (activeEdges.length === 0) continue;
 
       if (activeEdges.length === 4) {
@@ -441,7 +422,7 @@ function generateToolpath(layout: NestingSheet, limits: SafetyLimits, useCommonC
         pos = new THREE.Vector3(plunge.x, plunge.y, plunge.z);
 
         for (const edge of activeEdges) {
-          const end = validateAndClamp(edge.to.x, edge.to.y, zCut, segments.length, `Corte ${edge.name} peça ${piece.label}`);
+          const end = validateAndClamp(edge.to.x, edge.to.y, zCut, segments.length, `Corte ${edge.side} peça ${piece.label}`);
           addSegment("cut", pos, new THREE.Vector3(end.x, end.y, end.z), mainToolDiam, mainFresa.nome, mainFresa.position);
           pos = new THREE.Vector3(end.x, end.y, end.z);
         }
@@ -449,17 +430,17 @@ function generateToolpath(layout: NestingSheet, limits: SafetyLimits, useCommonC
         addSegment("retract", pos, new THREE.Vector3(pos.x, pos.y, zSafe), mainToolDiam, mainFresa.nome, mainFresa.position);
         pos = new THREE.Vector3(pos.x, pos.y, zSafe);
       } else {
-        // Partial contour — cut each active edge independently
+        // Partial contour — cut only the remaining edge stubs not covered by common cut
         for (const edge of activeEdges) {
-          const start = validateAndClamp(edge.from.x, edge.from.y, zSafe, segments.length, `Pos. borda ${edge.name} peça ${piece.label}`);
+          const start = validateAndClamp(edge.from.x, edge.from.y, zSafe, segments.length, `Pos. borda ${edge.side} peça ${piece.label}`);
           addSegment("rapid", pos, new THREE.Vector3(start.x, start.y, start.z), mainToolDiam, mainFresa.nome, mainFresa.position);
           pos = new THREE.Vector3(start.x, start.y, start.z);
 
-          const plunge = validateAndClamp(edge.from.x, edge.from.y, zCut, segments.length, `Entrada ${edge.name} peça ${piece.label}`);
+          const plunge = validateAndClamp(edge.from.x, edge.from.y, zCut, segments.length, `Entrada ${edge.side} peça ${piece.label}`);
           addSegment("cut", pos, new THREE.Vector3(plunge.x, plunge.y, plunge.z), mainToolDiam, mainFresa.nome, mainFresa.position);
           pos = new THREE.Vector3(plunge.x, plunge.y, plunge.z);
 
-          const end = validateAndClamp(edge.to.x, edge.to.y, zCut, segments.length, `Corte ${edge.name} peça ${piece.label}`);
+          const end = validateAndClamp(edge.to.x, edge.to.y, zCut, segments.length, `Corte ${edge.side} peça ${piece.label}`);
           addSegment("cut", pos, new THREE.Vector3(end.x, end.y, end.z), mainToolDiam, mainFresa.nome, mainFresa.position);
           pos = new THREE.Vector3(end.x, end.y, end.z);
 

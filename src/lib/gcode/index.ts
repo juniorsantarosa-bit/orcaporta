@@ -244,7 +244,7 @@ export function generateGCode(
     );
 
     if (hasSkippable) {
-      generatePartialContour(lines, piece, pieceIdx, skippableEdges, fresa, pp, zDepth, passLabel, f, f1, f4, sheet.espessura);
+      generatePartialContour(lines, piece, pieceIdx, sharedEdges, fresa, pp, zDepth, passLabel, f, f1, f4, sheet.espessura);
     } else {
       generatePieceContour(lines, piece, fresa, pp, zDepth, passLabel, f, f1, f4, sheet.espessura);
     }

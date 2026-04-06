@@ -316,15 +316,145 @@ export function generateCommonCutGCode(
 }
 
 /**
- * Generate modified contour for a piece with skipped shared edges.
- * Instead of a full rectangle, the contour skips edges that are handled by common cuts.
- * Remaining edges are cut as individual segments with proper lead-in/out.
+ * Generate remaining contour segments for a piece after removing only the
+ * exact overlapping spans handled by common cut.
+ */
+type PieceSide = "top" | "right" | "bottom" | "left";
+
+export interface RemainingContourSegment {
+  side: PieceSide;
+  from: { x: number; y: number };
+  to: { x: number; y: number };
+}
+
+interface Range {
+  start: number;
+  end: number;
+}
+
+function mergeRanges(ranges: Range[]): Range[] {
+  if (ranges.length === 0) return [];
+  const sorted = [...ranges].sort((a, b) => a.start - b.start);
+  const merged: Range[] = [sorted[0]];
+
+  for (let i = 1; i < sorted.length; i++) {
+    const last = merged[merged.length - 1];
+    const current = sorted[i];
+    if (current.start <= last.end + 0.1) {
+      last.end = Math.max(last.end, current.end);
+    } else {
+      merged.push({ ...current });
+    }
+  }
+
+  return merged;
+}
+
+function subtractRanges(min: number, max: number, blocked: Range[]): Range[] {
+  if (max <= min) return [];
+  const merged = mergeRanges(blocked);
+  const remaining: Range[] = [];
+  let cursor = min;
+
+  for (const range of merged) {
+    if (range.start > cursor + 0.1) {
+      remaining.push({ start: cursor, end: Math.min(range.start, max) });
+    }
+    cursor = Math.max(cursor, range.end);
+    if (cursor >= max) break;
+  }
+
+  if (cursor < max - 0.1) {
+    remaining.push({ start: cursor, end: max });
+  }
+
+  return remaining.filter(range => range.end - range.start > 0.5);
+}
+
+export function getRemainingContourSegments(
+  piece: PlacedNestingPiece,
+  pieceIndex: number,
+  sharedEdges: SharedEdge[],
+  toolDiameter: number,
+  cornerInset: number = 0,
+): RemainingContourSegment[] {
+  const halfTool = toolDiameter / 2;
+  const x1 = piece.x - halfTool;
+  const x2 = piece.x + piece.width + halfTool;
+  const y1 = piece.y - halfTool;
+  const y2 = piece.y + piece.height + halfTool;
+
+  const hMin = x1 + cornerInset;
+  const hMax = x2 - cornerInset;
+  const vMin = y1 + cornerInset;
+  const vMax = y2 - cornerInset;
+
+  if (hMax <= hMin || vMax <= vMin) return [];
+
+  const blocked: Record<PieceSide, Range[]> = {
+    top: [],
+    right: [],
+    bottom: [],
+    left: [],
+  };
+
+  const addBlockedRange = (side: PieceSide, start: number, end: number, axisMin: number, axisMax: number) => {
+    const clampedStart = Math.max(axisMin, Math.min(start, end));
+    const clampedEnd = Math.min(axisMax, Math.max(start, end));
+    if (clampedEnd - clampedStart > 0.5) {
+      blocked[side].push({ start: clampedStart, end: clampedEnd });
+    }
+  };
+
+  for (const edge of sharedEdges) {
+    const side = edge.pieceAIndex === pieceIndex
+      ? edge.edgeA
+      : edge.pieceBIndex === pieceIndex
+        ? edge.edgeB
+        : null;
+
+    if (!side) continue;
+
+    if (edge.orientation === "vertical" && (side === "left" || side === "right")) {
+      addBlockedRange(side, edge.cutStart.y, edge.cutEnd.y, vMin, vMax);
+    }
+
+    if (edge.orientation === "horizontal" && (side === "top" || side === "bottom")) {
+      addBlockedRange(side, edge.cutStart.x, edge.cutEnd.x, hMin, hMax);
+    }
+  }
+
+  const segments: RemainingContourSegment[] = [];
+
+  for (const span of subtractRanges(hMin, hMax, blocked.bottom)) {
+    segments.push({ side: "bottom", from: { x: span.start, y: y1 }, to: { x: span.end, y: y1 } });
+  }
+
+  for (const span of subtractRanges(vMin, vMax, blocked.right)) {
+    segments.push({ side: "right", from: { x: x2, y: span.start }, to: { x: x2, y: span.end } });
+  }
+
+  for (const span of subtractRanges(hMin, hMax, blocked.top)) {
+    segments.push({ side: "top", from: { x: span.end, y: y2 }, to: { x: span.start, y: y2 } });
+  }
+
+  for (const span of subtractRanges(vMin, vMax, blocked.left)) {
+    segments.push({ side: "left", from: { x: x1, y: span.end }, to: { x: x1, y: span.start } });
+  }
+
+  return segments;
+}
+
+/**
+ * Generate modified contour for a piece with skipped shared edge spans.
+ * Only the exact overlapping intervals are skipped; remaining edge stubs
+ * are still cut normally.
  */
 export function generatePartialContour(
   lines: string[],
   piece: PlacedNestingPiece,
   pieceIndex: number,
-  skippableEdges: Set<string>,
+  sharedEdges: SharedEdge[],
   tool: ToolSlot,
   pp: PostProcessorConfig,
   zDepth: number,
@@ -334,64 +464,32 @@ export function generatePartialContour(
   f4: (n: number) => string,
   espessura: number,
 ): void {
-  const halfFresa = tool.diametro / 2;
   const R = pp.raioContorno;
-  
-  const skipRight = skippableEdges.has(`${pieceIndex}-right`);
-  const skipLeft = skippableEdges.has(`${pieceIndex}-left`);
-  const skipTop = skippableEdges.has(`${pieceIndex}-top`);
-  const skipBottom = skippableEdges.has(`${pieceIndex}-bottom`);
-  
-  // If no edges are skipped, use full contour
-  const skippedCount = [skipRight, skipLeft, skipTop, skipBottom].filter(Boolean).length;
-  if (skippedCount === 0) {
-    // Import and use the standard full contour
-    return; // Caller should use generatePieceContour instead
-  }
+  const activeSegments = getRemainingContourSegments(piece, pieceIndex, sharedEdges, tool.diametro, R)
+    .map(seg => ({
+      name: seg.side,
+      startX: -seg.from.x,
+      startY: seg.from.y,
+      endX: -seg.to.x,
+      endY: seg.to.y,
+    }));
 
-  const zSeguro = pp.zSeguroAutoCalc ? espessura + pp.zSeguroOffset : pp.zSeguro;
-  const zRapido = pp.zSeguroAutoCalc ? espessura : pp.zRapido;
-  const feedEntry = pp.avancoEntradaOverride || tool.avancoEntrada;
-  const feedCut = pp.avancoCorteOverride || tool.avancoCorte;
-
-  // CNC coordinates (X mirrored)
-  const x1 = -(piece.x + piece.width) - halfFresa; // left in CNC
-  const x2 = -piece.x + halfFresa;                 // right in CNC
-  const y1 = piece.y - halfFresa;                   // bottom
-  const y2 = piece.y + piece.height + halfFresa;    // top
-
-  // Build segments: top, right, bottom, left
-  // Each segment is a line from corner to corner
-  interface Segment {
-    name: string;
-    skip: boolean;
-    startX: number; startY: number;
-    endX: number; endY: number;
-  }
-
-  const segments: Segment[] = [
-    { name: "top",    skip: skipTop,    startX: x1 + R, startY: y2, endX: x2 - R, endY: y2 },
-    { name: "right",  skip: skipRight,  startX: x2, startY: y2 - R, endX: x2, endY: y1 + R },
-    { name: "bottom", skip: skipBottom, startX: x2 - R, startY: y1, endX: x1 + R, endY: y1 },
-    { name: "left",   skip: skipLeft,   startX: x1, startY: y1 + R, endX: x1, endY: y2 - R },
-  ];
-
-  const activeSegments = segments.filter(s => !s.skip);
-  
   if (activeSegments.length === 0) return;
 
+  const zSeguro = pp.zSeguroAutoCalc ? espessura + pp.zSeguroOffset : pp.zSeguro;
+  const feedEntry = pp.avancoEntradaOverride || tool.avancoEntrada;
+  const feedCut = pp.avancoCorteOverride || tool.avancoCorte;
   const dimW = piece.rotated ? piece.height : piece.width;
   const dimH = piece.rotated ? piece.width : piece.height;
 
   if (pp.tipo === "mach_cnc") {
-    lines.push(`(${passLabel} - ${dimW} x ${dimH} - Partial contour, ${skippedCount} shared edges)`);
+    lines.push(`(${passLabel} - ${dimW} x ${dimH} - Partial contour by shared spans)`);
   }
 
-  // Cut each active segment independently with approach/retract
   for (const seg of activeSegments) {
     if (pp.tipo === "mach_cnc") {
       lines.push(`G0 X${f4(seg.startX)} Y${f4(seg.startY)} Z${f4(zSeguro)}`);
-      lines.push(`G0 Z${f4(zRapido)}`);
+      lines.push(`G0 Z${f4(pp.zSeguroAutoCalc ? espessura : pp.zRapido)}`);
       lines.push(`G1 Z${f4(zDepth)} F${f4(feedEntry)}`);
       lines.push(`G1 X${f4(seg.endX)} Y${f4(seg.endY)} F${f4(feedCut)}`);
       lines.push(`G0 Z${f4(zSeguro)}`);
@@ -403,7 +501,7 @@ export function generatePartialContour(
       lines.push(`G0 Z${f4(zSeguro)}`);
     } else {
       lines.push(`G0 X${f(seg.startX)} Y${f1(seg.startY)}`);
-      lines.push(`G0 Z${f1(zRapido)}`);
+      lines.push(`G0 Z${f1(pp.zSeguroAutoCalc ? espessura : pp.zRapido)}`);
       lines.push(`G1 Z${f(zDepth)} F${f(feedEntry)}`);
       lines.push(`G1 X${f(seg.endX)} Y${f1(seg.endY)} F${f(feedCut)}`);
       lines.push(`G0 Z${f1(zSeguro)}`);
