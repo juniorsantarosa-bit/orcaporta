@@ -279,6 +279,15 @@ export const SheetView2D = forwardRef<SheetView2DHandle, SheetView2DProps>(({ la
           <RefreshCw className="h-3 w-3" />
           OTIMIZAR
         </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => setShowUsinagens(true)}
+          className="h-6 px-3 text-[10px] font-bold gap-1"
+        >
+          <Drill className="h-3 w-3" />
+          USINAGENS
+        </Button>
       </div>
 
       <div
