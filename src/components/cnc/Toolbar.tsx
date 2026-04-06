@@ -128,6 +128,7 @@ export function Toolbar({ config, onConfigChange, onOptimize, onAction, isOptimi
       <ToolbarGroup label="Máquinas">
         <ToolbarButton icon={BarChart3} label="Estratégias" onClick={() => act("estrategias")} />
         <ToolbarButton icon={Grid3X3} label="Layers" onClick={() => act("layers")} />
+        <ToolbarButton icon={Play} label="Simular" onClick={() => act("simularCNC")} accent />
       </ToolbarGroup>
 
       <Separator orientation="vertical" className="h-10 mx-0.5" />
