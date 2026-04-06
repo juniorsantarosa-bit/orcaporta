@@ -813,13 +813,25 @@ export function SimulacaoCNCDialog({ open, onOpenChange, layouts, machineConfig 
             {/* Current operation info */}
             {currentSeg && progress > 0 && progress < 1 && (
               <div className="absolute bottom-2 left-2 bg-card/90 backdrop-blur text-[9px] font-mono px-2 py-1 rounded border border-border">
-                <span className={`font-bold ${currentSeg.type === "rapid" ? "text-red-500" : currentSeg.type === "drill" ? "text-green-600" : currentSeg.type === "cut" ? "text-green-600" : "text-muted-foreground"}`}>
-                  {currentSeg.type === "rapid" ? "G0 RÁPIDO" : currentSeg.type === "drill" ? "FURAÇÃO" : currentSeg.type === "cut" ? "G1 CORTE" : "RETRAÇÃO"}
+                <span className={`font-bold ${
+                  currentSeg.type === "toolchange" ? "text-blue-500" :
+                  currentSeg.type === "rapid" ? "text-red-500" :
+                  currentSeg.type === "drill" ? "text-green-600" :
+                  currentSeg.type === "cut" ? "text-green-600" : "text-muted-foreground"
+                }`}>
+                  {currentSeg.type === "toolchange" ? `🔧 TROCA: T${currentSeg.toolPosition} ${currentSeg.toolName}` :
+                   currentSeg.type === "rapid" ? "G0 RÁPIDO" :
+                   currentSeg.type === "drill" ? "FURAÇÃO" :
+                   currentSeg.type === "cut" ? "G1 CORTE" : "RETRAÇÃO"}
                 </span>
+                {currentSeg.type !== "toolchange" && (
+                  <span className="text-muted-foreground ml-2">
+                    X{currentSeg.to.x.toFixed(0)} Y{currentSeg.to.y.toFixed(0)} Z{currentSeg.to.z.toFixed(1)}
+                  </span>
+                )}
                 <span className="text-muted-foreground ml-2">
-                  X{currentSeg.to.x.toFixed(0)} Y{currentSeg.to.y.toFixed(0)} Z{currentSeg.to.z.toFixed(1)}
+                  {currentSeg.toolName ? `T${currentSeg.toolPosition} ${currentSeg.toolName}` : `Ø${currentSeg.toolDiam}mm`}
                 </span>
-                <span className="text-muted-foreground ml-2">Ø{currentSeg.toolDiam}mm</span>
               </div>
             )}
 
