@@ -211,6 +211,10 @@ export function parsePromobCSV(csvText: string): PromobPiece[] {
       console.log(`[PromobParser] Peça ID ${idUnico} ignorada: dimensões inválidas (${comp}x${prof})`);
       continue;
     }
+    // Parse espessura early (needed for CNC classification)
+    const espIdx = colIdx("ESP_CHAPA");
+    const depthIdx = colIdx("COLUMN_ITEM_DEPTH");
+    const espChapa = espIdx >= 0 ? parseNum(firstRow[espIdx]) : (depthIdx >= 0 ? parseNum(firstRow[depthIdx]) : 15);
 
     // Parse CNC JSON - try the CNC column first, then try joining remaining columns
     let furos: PromobHole[] = [];
