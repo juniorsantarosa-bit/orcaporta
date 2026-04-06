@@ -272,19 +272,19 @@ function CameraControls({ sheetW, sheetH, cameraAction }: { sheetW: number; shee
     const controls = controlsRef.current;
     const target = new THREE.Vector3(sheetW / 2, 0, sheetH / 2);
     
-    if (cameraAction === "zoomIn") {
+    if (actionName === "zoomIn") {
       camera.position.lerp(target, 0.2);
       camera.updateProjectionMatrix();
-    } else if (cameraAction === "zoomOut") {
+    } else if (actionName === "zoomOut") {
       const dir = camera.position.clone().sub(target).normalize();
       camera.position.add(dir.multiplyScalar(3));
       camera.updateProjectionMatrix();
-    } else if (cameraAction === "fit") {
+    } else if (actionName === "fit") {
       camera.position.set(sheetW / 2, Math.max(sheetW, sheetH) * 0.8, sheetH / 2 + 0.1);
       camera.lookAt(target);
       camera.updateProjectionMatrix();
       if (controls.target) controls.target.copy(target);
-    } else if (cameraAction === "home") {
+    } else if (actionName === "home") {
       camera.position.set(sheetW / 2 + 15, 12, sheetH / 2 + 15);
       camera.updateProjectionMatrix();
       if (controls.target) controls.target.copy(target);
