@@ -211,22 +211,23 @@ export function generatePieceContour(
     lines.push(`G0   Z${f4(zSeguro)}`);
 
   } else {
-    lines.push(`G0 X${f(leadInX)} Y${f1(leadInY)}`);
-    lines.push(`G0 Z${f1(zRapido)}`);
+    // SmartCut: consistent 3-decimal format matching production files
+    lines.push(`G0 X${f(leadInX)} Y${f(leadInY)}`);
+    lines.push(`G0 Z${f(zRapido)}`);
 
     lines.push(`G1 X${f(leadInX + pp.leadOutDistance)} Z${f(zDepth)} F${f(feedEntry)}`);
 
     lines.push(`G1 X${f(x2 - R)} F${f(feedCut)}`);
-    lines.push(`G2 X${f(x2)} Y${f1(y2 - R)} R${f(R)}`);
-    lines.push(`G1 Y${f1(y1 + R)}`);
-    lines.push(`G2 X${f(x2 - R)} Y${f1(y1)} R${f(R)}`);
+    lines.push(`G2 X${f(x2)} Y${f(y2 - R)} R${f(R)}`);
+    lines.push(`G1 Y${f(y1 + R)}`);
+    lines.push(`G2 X${f(x2 - R)} Y${f(y1)} R${f(R)}`);
     lines.push(`G1 X${f(x1 + R)}`);
-    lines.push(`G2 X${f(x1)} Y${f1(y1 + R)} R${f(R)}`);
-    lines.push(`G1 Y${f1(y2 - R)}`);
-    lines.push(`G2 X${f(x1 + R)} Y${f1(y2)} R${f(R)}`);
+    lines.push(`G2 X${f(x1)} Y${f(y1 + R)} R${f(R)}`);
+    lines.push(`G1 Y${f(y2 - R)}`);
+    lines.push(`G2 X${f(x1 + R)} Y${f(y2)} R${f(R)}`);
     lines.push(`G1 X${f(leadInX)}`);
 
     lines.push(`G1 X${f(leadInX - pp.leadOutDistance)} F${f(feedLeadOut)}`);
-    lines.push(`G0 Z${f1(zSeguro)}`);
+    lines.push(`G0 Z${f(zSeguro)}`);
   }
 }
