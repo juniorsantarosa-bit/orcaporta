@@ -30,7 +30,7 @@ export interface ToolMagazine {
 export const DEFAULT_TOOL_MAGAZINE: ToolMagazine = {
   nome: "Mach Turbo ATC16",
   slots: [
-    { position: 1,  nome: "Fresa 6mm",      tipo: "fresa_topo", diametro: 6.0,  rpm: 24000, avancoCorte: 8000,  avancoEntrada: 4000, ativo: true },
+    { position: 1,  nome: "Fresa 6x22mm",   tipo: "fresa_topo", diametro: 6.0,  rpm: 24000, avancoCorte: 8000,  avancoEntrada: 4000, ativo: true },
     { position: 2,  nome: "Broca 3mm",       tipo: "broca",      diametro: 3.0,  rpm: 8000,  avancoCorte: 3000,  avancoEntrada: 3000, ativo: true },
     { position: 3,  nome: "Broca 4mm",       tipo: "broca",      diametro: 4.0,  rpm: 2500,  avancoCorte: 5000,  avancoEntrada: 5000, ativo: true },
     { position: 4,  nome: "Broca 15mm",      tipo: "broca",      diametro: 15.0, rpm: 8000,  avancoCorte: 3000,  avancoEntrada: 3000, ativo: true },
