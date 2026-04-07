@@ -54,7 +54,13 @@ function parseCNCJson(raw: string, espessura: number): { furos: PromobHole[]; fr
 
     if (Array.isArray(cncData.Grooves)) {
       fresas = cncData.Grooves;
+      const seenGrooves = new Set<string>();
       for (const g of cncData.Grooves) {
+        // Deduplicate grooves by position + dimensions
+        const grooveKey = `${g.X ?? 0}_${g.Y ?? 0}_${g.Width ?? 0}_${g.Length ?? 0}_${g.Depth ?? 0}_${g.FaceNormal?.C ?? 0}`;
+        if (seenGrooves.has(grooveKey)) continue;
+        seenGrooves.add(grooveKey);
+
         const face = g.FaceNormal?.C === -1.0 ? "INF" : "SUP";
         const rawDepth = g.Depth ?? 0;
         // SAFETY CLAMP: never exceed espessura + 0.1mm
