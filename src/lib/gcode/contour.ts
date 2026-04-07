@@ -150,7 +150,7 @@ export function generatePieceContour(
   const y2 = piece.y + piece.height + halfFresa;
 
   const zSeguro = pp.zSeguroAutoCalc ? espessura + pp.zSeguroOffset : pp.zSeguro;
-  const zRapido = pp.zSeguroAutoCalc ? espessura : pp.zRapido;
+  const zRapido = pp.zRapidoAutoCalc ? espessura + pp.zRapidoOffset : pp.zRapido;
 
   const feedEntry = pp.avancoEntradaOverride || tool.avancoEntrada;
   const feedCut = pp.avancoCorteOverride || tool.avancoCorte;
