@@ -1,6 +1,7 @@
 /**
  * G-code drilling operations generator.
  * Generates drilling cycles grouped by tool diameter.
+ * Uses dynamic zRapido based on material thickness.
  */
 import { NestingSheet, PlacedNestingPiece, PromobHole } from "@/types/promob";
 import { ToolMagazine, findToolByDiameter } from "@/types/toolMagazine";
@@ -44,6 +45,18 @@ export function groupHolesByDiameter(holes: AbsoluteHole[]): Map<number, Absolut
   return groups;
 }
 
+/** Compute dynamic zRapido based on post-processor config and material thickness */
+function computeZRapido(pp: PostProcessorConfig, espessura: number): number {
+  if (pp.zRapidoAutoCalc) return espessura + pp.zRapidoOffset;
+  return pp.zRapido;
+}
+
+/** Compute dynamic zSeguro based on post-processor config and material thickness */
+function computeZSeguro(pp: PostProcessorConfig, espessura: number): number {
+  if (pp.zSeguroAutoCalc) return espessura + pp.zSeguroOffset;
+  return pp.zSeguro;
+}
+
 /** Generate drilling G-code for a group of holes with the same tool */
 export function generateDrillingBlock(
   lines: string[],
@@ -61,14 +74,14 @@ export function generateDrillingBlock(
   const tool = findToolByDiameter(magazine, diameter, "broca");
   if (!tool) return;
 
-  const zSeguro = pp.zSeguroAutoCalc ? sheet.espessura + pp.zSeguroOffset : pp.zSeguro;
-  const zRapido = pp.zSeguroAutoCalc ? sheet.espessura + pp.zSeguroOffset - 2 : pp.zRapido;
+  const zSeguro = computeZSeguro(pp, sheet.espessura);
+  const zRapido = computeZRapido(pp, sheet.espessura);
 
   // Section header
   if (pp.tipo === "smartcut") {
     lines.push(`(#### Furação B${Math.round(diameter)}mm ####)`);
     lines.push("(#### TROCA DE FERRAMENTAS ####)");
-    lines.push(`(#### FERRAMENTA: ${tool.nome} - ${f1(diameter)}mm ####)`);
+    lines.push(`(#### FERRAMENTA: ${tool.nome} - ${f(diameter)}mm ####)`);
     lines.push(`M6 T${tool.position}`);
     lines.push(`M3 S${tool.rpm}`);
   } else if (pp.tipo === "mach_cnc") {
@@ -78,7 +91,7 @@ export function generateDrillingBlock(
     lines.push(`M3 S${f4(tool.rpm)}`);
     lines.push("");
   } else {
-    // Aspire - brocas are less common but supported
+    // Aspire
     lines.push(`(########_Troca_de_Ferramentas_########)`);
     lines.push(`(Numero_da_Ferramenta:${tool.position})`);
     lines.push(`(Descricao:${tool.nome})`);
@@ -89,12 +102,27 @@ export function generateDrillingBlock(
 
   let firstHole = true;
   for (const h of holes) {
-    const zDepth = h.hole.FACE === "INF"
-      ? -(h.hole.Z - sheet.espessura)
-      : sheet.espessura - h.hole.Z;
+    // Calculate drill depth based on face
+    let zDepth: number;
+    if (h.hole.FACE === "INF") {
+      // Drilling from bottom: positive Z (into material from below)
+      zDepth = sheet.espessura - h.hole.Z;
+      // For passante from bottom, go past surface
+      if (h.hole.Z >= sheet.espessura) {
+        zDepth = -pp.passanteDrillOvershoot;
+      }
+    } else {
+      // Drilling from top: negative Z (into material from above)
+      if (h.hole.Z >= sheet.espessura) {
+        // Passante hole: go past material by overshoot amount
+        zDepth = -pp.passanteDrillOvershoot;
+      } else {
+        // Blind hole: depth = thickness - hole depth (positive = above zero)
+        zDepth = sheet.espessura - h.hole.Z;
+      }
+    }
 
     if (pp.tipo === "mach_cnc") {
-      // Mach CNC style: explicit XYZ on each line, with step comments
       const label = `FURO_D${Math.round(diameter)}_P${Math.round(h.hole.Z)}`;
       lines.push(`(${label})`);
       lines.push(`G0 X${f4(h.absX)}Y${f4(h.absY)}Z${f4(zSeguro)}`);
@@ -104,16 +132,16 @@ export function generateDrillingBlock(
       lines.push(`G0 X${f4(h.absX)}Y${f4(h.absY)}Z${f4(zRapido)}`);
       lines.push(`G0 X${f4(h.absX)}Y${f4(h.absY)}Z${f4(zSeguro)}`);
     } else {
-      // SmartCut style: concise
-      lines.push(`G0 X${f(h.absX)} Y${f1(h.absY)}`);
-      lines.push(`G0 Z${f1(zRapido)}`);
+      // SmartCut & Aspire: consistent 3-decimal format
+      lines.push(`G0 X${f(h.absX)} Y${f(h.absY)} Z${f(zSeguro)}`);
+      lines.push(`G0 Z${f(zRapido)}`);
       if (firstHole) {
-        lines.push(`G1 Z${f1(zDepth)} F${f(tool.avancoCorte)}`);
+        lines.push(`G1 Z${f(zDepth)} F${f(tool.avancoCorte)}`);
         firstHole = false;
       } else {
-        lines.push(`G1 Z${f1(zDepth)}`);
+        lines.push(`G1 Z${f(zDepth)}`);
       }
-      lines.push(`G0 Z${f1(zSeguro)}`);
+      lines.push(`G0 Z${f(zSeguro)}`);
     }
   }
 }

@@ -2,14 +2,18 @@
  * Main G-code generator orchestrator.
  * Combines drilling + contour operations with proper tool sequencing.
  * Supports SmartCut, Mach CNC, and Aspire post-processors.
- * Includes Common Cut optimization for shared edges between adjacent pieces.
+ * 
+ * Key behaviors:
+ * - Dynamic zRapido based on material thickness (espessura + offset)
+ * - Consistent 3-decimal formatting for SmartCut
+ * - Deduplication of usinagens
+ * - No redundant tool changes when same fresa used for usinagens + contour
  */
 import { NestingSheet, Usinagem } from "@/types/promob";
 import { ToolMagazine, getMainFresa, DEFAULT_TOOL_MAGAZINE } from "@/types/toolMagazine";
 import { PostProcessorConfig, SMARTCUT_CONFIG, POST_PROCESSORS, PostProcessorType } from "@/types/postProcessor";
 import { collectHoles, groupHolesByDiameter, generateDrillingBlock } from "./drilling";
 import { generatePieceContour } from "./contour";
-import { detectSharedEdges, generateCommonCutGCode, generatePartialContour } from "./commonCut";
 
 const f = (n: number) => n.toFixed(3);
 const f1 = (n: number) => n.toFixed(1);
@@ -18,10 +22,31 @@ const f4 = (n: number) => n.toFixed(4);
 export interface GenerateOptions {
   postProcessor?: PostProcessorType;
   magazine?: ToolMagazine;
-  /** Enable common cut optimization (default: true) */
-  useCommonCut?: boolean;
-  /** Gap between pieces in mm (for common cut detection) */
+  /** Gap between pieces in mm */
   gap?: number;
+}
+
+/** Compute dynamic zRapido */
+function computeZRapido(pp: PostProcessorConfig, espessura: number): number {
+  if (pp.zRapidoAutoCalc) return espessura + pp.zRapidoOffset;
+  return pp.zRapido;
+}
+
+/** Compute dynamic zSeguro */
+function computeZSeguro(pp: PostProcessorConfig, espessura: number): number {
+  if (pp.zSeguroAutoCalc) return espessura + pp.zSeguroOffset;
+  return pp.zSeguro;
+}
+
+/** Deduplicate usinagens by comparing coordinates and dimensions */
+function deduplicateUsinagens(items: { u: Usinagem; pieceX: number; pieceY: number; label: string; rotated: boolean }[]) {
+  const seen = new Set<string>();
+  return items.filter(item => {
+    const key = `${item.u.tipo}_${item.pieceX}_${item.pieceY}_${item.u.x}_${item.u.y}_${item.u.largura}_${item.u.comprimento}_${item.u.profundidade}_${item.rotated}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 /**
@@ -34,17 +59,11 @@ export function generateGCode(
   const ppType = options.postProcessor || "smartcut";
   const pp = POST_PROCESSORS[ppType];
   const magazine = options.magazine || DEFAULT_TOOL_MAGAZINE;
-  const useCommonCut = options.useCommonCut !== false; // default true
-  const gap = options.gap || 6;
   const lines: string[] = [];
 
-  const zSeguro = pp.zSeguroAutoCalc ? sheet.espessura + pp.zSeguroOffset : pp.zSeguro;
-
-  // === DETECT COMMON CUTS ===
+  const zSeguro = computeZSeguro(pp, sheet.espessura);
+  const zRapido = computeZRapido(pp, sheet.espessura);
   const fresa = getMainFresa(magazine);
-  const { sharedEdges, skippableEdges } = useCommonCut
-    ? detectSharedEdges(sheet.pieces, gap, fresa.diametro)
-    : { sharedEdges: [], skippableEdges: new Set<string>() };
 
   // === METADATA HEADER (Mach CNC only) ===
   if (pp.includeMetadata) {
@@ -53,10 +72,6 @@ export function generateGCode(
     lines.push(`( Pos processador:  ${pp.nome} )`);
     lines.push(`( Material:  ${sheet.material} )`);
     lines.push(`( Dimensoes:  X:${f4(sheet.sheetWidth)} Y:${f4(sheet.sheetHeight)} Z:${f4(sheet.espessura)} )`);
-    
-    if (useCommonCut && sharedEdges.length > 0) {
-      lines.push(`( Common Cut: ${sharedEdges.length} cortes compartilhados )`);
-    }
     
     // List tools that will be used
     const usedTools = new Set<number>();
@@ -82,13 +97,10 @@ export function generateGCode(
   for (const line of pp.headerLines) {
     lines.push(line);
   }
-  lines.push("");
 
   // === DRILLING OPERATIONS ===
   const allHoles = collectHoles(sheet);
   const holeGroups = groupHolesByDiameter(allHoles);
-
-  // Sort by diameter (small brocas first)
   const sortedDiameters = Array.from(holeGroups.keys()).sort((a, b) => a - b);
   
   for (const diam of sortedDiameters) {
@@ -96,8 +108,7 @@ export function generateGCode(
   }
 
   // === MACHINING OPERATIONS (usinagens: grooves, circular cutouts) ===
-  // After drilling, before contour cuts — standard CNC workflow
-  const allUsinagens: { u: Usinagem; pieceX: number; pieceY: number; label: string; rotated: boolean }[] = [];
+  let allUsinagens: { u: Usinagem; pieceX: number; pieceY: number; label: string; rotated: boolean }[] = [];
   sheet.pieces.forEach(piece => {
     if (piece.usinagens && piece.usinagens.length > 0) {
       piece.usinagens.forEach(u => {
@@ -106,11 +117,17 @@ export function generateGCode(
     }
   });
 
+  // Deduplicate usinagens (same piece, same coords, same dimensions)
+  allUsinagens = deduplicateUsinagens(allUsinagens);
+
+  // Track if we already did a tool change for the fresa
+  let fresaToolChangeEmitted = false;
+
   if (allUsinagens.length > 0) {
-    // Tool change for fresa (same tool for machining)
+    // Tool change for fresa
     if (pp.tipo === "smartcut") {
       lines.push("(#### TROCA DE FERRAMENTAS ####)");
-      lines.push(`(#### FERRAMENTA: ${fresa.nome} - ${f1(fresa.diametro)}mm ####)`);
+      lines.push(`(#### FERRAMENTA: ${fresa.nome} - ${f(fresa.diametro)}mm ####)`);
       lines.push(`M6 T${fresa.position}`);
       lines.push(`M3 S${fresa.rpm}`);
     } else if (pp.tipo === "mach_cnc") {
@@ -128,106 +145,87 @@ export function generateGCode(
       lines.push(`M3 S${fresa.rpm}`);
       lines.push(` `);
     }
-
-    const zSeguroVal = pp.zSeguroAutoCalc ? sheet.espessura + pp.zSeguroOffset : pp.zSeguro;
-    const feedEntry = pp.avancoEntradaOverride || fresa.avancoEntrada;
-    const feedCut = pp.avancoCorteOverride || fresa.avancoCorte;
+    fresaToolChangeEmitted = true;
 
     if (pp.tipo === "mach_cnc") lines.push(`( === USINAGENS: ${allUsinagens.length} operações === )`);
     else lines.push(`(=== Usinagens ===)`);
     lines.push("");
 
+    const feedEntry = pp.avancoEntradaOverride || fresa.avancoEntrada;
+    const feedCut = pp.avancoCorteOverride || fresa.avancoCorte;
+
     for (let ui = 0; ui < allUsinagens.length; ui++) {
       const { u, pieceX, pieceY, label, rotated } = allUsinagens[ui];
-      // Handle rotation: swap X/Y coordinates for rotated pieces
       const ux = rotated ? -(pieceX + (u.y || 0)) : -(pieceX + (u.x || 0));
       const uy = rotated ? pieceY + (u.x || 0) : pieceY + (u.y || 0);
-      // Max allowed depth: sheet thickness + 0.1mm (mesa de sacrifício limit)
       const maxDepth = -(sheet.espessura + 0.1);
-
-      // Clamp depth: never exceed maxDepth (more negative = deeper)
       const clampDepth = (raw: number) => Math.max(raw, maxDepth);
 
       if (u.tipo === "recorte_circular") {
         const r = (u.largura || 0) / 2;
         const circDepth = u.passante ? maxDepth : clampDepth(-(u.profundidade || 0));
         lines.push(`( Recorte Circular Ø${u.largura}mm prof.${Math.abs(circDepth).toFixed(1)}mm - Peça ${label} )`);
-        
-        // Move to entry point (edge of circle)
-        lines.push(`G0 X${f4(ux - r)} Y${f4(uy)} Z${f4(zSeguroVal)}`);
-        lines.push(`G1 Z${f4(circDepth)} F${f4(feedEntry)}`);
-        // Circular interpolation G2 (clockwise)
-        lines.push(`G2 X${f4(ux - r)} Y${f4(uy)} I${f4(r)} J0 F${f4(feedCut)}`);
-        lines.push(`G0 Z${f4(zSeguroVal)}`);
+        lines.push(`G0 X${f(ux - r)} Y${f(uy)} Z${f(zSeguro)}`);
+        lines.push(`G1 Z${f(circDepth)} F${f(feedEntry)}`);
+        lines.push(`G2 X${f(ux - r)} Y${f(uy)} I${f(r)} J0 F${f(feedCut)}`);
+        lines.push(`G0 Z${f(zSeguro)}`);
         lines.push("");
       } else if (u.tipo === "recorte_retangular") {
-        // Rectangular cutout — trace full perimeter
         const w = u.comprimento || u.largura;
         const h = u.largura;
         const grooveDepth = u.passante ? maxDepth : clampDepth(-(u.profundidade || 0));
-        
         lines.push(`( Recorte Retangular ${w}mm×${h}mm prof.${Math.abs(grooveDepth).toFixed(1)}mm - Peça ${label} )`);
-        
-        // Start at corner, plunge, trace 4 sides
         const x1 = ux, y1 = uy;
-        const x2 = ux - w, y2 = uy + h; // Mirror X
-        
-        lines.push(`G0 X${f4(x1)} Y${f4(y1)} Z${f4(zSeguroVal)}`);
-        lines.push(`G1 Z${f4(grooveDepth)} F${f4(feedEntry)}`);
-        lines.push(`G1 X${f4(x2)} Y${f4(y1)} F${f4(feedCut)}`);
-        lines.push(`G1 X${f4(x2)} Y${f4(y2)} F${f4(feedCut)}`);
-        lines.push(`G1 X${f4(x1)} Y${f4(y2)} F${f4(feedCut)}`);
-        lines.push(`G1 X${f4(x1)} Y${f4(y1)} F${f4(feedCut)}`);
-        lines.push(`G0 Z${f4(zSeguroVal)}`);
+        const x2 = ux - w, y2 = uy + h;
+        lines.push(`G0 X${f(x1)} Y${f(y1)} Z${f(zSeguro)}`);
+        lines.push(`G1 Z${f(grooveDepth)} F${f(feedEntry)}`);
+        lines.push(`G1 X${f(x2)} Y${f(y1)} F${f(feedCut)}`);
+        lines.push(`G1 X${f(x2)} Y${f(y2)} F${f(feedCut)}`);
+        lines.push(`G1 X${f(x1)} Y${f(y2)} F${f(feedCut)}`);
+        lines.push(`G1 X${f(x1)} Y${f(y1)} F${f(feedCut)}`);
+        lines.push(`G0 Z${f(zSeguro)}`);
         lines.push("");
       } else {
-        // Canal/groove — linear cut
         const gLen = u.comprimento || u.largura;
-        const endX = ux - gLen; // Mirror
+        const endX = ux - gLen;
         const grooveDepth = u.passante ? maxDepth : clampDepth(-(u.profundidade || 0));
-        
         const tipoLabel = u.tipo === "canal" ? "Canal" : u.tipo === "rebaixo" ? "Rebaixo" : "Usinagem";
         lines.push(`( ${tipoLabel} ${u.largura}mm×${gLen}mm prof.${Math.abs(grooveDepth).toFixed(1)}mm - Peça ${label} )`);
-        
-        lines.push(`G0 X${f4(ux)} Y${f4(uy)} Z${f4(zSeguroVal)}`);
-        lines.push(`G1 Z${f4(grooveDepth)} F${f4(feedEntry)}`);
-        lines.push(`G1 X${f4(endX)} Y${f4(uy)} F${f4(feedCut)}`);
-        lines.push(`G0 Z${f4(zSeguroVal)}`);
+        lines.push(`G0 X${f(ux)} Y${f(uy)} Z${f(zSeguro)}`);
+        lines.push(`G1 Z${f(grooveDepth)} F${f(feedEntry)}`);
+        lines.push(`G1 X${f(endX)} Y${f(uy)} F${f(feedCut)}`);
+        lines.push(`G0 Z${f(zSeguro)}`);
         lines.push("");
       }
     }
   }
 
   // === CONTOUR CUTTING ===
-  // Tool change for fresa
-  if (pp.tipo === "smartcut") {
-    lines.push("(#### TROCA DE FERRAMENTAS ####)");
-    lines.push(`(#### FERRAMENTA: ${fresa.nome} - ${f1(fresa.diametro)}mm ####)`);
-    lines.push(`M6 T${fresa.position}`);
-    lines.push(`M3 S${fresa.rpm}`);
-  } else if (pp.tipo === "mach_cnc") {
-    lines.push(`( FERRAMENTA: ${fresa.position} - ${fresa.nome} )`);
-    lines.push("");
-    lines.push(`M6 T${fresa.position} `);
-    lines.push(`M3 S${f4(fresa.rpm)}`);
-    lines.push("");
-  } else {
-    lines.push(`(########_Troca_de_Ferramentas_########)`);
-    lines.push(`(Numero_da_Ferramenta:${fresa.position})`);
-    lines.push(`(Descricao:${fresa.nome})`);
-    lines.push(` `);
-    lines.push(`M6 T${fresa.position}`);
-    lines.push(`M3 S${fresa.rpm}`);
-    lines.push(` `);
+  // Only emit tool change if we haven't already (same fresa for usinagens + contour)
+  if (!fresaToolChangeEmitted) {
+    if (pp.tipo === "smartcut") {
+      lines.push("(#### TROCA DE FERRAMENTAS ####)");
+      lines.push(`(#### FERRAMENTA: ${fresa.nome} - ${f(fresa.diametro)}mm ####)`);
+      lines.push(`M6 T${fresa.position}`);
+      lines.push(`M3 S${fresa.rpm}`);
+    } else if (pp.tipo === "mach_cnc") {
+      lines.push(`( FERRAMENTA: ${fresa.position} - ${fresa.nome} )`);
+      lines.push("");
+      lines.push(`M6 T${fresa.position} `);
+      lines.push(`M3 S${f4(fresa.rpm)}`);
+      lines.push("");
+    } else {
+      lines.push(`(########_Troca_de_Ferramentas_########)`);
+      lines.push(`(Numero_da_Ferramenta:${fresa.position})`);
+      lines.push(`(Descricao:${fresa.nome})`);
+      lines.push(` `);
+      lines.push(`M6 T${fresa.position}`);
+      lines.push(`M3 S${fresa.rpm}`);
+      lines.push(` `);
+    }
   }
 
-  // === COMMON CUT LINES (before individual contours) ===
-  if (useCommonCut && sharedEdges.length > 0) {
-    generateCommonCutGCode(lines, sharedEdges, sheet.pieces, fresa, pp, sheet.espessura, f, f1, f4);
-  }
-
-  // === INDIVIDUAL CONTOURS (with shared edges skipped) ===
-  // Classify pieces as small or large for two-pass strategy
+  // === INDIVIDUAL CONTOURS ===
   const smallPieces = pp.usarDoisPasses
     ? sheet.pieces.filter(p =>
         p.width <= pp.larguraPequena || (p.width * p.height) <= pp.areaPequena
@@ -239,32 +237,15 @@ export function generateGCode(
       )
     : sheet.pieces;
 
-  // Helper to generate contour for a piece, using partial if it has shared edges
-  const generateContourForPiece = (piece: typeof sheet.pieces[0], zDepth: number, passLabel: string) => {
-    const pieceIdx = sheet.pieces.indexOf(piece);
-    const hasSkippable = useCommonCut && (
-      skippableEdges.has(`${pieceIdx}-right`) ||
-      skippableEdges.has(`${pieceIdx}-left`) ||
-      skippableEdges.has(`${pieceIdx}-top`) ||
-      skippableEdges.has(`${pieceIdx}-bottom`)
-    );
-
-    if (hasSkippable) {
-      generatePartialContour(lines, piece, pieceIdx, sharedEdges, fresa, pp, zDepth, passLabel, f, f1, f4, sheet.espessura);
-    } else {
-      generatePieceContour(lines, piece, fresa, pp, zDepth, passLabel, f, f1, f4, sheet.espessura);
-    }
-  };
-
   // Two-pass for small pieces
   if (pp.usarDoisPasses && smallPieces.length > 0) {
     if (pp.tipo === "smartcut") lines.push("(#### Corte Small P1 ####)");
     for (const piece of smallPieces) {
-      generateContourForPiece(piece, pp.passePreCorte, "PECA_P1");
+      generatePieceContour(lines, piece, fresa, pp, pp.passePreCorte, "PECA_P1", f, f1, f4, sheet.espessura);
     }
     if (pp.tipo === "smartcut") lines.push("(#### Corte Small ####)");
     for (const piece of smallPieces) {
-      generateContourForPiece(piece, pp.passeFinal, "PECA");
+      generatePieceContour(lines, piece, fresa, pp, pp.passeFinal, "PECA", f, f1, f4, sheet.espessura);
     }
   }
 
@@ -272,7 +253,7 @@ export function generateGCode(
   if (largePieces.length > 0) {
     if (pp.tipo === "smartcut") lines.push("(#### Corte ####)");
     for (const piece of largePieces) {
-      generateContourForPiece(piece, pp.passeFinal, "PECA");
+      generatePieceContour(lines, piece, fresa, pp, pp.passeFinal, "PECA", f, f1, f4, sheet.espessura);
     }
   }
 
@@ -286,8 +267,6 @@ export function generateGCode(
 
 /**
  * Generate G-code filename following convention.
- * SmartCut/Mach: "0001_Branco_TX_15mm.nc"
- * Aspire: "0001_Branco_TX_15mm.tap"
  */
 export function generateGCodeFilename(
   sheetIndex: number,

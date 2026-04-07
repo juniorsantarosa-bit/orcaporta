@@ -34,11 +34,14 @@ export interface PostProcessorConfig {
   zRapido: number;              // SmartCut: 16, Mach: 20-23, Aspire: espessura
   zSeguroAutoCalc: boolean;     // If true, zSeguro = espessura + offset
   zSeguroOffset: number;        // Offset above material for Aspire (5.08)
+  zRapidoAutoCalc: boolean;     // If true, zRapido = espessura + zRapidoOffset
+  zRapidoOffset: number;        // SmartCut: 1 (15+1=16, 18+1=19, 6+1=7)
   
   // Cutting depths
   passePreCorte: number;        // Mach CNC Step 1: Z2.0 (above surface, holding cut)
   passeFinal: number;           // Z-0.1 (SmartCut) or Z-0.2 (Mach CNC)
   usarDoisPasses: boolean;      // Mach CNC: true for small pieces
+  passanteDrillOvershoot: number; // How far past material for passante drills (SmartCut: 0.5, Mach: 0.2)
   
   // Feed overrides (used when magazine tool feed should be overridden)
   avancoEntradaOverride: number | null;  // Mach: 1500, Aspire: 2500
@@ -70,9 +73,12 @@ export const SMARTCUT_CONFIG: PostProcessorConfig = {
   zRapido: 16,
   zSeguroAutoCalc: false,
   zSeguroOffset: 0,
+  zRapidoAutoCalc: true,
+  zRapidoOffset: 1,
   passePreCorte: 1.0,
   passeFinal: -0.1,
   usarDoisPasses: true,
+  passanteDrillOvershoot: 0.5,
   avancoEntradaOverride: 4000,
   avancoCorteOverride: 8000,
   avancoLeadOut: 4000,
@@ -96,9 +102,12 @@ export const MACH_CNC_CONFIG: PostProcessorConfig = {
   zRapido: 20,
   zSeguroAutoCalc: false,
   zSeguroOffset: 3,
+  zRapidoAutoCalc: true,
+  zRapidoOffset: 2,
   passePreCorte: 2.0,
   passeFinal: -0.2,
   usarDoisPasses: true,
+  passanteDrillOvershoot: 0.2,
   avancoEntradaOverride: 1500,
   avancoCorteOverride: 10000,
   avancoLeadOut: 7000,
@@ -122,9 +131,12 @@ export const ASPIRE_CONFIG: PostProcessorConfig = {
   zRapido: 15,
   zSeguroAutoCalc: true,
   zSeguroOffset: 5.08,
+  zRapidoAutoCalc: true,
+  zRapidoOffset: 0,
   passePreCorte: 0,
   passeFinal: -0.1,
   usarDoisPasses: false,
+  passanteDrillOvershoot: 0.1,
   avancoEntradaOverride: 2500,
   avancoCorteOverride: 10000,
   avancoLeadOut: null,
