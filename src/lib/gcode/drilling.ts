@@ -81,7 +81,7 @@ export function generateDrillingBlock(
   if (pp.tipo === "smartcut") {
     lines.push(`(#### Furação B${Math.round(diameter)}mm ####)`);
     lines.push("(#### TROCA DE FERRAMENTAS ####)");
-    lines.push(`(#### FERRAMENTA: ${tool.nome} - ${f(diameter)}mm ####)`);
+    lines.push(`(#### FERRAMENTA: ${tool.nome} - ${diameter.toFixed(2)}mm ####)`);
     lines.push(`M6 T${tool.position}`);
     lines.push(`M3 S${tool.rpm}`);
   } else if (pp.tipo === "mach_cnc") {

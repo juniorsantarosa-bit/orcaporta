@@ -214,7 +214,6 @@ export function generatePieceContour(
     // SmartCut: consistent 3-decimal format matching production files
     lines.push(`G0 X${f(leadInX)} Y${f(leadInY)}`);
     lines.push(`G0 Z${f(zRapido)}`);
-
     lines.push(`G1 X${f(leadInX + pp.leadOutDistance)} Z${f(zDepth)} F${f(feedEntry)}`);
 
     lines.push(`G1 X${f(x2 - R)} F${f(feedCut)}`);
