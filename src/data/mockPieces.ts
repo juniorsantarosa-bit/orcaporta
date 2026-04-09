@@ -77,10 +77,10 @@ export const mockSheetLayouts: NestingSheet[] = [
     codCorte: 7002,
     efficiency: 87.3,
     pieces: [
-      { pieceId: 1, x: 5, y: 5, width: 2399, height: 564, rotated: false, label: "0", descricao: "!DIV_INT", furos: holesDIVINT, bordaSup: false, bordaInf: false, bordaEsq: false, bordaDir: false, cliente: "Julia", ambiente: "Quarto", moduloDesc: "ARM_01", usinagens: [], espessura: 15 },
-      { pieceId: 3, x: 5, y: 573, width: 2500, height: 580, rotated: false, label: "1", descricao: "!LAT_ESQ", furos: holesLATESQ, bordaSup: true, bordaInf: false, bordaEsq: false, bordaDir: false, cliente: "Julia", ambiente: "Quarto", moduloDesc: "ARM_01", usinagens: [], espessura: 15 },
-      { pieceId: 4, x: 5, y: 1157, width: 2500, height: 580, rotated: false, label: "2", descricao: "!LAT_DIR", furos: holesLATDIR, bordaSup: true, bordaInf: false, bordaEsq: false, bordaDir: false, cliente: "Julia", ambiente: "Quarto", moduloDesc: "ARM_01", usinagens: [], espessura: 15 },
-      { pieceId: 10, x: 2509, y: 5, width: 235, height: 735, rotated: true, label: "3", descricao: "!FUNDO", furos: noHoles, bordaSup: false, bordaInf: false, bordaEsq: false, bordaDir: false, cliente: "Julia", ambiente: "Quarto", moduloDesc: "ARM_01", usinagens: [], espessura: 15 },
+      { pieceId: 1, x: 5, y: 5, width: 564, height: 2399, rotated: true, label: "0", descricao: "!DIV_INT", furos: holesDIVINT, bordaSup: false, bordaInf: false, bordaEsq: false, bordaDir: false, cliente: "Julia", ambiente: "Quarto", moduloDesc: "ARM_01", usinagens: [], espessura: 15 },
+      { pieceId: 3, x: 573, y: 5, width: 580, height: 2500, rotated: true, label: "1", descricao: "!LAT_ESQ", furos: holesLATESQ, bordaSup: true, bordaInf: false, bordaEsq: false, bordaDir: false, cliente: "Julia", ambiente: "Quarto", moduloDesc: "ARM_01", usinagens: [], espessura: 15 },
+      { pieceId: 4, x: 1157, y: 5, width: 580, height: 2500, rotated: true, label: "2", descricao: "!LAT_DIR", furos: holesLATDIR, bordaSup: true, bordaInf: false, bordaEsq: false, bordaDir: false, cliente: "Julia", ambiente: "Quarto", moduloDesc: "ARM_01", usinagens: [], espessura: 15 },
+      { pieceId: 10, x: 5, y: 2509, width: 735, height: 235, rotated: false, label: "3", descricao: "!FUNDO", furos: noHoles, bordaSup: false, bordaInf: false, bordaEsq: false, bordaDir: false, cliente: "Julia", ambiente: "Quarto", moduloDesc: "ARM_01", usinagens: [], espessura: 15 },
     ],
   },
   {
