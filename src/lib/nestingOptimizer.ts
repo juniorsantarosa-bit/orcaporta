@@ -15,8 +15,8 @@ export interface NestingOptions {
 }
 
 const DEFAULT_OPTIONS: NestingOptions = {
-  sheetWidth: 2750,
-  sheetHeight: 1840,
+  sheetWidth: 1840,
+  sheetHeight: 2750,
   espessura: 15,
   material: "Branco TX 15mm",
   gap: 6,
