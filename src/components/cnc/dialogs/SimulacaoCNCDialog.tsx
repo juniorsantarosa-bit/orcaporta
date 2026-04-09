@@ -468,9 +468,9 @@ function generateToolpath(layout: NestingSheet, limits: SafetyLimits, useCommonC
         const contourStartX = (x1 + x2) / 2;
         const contourStartY = y2;
 
-        // Lead-in point: OUTSIDE contour (above top edge)
-        const leadInX = contourStartX;
-        const leadInY = contourStartY + leadDistance;
+        // Lead-in point: LEFT of contour start (along top edge, same Y)
+        const leadInX = contourStartX - leadDistance;
+        const leadInY = contourStartY;
 
         // 1. Rapid to lead-in point (OUTSIDE contour)
         const liStart = validateAndClamp(leadInX, leadInY, zSafe, segments.length, `Lead-in peça ${piece.label}`);
