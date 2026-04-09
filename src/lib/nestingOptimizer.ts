@@ -301,7 +301,7 @@ function packWithOrder(
   let remaining = [...sorted];
 
   while (remaining.length > 0) {
-    const packer = new SkylinePacker(usableW, usableH, opts.gap);
+    const packer = new SkylinePacker(usableH, usableW, opts.gap);
     const placed: PackedPiece[] = [];
     const notPlaced: ExpandedPiece[] = [];
 
