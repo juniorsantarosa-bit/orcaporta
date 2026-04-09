@@ -260,11 +260,11 @@ export function generatePieceContour(
     lines.push(`G2 X${f(x1)} Y${f(y1 + R)} R${f(R)}`);
     lines.push(`G1 Y${f(y2 - R)}`);
     lines.push(`G2 X${f(x1 + R)} Y${f(y2)} R${f(R)}`);
-    // Close loop: return to contour start + overcut
-    lines.push(`G1 X${f(contourStartX + OVERCUT)}`);
+    // Close loop: continue past contour start to lead-in point (overcut along X)
+    lines.push(`G1 X${f(leadInX)}`);
 
-    // 4. Lead-out: exit OUTSIDE contour
-    lines.push(`G1 X${f(leadInX)} Y${f(leadInY)} F${f(feedLeadOut)}`);
+    // 4. Lead-out: retrace along X back to contour start point
+    lines.push(`G1 X${f(contourStartX)} F${f(feedLeadOut)}`);
 
     // 5. Retract to safe Z
     lines.push(`G0 Z${f(zSeguro)}`);
