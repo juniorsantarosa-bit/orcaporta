@@ -120,8 +120,6 @@ function arcCmd(
   }
 }
 
-/** Small overcut distance (mm) to guarantee full separation */
-const OVERCUT = 2.0;
 
 /**
  * Generate contour cut for a single piece.
@@ -166,10 +164,12 @@ export function generatePieceContour(
   const contourStartX = (x1 + x2) / 2;
   const contourStartY = y2;
 
-  // Lead-in/out point: OUTSIDE the contour (above top edge)
+  // Lead-in/out along X axis (along top edge), NOT perpendicular
+  // Reference pattern: lead-in is LEFT of contour start (more negative X),
+  // ramp diagonally to contour start, loop closes past start, lead-out retraces back
   const leadDistance = pp.leadOutDistance;
-  const leadInX = contourStartX;
-  const leadInY = contourStartY + leadDistance;  // OUTSIDE, above piece
+  const leadInX = contourStartX - leadDistance;  // LEFT of contour start (along top edge)
+  const leadInY = contourStartY;                 // SAME Y as top edge
 
   if (pp.tipo === "mach_cnc") {
     const dimW = piece.rotated ? piece.height : piece.width;
@@ -201,14 +201,14 @@ export function generatePieceContour(
     lines.push(arcCmd("G2", x1, y1 + R, x1 + R, y1, x1 + R, y1 + R, R, pp, f4));
     lines.push(`G1 Y${f4(y2 - R)}`);
     lines.push(arcCmd("G2", x1 + R, y2, x1, y2 - R, x1 + R, y2 - R, R, pp, f4));
-    // Close loop: return to contour start + overcut
-    lines.push(`G1 X${f4(contourStartX + OVERCUT)}`);
+    // Close loop: continue past contour start to lead-in point (overcut along X)
+    lines.push(`G1 X${f4(leadInX)}`);
 
-    // 5. Lead-out: exit OUTSIDE contour
-    lines.push(`G1 X${f4(leadInX)}Y${f4(leadInY)}Z${f4(zDepth)}F${f4(feedLeadOut)}`);
+    // 5. Lead-out: retrace along X back to contour start point
+    lines.push(`G1 X${f4(contourStartX)} F${f4(feedLeadOut)}`);
 
     // 6. Retract to safe Z
-    lines.push(`G0 X${f4(leadInX)}Y${f4(leadInY)}Z${f4(zSeguro)}`);
+    lines.push(`G0 Z${f4(zSeguro)}`);
 
   } else if (pp.tipo === "aspire") {
     // 1. Rapid to lead-in point (OUTSIDE contour)
@@ -231,11 +231,11 @@ export function generatePieceContour(
     lines.push(arcCmd("G2", x1, y1 + R, x1 + R, y1, x1 + R, y1 + R, R, pp, f4));
     lines.push(`G1  Y${f4(y2 - R)}  `);
     lines.push(arcCmd("G2", x1 + R, y2, x1, y2 - R, x1 + R, y2 - R, R, pp, f4));
-    // Close loop: return to contour start + overcut
-    lines.push(`G1 X${f4(contourStartX + OVERCUT)}   `);
+    // Close loop: continue past contour start to lead-in point (overcut along X)
+    lines.push(`G1 X${f4(leadInX)}   `);
 
-    // 5. Lead-out: exit OUTSIDE contour
-    lines.push(`G1 X${f4(leadInX)} Y${f4(leadInY)} F${f4(feedLeadOut || feedEntry)}`);
+    // 5. Lead-out: retrace along X back to contour start point
+    lines.push(`G1 X${f4(contourStartX)} F${f4(feedLeadOut || feedEntry)}`);
 
     // 6. Retract
     lines.push(`G0   Z${f4(zSeguro)}`);
@@ -258,11 +258,11 @@ export function generatePieceContour(
     lines.push(`G2 X${f(x1)} Y${f(y1 + R)} R${f(R)}`);
     lines.push(`G1 Y${f(y2 - R)}`);
     lines.push(`G2 X${f(x1 + R)} Y${f(y2)} R${f(R)}`);
-    // Close loop: return to contour start + overcut
-    lines.push(`G1 X${f(contourStartX + OVERCUT)}`);
+    // Close loop: continue past contour start to lead-in point (overcut along X)
+    lines.push(`G1 X${f(leadInX)}`);
 
-    // 4. Lead-out: exit OUTSIDE contour
-    lines.push(`G1 X${f(leadInX)} Y${f(leadInY)} F${f(feedLeadOut)}`);
+    // 4. Lead-out: retrace along X back to contour start point
+    lines.push(`G1 X${f(contourStartX)} F${f(feedLeadOut)}`);
 
     // 5. Retract to safe Z
     lines.push(`G0 Z${f(zSeguro)}`);

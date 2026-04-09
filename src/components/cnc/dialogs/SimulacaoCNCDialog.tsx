@@ -455,7 +455,7 @@ function generateToolpath(layout: NestingSheet, limits: SafetyLimits, useCommonC
       if (activeEdges.length === 4) {
         // Full contour with lead-in/contour/lead-out matching G-code generator
         const R = 3; // raio de contorno
-        const OVERCUT = 2.0;
+        // Lead-in/out along X axis (along top edge), matching contour.ts
         const leadDistance = 50; // leadOutDistance
 
         // Contour rectangle (with tool compensation) — same as contour.ts
@@ -468,9 +468,9 @@ function generateToolpath(layout: NestingSheet, limits: SafetyLimits, useCommonC
         const contourStartX = (x1 + x2) / 2;
         const contourStartY = y2;
 
-        // Lead-in point: OUTSIDE contour (above top edge)
-        const leadInX = contourStartX;
-        const leadInY = contourStartY + leadDistance;
+        // Lead-in point: LEFT of contour start (along top edge, same Y)
+        const leadInX = contourStartX - leadDistance;
+        const leadInY = contourStartY;
 
         // 1. Rapid to lead-in point (OUTSIDE contour)
         const liStart = validateAndClamp(leadInX, leadInY, zSafe, segments.length, `Lead-in peça ${piece.label}`);
@@ -515,14 +515,13 @@ function generateToolpath(layout: NestingSheet, limits: SafetyLimits, useCommonC
         const c8 = validateAndClamp(x1 + R, y2, zCut, segments.length, `Canto sup-esq peça ${piece.label}`);
         addSegment("cut", pos, new THREE.Vector3(c8.x, c8.y, c8.z), mainToolDiam, mainFresa.nome, mainFresa.position);
         pos = new THREE.Vector3(c8.x, c8.y, c8.z);
-        // Close loop with overcut
-        const closeX = contourStartX + OVERCUT;
-        const c9 = validateAndClamp(closeX, y2, zCut, segments.length, `Fechamento peça ${piece.label}`);
+        // Close loop: continue past contour start to lead-in point (overcut along X)
+        const c9 = validateAndClamp(leadInX, y2, zCut, segments.length, `Fechamento peça ${piece.label}`);
         addSegment("cut", pos, new THREE.Vector3(c9.x, c9.y, c9.z), mainToolDiam, mainFresa.nome, mainFresa.position);
         pos = new THREE.Vector3(c9.x, c9.y, c9.z);
 
-        // 4. Lead-out: exit OUTSIDE contour
-        const loEnd = validateAndClamp(leadInX, leadInY, zCut, segments.length, `Lead-out peça ${piece.label}`);
+        // 4. Lead-out: retrace along X back to contour start point
+        const loEnd = validateAndClamp(contourStartX, contourStartY, zCut, segments.length, `Lead-out peça ${piece.label}`);
         addSegment("cut", pos, new THREE.Vector3(loEnd.x, loEnd.y, loEnd.z), mainToolDiam, mainFresa.nome, mainFresa.position);
         pos = new THREE.Vector3(loEnd.x, loEnd.y, loEnd.z);
 
