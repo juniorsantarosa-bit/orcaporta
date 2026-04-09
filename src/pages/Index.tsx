@@ -187,8 +187,8 @@ export default function Index() {
     setTimeout(() => {
       const start = performance.now();
       const opts: Partial<NestingOptions> = {
-        sheetWidth: generalConfig.chapaY,
-        sheetHeight: generalConfig.chapaX,
+        sheetWidth: generalConfig.chapaX,
+        sheetHeight: generalConfig.chapaY,
         gap: nestingConfig.espessuraCorte,
         refiloX: nestingConfig.refiloX,
         refiloY: nestingConfig.refiloY,
