@@ -41,6 +41,8 @@ interface ExpandedPiece {
   index: number;
 }
 
+type PackingDirection = "vertical" | "horizontal";
+
 class SkylinePacker {
   private skyline: SkylineNode[];
   private binWidth: number;
@@ -219,18 +221,18 @@ export function optimizeNesting(
       (a, b) => (b.width + b.height) - (a.width + a.height),
     ];
 
-    let bestResult: ReturnType<typeof packWithOrder> | null = null;
+    let bestResult: PackResult | null = null;
+    const packingDirections: PackingDirection[] =
+      opts.direction === "indefinido" ? ["vertical", "horizontal"] : [opts.direction];
 
-    for (const sortFn of sortStrategies) {
-      const sorted = [...expanded].sort(sortFn);
-      const result = packWithOrder(sorted, usableW, usableH, opts);
+    for (const direction of packingDirections) {
+      for (const sortFn of sortStrategies) {
+        const sorted = [...expanded].sort(sortFn);
+        const result = packWithOrder(sorted, usableW, usableH, opts, direction);
 
-      if (
-        !bestResult ||
-        result.sheets.length < bestResult.sheets.length ||
-        (result.sheets.length === bestResult.sheets.length && result.totalEfficiency > bestResult.totalEfficiency)
-      ) {
-        bestResult = result;
+        if (comparePackResults(bestResult, result, opts.direction)) {
+          bestResult = result;
+        }
       }
     }
 
@@ -291,22 +293,69 @@ interface PackedPiece {
   rotated: boolean;
 }
 
+interface PackResult {
+  sheets: PackedPiece[][];
+  totalEfficiency: number;
+  maxUsedX: number;
+  maxUsedY: number;
+}
+
+function comparePackResults(
+  current: PackResult | null,
+  candidate: PackResult,
+  requestedDirection: NestingOptions["direction"]
+): boolean {
+  if (!current) return true;
+
+  if (candidate.sheets.length !== current.sheets.length) {
+    return candidate.sheets.length < current.sheets.length;
+  }
+
+  if (requestedDirection === "vertical") {
+    if (Math.abs(candidate.maxUsedX - current.maxUsedX) > 0.01) {
+      return candidate.maxUsedX < current.maxUsedX;
+    }
+
+    if (Math.abs(candidate.maxUsedY - current.maxUsedY) > 0.01) {
+      return candidate.maxUsedY > current.maxUsedY;
+    }
+  }
+
+  if (requestedDirection === "horizontal") {
+    if (Math.abs(candidate.maxUsedY - current.maxUsedY) > 0.01) {
+      return candidate.maxUsedY < current.maxUsedY;
+    }
+
+    if (Math.abs(candidate.maxUsedX - current.maxUsedX) > 0.01) {
+      return candidate.maxUsedX > current.maxUsedX;
+    }
+  }
+
+  return candidate.totalEfficiency > current.totalEfficiency;
+}
+
 function packWithOrder(
   sorted: ExpandedPiece[],
   usableW: number,
   usableH: number,
-  opts: NestingOptions
-): { sheets: PackedPiece[][]; totalEfficiency: number } {
+  opts: NestingOptions,
+  direction: PackingDirection
+): PackResult {
   const sheets: { packer: SkylinePacker; pieces: PackedPiece[] }[] = [];
   let remaining = [...sorted];
+  const isVertical = direction === "vertical";
 
   while (remaining.length > 0) {
-    const packer = new SkylinePacker(usableH, usableW, opts.gap);
+    const packer = new SkylinePacker(
+      isVertical ? usableH : usableW,
+      isVertical ? usableW : usableH,
+      opts.gap
+    );
     const placed: PackedPiece[] = [];
     const notPlaced: ExpandedPiece[] = [];
 
     for (const ep of remaining) {
-      const result = tryPlace(packer, ep, opts);
+      const result = tryPlace(packer, ep, opts, direction);
       if (result) {
         placed.push(result);
       } else {
@@ -325,7 +374,7 @@ function packWithOrder(
     for (const ep of notPlaced) {
       let fitted = false;
       for (const existingSheet of sheets) {
-        const result = tryPlace(existingSheet.packer, ep, opts);
+        const result = tryPlace(existingSheet.packer, ep, opts, direction);
         if (result) {
           existingSheet.pieces.push(result);
           fitted = true;
@@ -346,19 +395,40 @@ function packWithOrder(
     0
   );
 
+  const maxUsedX = sheets.reduce(
+    (maxSheetX, sheet) => Math.max(maxSheetX, ...sheet.pieces.map((piece) => piece.x + piece.w), 0),
+    0
+  );
+  const maxUsedY = sheets.reduce(
+    (maxSheetY, sheet) => Math.max(maxSheetY, ...sheet.pieces.map((piece) => piece.y + piece.h), 0),
+    0
+  );
+
   return {
     sheets: sheets.map((s) => s.pieces),
     totalEfficiency: totalArea > 0 ? (usedArea / totalArea) * 100 : 0,
+    maxUsedX,
+    maxUsedY,
   };
 }
 
-function tryPlace(packer: SkylinePacker, ep: ExpandedPiece, opts: NestingOptions): PackedPiece | null {
-  // Packer axes are swapped: packer's X = real Y, packer's Y = real X
-  // So we pass piece (height, width) to the packer as (packerW, packerH)
-  const pos1 = packer.findPosition(ep.height, ep.width);
+function tryPlace(
+  packer: SkylinePacker,
+  ep: ExpandedPiece,
+  opts: NestingOptions,
+  direction: PackingDirection
+): PackedPiece | null {
+  const isVertical = direction === "vertical";
+  const pos1 = packer.findPosition(
+    isVertical ? ep.height : ep.width,
+    isVertical ? ep.width : ep.height
+  );
   let pos2: ReturnType<SkylinePacker["findPosition"]> = null;
   if (opts.allowRotation && !ep.piece.veio && ep.width !== ep.height) {
-    pos2 = packer.findPosition(ep.width, ep.height);
+    pos2 = packer.findPosition(
+      isVertical ? ep.width : ep.height,
+      isVertical ? ep.height : ep.width
+    );
   }
 
   let bestPos = pos1;
@@ -379,14 +449,17 @@ function tryPlace(packer: SkylinePacker, ep: ExpandedPiece, opts: NestingOptions
   const w = useRotated ? ep.height : ep.width;
   const h = useRotated ? ep.width : ep.height;
 
-  // Place in packer with swapped dimensions (h as packerW, w as packerH)
-  packer.place(bestPos.x, bestPos.y, h, w);
+  packer.place(
+    bestPos.x,
+    bestPos.y,
+    isVertical ? h : w,
+    isVertical ? w : h
+  );
 
-  // Swap back: packer.x → real Y, packer.y → real X
   return {
     ep,
-    x: bestPos.y + opts.refiloX,
-    y: bestPos.x + opts.refiloY,
+    x: (isVertical ? bestPos.y : bestPos.x) + opts.refiloX,
+    y: (isVertical ? bestPos.x : bestPos.y) + opts.refiloY,
     w,
     h,
     rotated: useRotated,
