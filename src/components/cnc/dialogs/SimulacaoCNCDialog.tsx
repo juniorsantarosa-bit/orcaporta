@@ -455,7 +455,7 @@ function generateToolpath(layout: NestingSheet, limits: SafetyLimits, useCommonC
       if (activeEdges.length === 4) {
         // Full contour with lead-in/contour/lead-out matching G-code generator
         const R = 3; // raio de contorno
-        const OVERCUT = 2.0;
+        // Lead-in/out along X axis (along top edge), matching contour.ts
         const leadDistance = 50; // leadOutDistance
 
         // Contour rectangle (with tool compensation) — same as contour.ts
