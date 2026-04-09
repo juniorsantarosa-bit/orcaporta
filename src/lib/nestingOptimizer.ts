@@ -301,7 +301,7 @@ function packWithOrder(
   let remaining = [...sorted];
 
   while (remaining.length > 0) {
-    const packer = new SkylinePacker(usableW, usableH, opts.gap);
+    const packer = new SkylinePacker(usableH, usableW, opts.gap);
     const placed: PackedPiece[] = [];
     const notPlaced: ExpandedPiece[] = [];
 
@@ -353,10 +353,12 @@ function packWithOrder(
 }
 
 function tryPlace(packer: SkylinePacker, ep: ExpandedPiece, opts: NestingOptions): PackedPiece | null {
-  const pos1 = packer.findPosition(ep.width, ep.height);
+  // Packer axes are swapped: packer's X = real Y, packer's Y = real X
+  // So we pass piece (height, width) to the packer as (packerW, packerH)
+  const pos1 = packer.findPosition(ep.height, ep.width);
   let pos2: ReturnType<SkylinePacker["findPosition"]> = null;
   if (opts.allowRotation && !ep.piece.veio && ep.width !== ep.height) {
-    pos2 = packer.findPosition(ep.height, ep.width);
+    pos2 = packer.findPosition(ep.width, ep.height);
   }
 
   let bestPos = pos1;
@@ -376,12 +378,15 @@ function tryPlace(packer: SkylinePacker, ep: ExpandedPiece, opts: NestingOptions
 
   const w = useRotated ? ep.height : ep.width;
   const h = useRotated ? ep.width : ep.height;
-  packer.place(bestPos.x, bestPos.y, w, h);
 
+  // Place in packer with swapped dimensions (h as packerW, w as packerH)
+  packer.place(bestPos.x, bestPos.y, h, w);
+
+  // Swap back: packer.x → real Y, packer.y → real X
   return {
     ep,
-    x: bestPos.x + opts.refiloX,
-    y: bestPos.y + opts.refiloY,
+    x: bestPos.y + opts.refiloX,
+    y: bestPos.x + opts.refiloY,
     w,
     h,
     rotated: useRotated,
