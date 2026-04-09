@@ -127,7 +127,7 @@ export function generateGCode(
     // Tool change for fresa
     if (pp.tipo === "smartcut") {
       lines.push("(#### TROCA DE FERRAMENTAS ####)");
-      lines.push(`(#### FERRAMENTA: ${fresa.nome} - ${f(fresa.diametro)}mm ####)`);
+      lines.push(`(#### FERRAMENTA: ${fresa.nome} - ${fresa.diametro.toFixed(2)}mm ####)`);
       lines.push(`M6 T${fresa.position}`);
       lines.push(`M3 S${fresa.rpm}`);
     } else if (pp.tipo === "mach_cnc") {
@@ -205,7 +205,7 @@ export function generateGCode(
   if (!fresaToolChangeEmitted) {
     if (pp.tipo === "smartcut") {
       lines.push("(#### TROCA DE FERRAMENTAS ####)");
-      lines.push(`(#### FERRAMENTA: ${fresa.nome} - ${f(fresa.diametro)}mm ####)`);
+      lines.push(`(#### FERRAMENTA: ${fresa.nome} - ${fresa.diametro.toFixed(2)}mm ####)`);
       lines.push(`M6 T${fresa.position}`);
       lines.push(`M3 S${fresa.rpm}`);
     } else if (pp.tipo === "mach_cnc") {
