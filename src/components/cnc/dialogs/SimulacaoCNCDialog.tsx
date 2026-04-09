@@ -515,14 +515,13 @@ function generateToolpath(layout: NestingSheet, limits: SafetyLimits, useCommonC
         const c8 = validateAndClamp(x1 + R, y2, zCut, segments.length, `Canto sup-esq peça ${piece.label}`);
         addSegment("cut", pos, new THREE.Vector3(c8.x, c8.y, c8.z), mainToolDiam, mainFresa.nome, mainFresa.position);
         pos = new THREE.Vector3(c8.x, c8.y, c8.z);
-        // Close loop with overcut
-        const closeX = contourStartX + OVERCUT;
-        const c9 = validateAndClamp(closeX, y2, zCut, segments.length, `Fechamento peça ${piece.label}`);
+        // Close loop: continue past contour start to lead-in point (overcut along X)
+        const c9 = validateAndClamp(leadInX, y2, zCut, segments.length, `Fechamento peça ${piece.label}`);
         addSegment("cut", pos, new THREE.Vector3(c9.x, c9.y, c9.z), mainToolDiam, mainFresa.nome, mainFresa.position);
         pos = new THREE.Vector3(c9.x, c9.y, c9.z);
 
-        // 4. Lead-out: exit OUTSIDE contour
-        const loEnd = validateAndClamp(leadInX, leadInY, zCut, segments.length, `Lead-out peça ${piece.label}`);
+        // 4. Lead-out: retrace along X back to contour start point
+        const loEnd = validateAndClamp(contourStartX, contourStartY, zCut, segments.length, `Lead-out peça ${piece.label}`);
         addSegment("cut", pos, new THREE.Vector3(loEnd.x, loEnd.y, loEnd.z), mainToolDiam, mainFresa.nome, mainFresa.position);
         pos = new THREE.Vector3(loEnd.x, loEnd.y, loEnd.z);
 
