@@ -203,14 +203,14 @@ export function generatePieceContour(
     lines.push(arcCmd("G2", x1, y1 + R, x1 + R, y1, x1 + R, y1 + R, R, pp, f4));
     lines.push(`G1 Y${f4(y2 - R)}`);
     lines.push(arcCmd("G2", x1 + R, y2, x1, y2 - R, x1 + R, y2 - R, R, pp, f4));
-    // Close loop: return to contour start + overcut
-    lines.push(`G1 X${f4(contourStartX + OVERCUT)}`);
+    // Close loop: continue past contour start to lead-in point (overcut along X)
+    lines.push(`G1 X${f4(leadInX)}`);
 
-    // 5. Lead-out: exit OUTSIDE contour
-    lines.push(`G1 X${f4(leadInX)}Y${f4(leadInY)}Z${f4(zDepth)}F${f4(feedLeadOut)}`);
+    // 5. Lead-out: retrace along X back to contour start point
+    lines.push(`G1 X${f4(contourStartX)} F${f4(feedLeadOut)}`);
 
     // 6. Retract to safe Z
-    lines.push(`G0 X${f4(leadInX)}Y${f4(leadInY)}Z${f4(zSeguro)}`);
+    lines.push(`G0 Z${f4(zSeguro)}`);
 
   } else if (pp.tipo === "aspire") {
     // 1. Rapid to lead-in point (OUTSIDE contour)
