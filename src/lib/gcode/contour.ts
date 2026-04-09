@@ -120,8 +120,6 @@ function arcCmd(
   }
 }
 
-/** Small overcut distance (mm) to guarantee full separation */
-const OVERCUT = 2.0;
 
 /**
  * Generate contour cut for a single piece.
