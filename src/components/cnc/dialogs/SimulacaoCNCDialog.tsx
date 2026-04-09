@@ -453,22 +453,80 @@ function generateToolpath(layout: NestingSheet, limits: SafetyLimits, useCommonC
       if (activeEdges.length === 0) continue;
 
       if (activeEdges.length === 4) {
-        // Full contour — continuous loop (no retract between edges)
-        const first = activeEdges[0];
-        const start = validateAndClamp(first.from.x, first.from.y, zSafe, segments.length, `Pos. peça ${piece.label}`);
-        addSegment("rapid", pos, new THREE.Vector3(start.x, start.y, start.z), mainToolDiam, mainFresa.nome, mainFresa.position);
-        pos = new THREE.Vector3(start.x, start.y, start.z);
+        // Full contour with lead-in/contour/lead-out matching G-code generator
+        const R = 3; // raio de contorno
+        const OVERCUT = 2.0;
+        const leadDistance = 50; // leadOutDistance
 
-        const plunge = validateAndClamp(first.from.x, first.from.y, zCut, segments.length, `Entrada peça ${piece.label}`);
-        addSegment("cut", pos, new THREE.Vector3(plunge.x, plunge.y, plunge.z), mainToolDiam, mainFresa.nome, mainFresa.position);
-        pos = new THREE.Vector3(plunge.x, plunge.y, plunge.z);
+        // Contour rectangle (with tool compensation) — same as contour.ts
+        const x1 = piece.x - offset;                          // left
+        const x2 = piece.x + piece.width + offset;            // right
+        const y1 = piece.y - offset;                          // bottom
+        const y2 = piece.y + piece.height + offset;           // top
 
-        for (const edge of activeEdges) {
-          const end = validateAndClamp(edge.to.x, edge.to.y, zCut, segments.length, `Corte ${edge.side} peça ${piece.label}`);
-          addSegment("cut", pos, new THREE.Vector3(end.x, end.y, end.z), mainToolDiam, mainFresa.nome, mainFresa.position);
-          pos = new THREE.Vector3(end.x, end.y, end.z);
-        }
+        // Contour start point: middle of top edge
+        const contourStartX = (x1 + x2) / 2;
+        const contourStartY = y2;
 
+        // Lead-in point: OUTSIDE contour (above top edge)
+        const leadInX = contourStartX;
+        const leadInY = contourStartY + leadDistance;
+
+        // 1. Rapid to lead-in point (OUTSIDE contour)
+        const liStart = validateAndClamp(leadInX, leadInY, zSafe, segments.length, `Lead-in peça ${piece.label}`);
+        addSegment("rapid", pos, new THREE.Vector3(liStart.x, liStart.y, liStart.z), mainToolDiam, mainFresa.nome, mainFresa.position);
+        pos = new THREE.Vector3(liStart.x, liStart.y, liStart.z);
+
+        // 2. Ramp descent at lead-in → contour start (diagonal ramp)
+        const rampEnd = validateAndClamp(contourStartX, contourStartY, zCut, segments.length, `Rampa entrada peça ${piece.label}`);
+        addSegment("cut", pos, new THREE.Vector3(rampEnd.x, rampEnd.y, rampEnd.z), mainToolDiam, mainFresa.nome, mainFresa.position);
+        pos = new THREE.Vector3(rampEnd.x, rampEnd.y, rampEnd.z);
+
+        // 3. Complete closed-loop contour (top→right corner→down→bottom corner→left→top corner→up→close+overcut)
+        // Top edge: contourStart → right corner
+        const c1 = validateAndClamp(x2 - R, y2, zCut, segments.length, `Topo dir peça ${piece.label}`);
+        addSegment("cut", pos, new THREE.Vector3(c1.x, c1.y, c1.z), mainToolDiam, mainFresa.nome, mainFresa.position);
+        pos = new THREE.Vector3(c1.x, c1.y, c1.z);
+        // Right-top corner arc
+        const c2 = validateAndClamp(x2, y2 - R, zCut, segments.length, `Canto sup-dir peça ${piece.label}`);
+        addSegment("cut", pos, new THREE.Vector3(c2.x, c2.y, c2.z), mainToolDiam, mainFresa.nome, mainFresa.position);
+        pos = new THREE.Vector3(c2.x, c2.y, c2.z);
+        // Right edge down
+        const c3 = validateAndClamp(x2, y1 + R, zCut, segments.length, `Dir inf peça ${piece.label}`);
+        addSegment("cut", pos, new THREE.Vector3(c3.x, c3.y, c3.z), mainToolDiam, mainFresa.nome, mainFresa.position);
+        pos = new THREE.Vector3(c3.x, c3.y, c3.z);
+        // Right-bottom corner arc
+        const c4 = validateAndClamp(x2 - R, y1, zCut, segments.length, `Canto inf-dir peça ${piece.label}`);
+        addSegment("cut", pos, new THREE.Vector3(c4.x, c4.y, c4.z), mainToolDiam, mainFresa.nome, mainFresa.position);
+        pos = new THREE.Vector3(c4.x, c4.y, c4.z);
+        // Bottom edge left
+        const c5 = validateAndClamp(x1 + R, y1, zCut, segments.length, `Inf esq peça ${piece.label}`);
+        addSegment("cut", pos, new THREE.Vector3(c5.x, c5.y, c5.z), mainToolDiam, mainFresa.nome, mainFresa.position);
+        pos = new THREE.Vector3(c5.x, c5.y, c5.z);
+        // Left-bottom corner arc
+        const c6 = validateAndClamp(x1, y1 + R, zCut, segments.length, `Canto inf-esq peça ${piece.label}`);
+        addSegment("cut", pos, new THREE.Vector3(c6.x, c6.y, c6.z), mainToolDiam, mainFresa.nome, mainFresa.position);
+        pos = new THREE.Vector3(c6.x, c6.y, c6.z);
+        // Left edge up
+        const c7 = validateAndClamp(x1, y2 - R, zCut, segments.length, `Esq sup peça ${piece.label}`);
+        addSegment("cut", pos, new THREE.Vector3(c7.x, c7.y, c7.z), mainToolDiam, mainFresa.nome, mainFresa.position);
+        pos = new THREE.Vector3(c7.x, c7.y, c7.z);
+        // Left-top corner arc
+        const c8 = validateAndClamp(x1 + R, y2, zCut, segments.length, `Canto sup-esq peça ${piece.label}`);
+        addSegment("cut", pos, new THREE.Vector3(c8.x, c8.y, c8.z), mainToolDiam, mainFresa.nome, mainFresa.position);
+        pos = new THREE.Vector3(c8.x, c8.y, c8.z);
+        // Close loop with overcut
+        const closeX = contourStartX + OVERCUT;
+        const c9 = validateAndClamp(closeX, y2, zCut, segments.length, `Fechamento peça ${piece.label}`);
+        addSegment("cut", pos, new THREE.Vector3(c9.x, c9.y, c9.z), mainToolDiam, mainFresa.nome, mainFresa.position);
+        pos = new THREE.Vector3(c9.x, c9.y, c9.z);
+
+        // 4. Lead-out: exit OUTSIDE contour
+        const loEnd = validateAndClamp(leadInX, leadInY, zCut, segments.length, `Lead-out peça ${piece.label}`);
+        addSegment("cut", pos, new THREE.Vector3(loEnd.x, loEnd.y, loEnd.z), mainToolDiam, mainFresa.nome, mainFresa.position);
+        pos = new THREE.Vector3(loEnd.x, loEnd.y, loEnd.z);
+
+        // 5. Retract to safe Z
         addSegment("retract", pos, new THREE.Vector3(pos.x, pos.y, zSafe), mainToolDiam, mainFresa.nome, mainFresa.position);
         pos = new THREE.Vector3(pos.x, pos.y, zSafe);
       } else {
