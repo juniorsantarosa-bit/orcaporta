@@ -166,10 +166,12 @@ export function generatePieceContour(
   const contourStartX = (x1 + x2) / 2;
   const contourStartY = y2;
 
-  // Lead-in/out point: OUTSIDE the contour (above top edge)
+  // Lead-in/out along X axis (along top edge), NOT perpendicular
+  // Reference pattern: lead-in is LEFT of contour start (more negative X),
+  // ramp diagonally to contour start, loop closes past start, lead-out retraces back
   const leadDistance = pp.leadOutDistance;
-  const leadInX = contourStartX;
-  const leadInY = contourStartY + leadDistance;  // OUTSIDE, above piece
+  const leadInX = contourStartX - leadDistance;  // LEFT of contour start (along top edge)
+  const leadInY = contourStartY;                 // SAME Y as top edge
 
   if (pp.tipo === "mach_cnc") {
     const dimW = piece.rotated ? piece.height : piece.width;
