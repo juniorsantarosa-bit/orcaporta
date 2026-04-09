@@ -1,18 +1,18 @@
 /**
  * G-code contour cutting operations generator.
  * Supports SmartCut diagonal ramp, Mach CNC two-pass, and Aspire helical ramp.
- * Optimized: detects shared edges between adjacent pieces to avoid double cuts.
+ * 
+ * CRITICAL: Lead-in/contour/lead-out are strictly separated:
+ *   1. Lead-in: ramp descent OUTSIDE the piece contour
+ *   2. Contour: complete closed loop (start = end point)
+ *   3. Lead-out: lateral exit OUTSIDE the piece, then Z retract
  */
 import { PlacedNestingPiece } from "@/types/promob";
 import { ToolSlot } from "@/types/toolMagazine";
 import { PostProcessorConfig } from "@/types/postProcessor";
-import { NestingSheet } from "@/types/promob";
 
 /**
  * Detect shared edges between pieces on the same sheet.
- * Two pieces share an edge when they are separated by exactly the gap distance
- * and their edges overlap along the shared dimension.
- * Returns a set of edge keys that should be skipped (already cut by neighbor).
  */
 export function findSharedEdges(
   pieces: PlacedNestingPiece[],
@@ -20,26 +20,22 @@ export function findSharedEdges(
   toolDiameter: number,
 ): Set<string> {
   const skippable = new Set<string>();
-  const tolerance = toolDiameter + 2; // pieces within tool diameter + small tolerance share a cut
+  const tolerance = toolDiameter + 2;
 
   for (let i = 0; i < pieces.length; i++) {
     for (let j = i + 1; j < pieces.length; j++) {
       const a = pieces[i];
       const b = pieces[j];
 
-      // Check if A's right edge aligns with B's left edge
       const rightLeftDist = Math.abs((a.x + a.width) - b.x);
       if (rightLeftDist <= tolerance) {
-        // Check vertical overlap
         const overlapTop = Math.max(a.y, b.y);
         const overlapBot = Math.min(a.y + a.height, b.y + b.height);
         if (overlapBot - overlapTop > 10) {
-          // A's right and B's left share a cut — mark B's left as skippable
           skippable.add(`${j}-left`);
         }
       }
 
-      // Check if A's bottom edge aligns with B's top edge
       const bottomTopDist = Math.abs((a.y + a.height) - b.y);
       if (bottomTopDist <= tolerance) {
         const overlapLeft = Math.max(a.x, b.x);
@@ -49,7 +45,6 @@ export function findSharedEdges(
         }
       }
 
-      // Check if B's right edge aligns with A's left edge
       const bRightALeft = Math.abs((b.x + b.width) - a.x);
       if (bRightALeft <= tolerance) {
         const overlapTop = Math.max(a.y, b.y);
@@ -59,7 +54,6 @@ export function findSharedEdges(
         }
       }
 
-      // Check if B's bottom edge aligns with A's top edge
       const bBottomATop = Math.abs((b.y + b.height) - a.y);
       if (bBottomATop <= tolerance) {
         const overlapLeft = Math.max(a.x, b.x);
@@ -126,8 +120,19 @@ function arcCmd(
   }
 }
 
+/** Small overcut distance (mm) to guarantee full separation */
+const OVERCUT = 2.0;
+
 /**
  * Generate contour cut for a single piece.
+ * 
+ * Structure:
+ *   1. Rapid to lead-in point (OUTSIDE contour, above piece top edge)
+ *   2. Ramp descent to cutting depth at lead-in point
+ *   3. Linear move to contour start point (entry into contour)
+ *   4. Complete closed-loop contour (returns to contour start + overcut)
+ *   5. Lead-out move to point OUTSIDE contour
+ *   6. Retract to safe Z
  */
 export function generatePieceContour(
   lines: string[],
@@ -144,10 +149,11 @@ export function generatePieceContour(
   const R = pp.raioContorno;
   const halfFresa = tool.diametro / 2;
 
-  const x1 = -(piece.x + piece.width) - halfFresa;
-  const x2 = -piece.x + halfFresa;
-  const y1 = piece.y - halfFresa;
-  const y2 = piece.y + piece.height + halfFresa;
+  // Contour rectangle (with tool compensation)
+  const x1 = -(piece.x + piece.width) - halfFresa;  // left
+  const x2 = -piece.x + halfFresa;                   // right
+  const y1 = piece.y - halfFresa;                     // bottom
+  const y2 = piece.y + piece.height + halfFresa;      // top
 
   const zSeguro = pp.zSeguroAutoCalc ? espessura + pp.zSeguroOffset : pp.zSeguro;
   const zRapido = pp.zRapidoAutoCalc ? espessura + pp.zRapidoOffset : pp.zRapido;
@@ -156,16 +162,25 @@ export function generatePieceContour(
   const feedCut = pp.avancoCorteOverride || tool.avancoCorte;
   const feedLeadOut = pp.avancoLeadOut || feedEntry;
 
-  const leadInX = (x1 + x2) / 2;
-  const leadInY = y2;
+  // Contour start point: middle of top edge
+  const contourStartX = (x1 + x2) / 2;
+  const contourStartY = y2;
+
+  // Lead-in/out point: OUTSIDE the contour (above top edge)
+  const leadDistance = pp.leadOutDistance;
+  const leadInX = contourStartX;
+  const leadInY = contourStartY + leadDistance;  // OUTSIDE, above piece
 
   if (pp.tipo === "mach_cnc") {
     const dimW = piece.rotated ? piece.height : piece.width;
     const dimH = piece.rotated ? piece.width : piece.height;
     lines.push(`(${passLabel} - ${dimW} x ${dimH})`);
-    lines.push(`G0 X${f4(leadInX)}Y${f4(leadInY - 14.7)}Z${f4(zSeguro)}`);
-    lines.push(`G0 X${f4(leadInX)}Y${f4(leadInY - 14.7)}Z${f4(zRapido)}`);
 
+    // 1. Rapid to lead-in point (OUTSIDE contour)
+    lines.push(`G0 X${f4(leadInX)}Y${f4(leadInY)}Z${f4(zSeguro)}`);
+    lines.push(`G0 X${f4(leadInX)}Y${f4(leadInY)}Z${f4(zRapido)}`);
+
+    // 2. Ramp descent at lead-in point (OUTSIDE contour)
     if (zDepth > 0) {
       lines.push(`(Step:1/2)`);
       lines.push(`G1 X${f4(leadInX)}Y${f4(leadInY)}Z${f4(zDepth)}F${f4(feedEntry)}`);
@@ -174,8 +189,10 @@ export function generatePieceContour(
       lines.push(`G1 X${f4(leadInX)}Y${f4(leadInY)}Z${f4(zDepth)}F${f4(pp.usarDoisPasses ? feedEntry * 0.7 : feedEntry)}`);
     }
 
-    lines.push(`G1 X${f4(leadInX)}Y${f4(leadInY)}Z${f4(zDepth)}F${f4(feedCut)}`);
-    
+    // 3. Linear entry: lead-in → contour start (at cutting depth)
+    lines.push(`G1 X${f4(contourStartX)}Y${f4(contourStartY)}Z${f4(zDepth)}F${f4(feedCut)}`);
+
+    // 4. Complete closed-loop contour
     lines.push(`G1 X${f4(x2 - R)}Y${f4(y2)}Z${f4(zDepth)}`);
     lines.push(arcCmd("G2", x2, y2 - R, x2 - R, y2, x2 - R, y2 - R, R, pp, f4));
     lines.push(`G1 Y${f4(y1 + R)}`);
@@ -184,21 +201,29 @@ export function generatePieceContour(
     lines.push(arcCmd("G2", x1, y1 + R, x1 + R, y1, x1 + R, y1 + R, R, pp, f4));
     lines.push(`G1 Y${f4(y2 - R)}`);
     lines.push(arcCmd("G2", x1 + R, y2, x1, y2 - R, x1 + R, y2 - R, R, pp, f4));
-    lines.push(`G1 X${f4(leadInX)}`);
+    // Close loop: return to contour start + overcut
+    lines.push(`G1 X${f4(contourStartX + OVERCUT)}`);
 
+    // 5. Lead-out: exit OUTSIDE contour
     lines.push(`G1 X${f4(leadInX)}Y${f4(leadInY)}Z${f4(zDepth)}F${f4(feedLeadOut)}`);
+
+    // 6. Retract to safe Z
     lines.push(`G0 X${f4(leadInX)}Y${f4(leadInY)}Z${f4(zSeguro)}`);
 
   } else if (pp.tipo === "aspire") {
+    // 1. Rapid to lead-in point (OUTSIDE contour)
     lines.push(`G0 X${f4(leadInX)} Y${f4(leadInY)} `);
     lines.push(`G0   Z${f4(zSeguro)}`);
 
+    // 2. Helical ramp at lead-in point (OUTSIDE contour)
     lines.push(`G1   Z${f4(zRapido)} F${f4(feedEntry)}`);
     generateHelicalRamp(lines, leadInX, leadInY, zRapido, zDepth, pp, feedEntry, f4);
 
-    lines.push(`G1 X${f4(leadInX)} Z${f4(zDepth)} `);
+    // 3. Linear entry: lead-in → contour start
+    lines.push(`G1 X${f4(contourStartX)} Y${f4(contourStartY)} Z${f4(zDepth)} F${f4(feedCut)}`);
 
-    lines.push(`G1 X${f4(x2 - R)}  Z${f4(zDepth)} F${f4(feedCut)}`);
+    // 4. Complete closed-loop contour
+    lines.push(`G1 X${f4(x2 - R)} Z${f4(zDepth)} F${f4(feedCut)}`);
     lines.push(arcCmd("G2", x2, y2 - R, x2 - R, y2, x2 - R, y2 - R, R, pp, f4));
     lines.push(`G1  Y${f4(y1 + R)}  `);
     lines.push(arcCmd("G2", x2 - R, y1, x2, y1 + R, x2 - R, y1 + R, R, pp, f4));
@@ -206,16 +231,25 @@ export function generatePieceContour(
     lines.push(arcCmd("G2", x1, y1 + R, x1 + R, y1, x1 + R, y1 + R, R, pp, f4));
     lines.push(`G1  Y${f4(y2 - R)}  `);
     lines.push(arcCmd("G2", x1 + R, y2, x1, y2 - R, x1 + R, y2 - R, R, pp, f4));
-    lines.push(`G1 X${f4(leadInX)}   `);
+    // Close loop: return to contour start + overcut
+    lines.push(`G1 X${f4(contourStartX + OVERCUT)}   `);
 
+    // 5. Lead-out: exit OUTSIDE contour
+    lines.push(`G1 X${f4(leadInX)} Y${f4(leadInY)} F${f4(feedLeadOut || feedEntry)}`);
+
+    // 6. Retract
     lines.push(`G0   Z${f4(zSeguro)}`);
 
   } else {
     // SmartCut: consistent 3-decimal format matching production files
+    // 1. Rapid to lead-in point (OUTSIDE contour, above top edge)
     lines.push(`G0 X${f(leadInX)} Y${f(leadInY)}`);
     lines.push(`G0 Z${f(zRapido)}`);
-    lines.push(`G1 X${f(leadInX + pp.leadOutDistance)} Z${f(zDepth)} F${f(feedEntry)}`);
 
+    // 2. Diagonal ramp descent at lead-in (OUTSIDE → contour start)
+    lines.push(`G1 X${f(contourStartX)} Y${f(contourStartY)} Z${f(zDepth)} F${f(feedEntry)}`);
+
+    // 3. Complete closed-loop contour (start at contourStart, full rectangle, back to start)
     lines.push(`G1 X${f(x2 - R)} F${f(feedCut)}`);
     lines.push(`G2 X${f(x2)} Y${f(y2 - R)} R${f(R)}`);
     lines.push(`G1 Y${f(y1 + R)}`);
@@ -224,9 +258,13 @@ export function generatePieceContour(
     lines.push(`G2 X${f(x1)} Y${f(y1 + R)} R${f(R)}`);
     lines.push(`G1 Y${f(y2 - R)}`);
     lines.push(`G2 X${f(x1 + R)} Y${f(y2)} R${f(R)}`);
-    lines.push(`G1 X${f(leadInX)}`);
+    // Close loop: return to contour start + overcut
+    lines.push(`G1 X${f(contourStartX + OVERCUT)}`);
 
-    lines.push(`G1 X${f(leadInX - pp.leadOutDistance)} F${f(feedLeadOut)}`);
+    // 4. Lead-out: exit OUTSIDE contour
+    lines.push(`G1 X${f(leadInX)} Y${f(leadInY)} F${f(feedLeadOut)}`);
+
+    // 5. Retract to safe Z
     lines.push(`G0 Z${f(zSeguro)}`);
   }
 }
