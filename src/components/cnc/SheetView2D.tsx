@@ -76,11 +76,10 @@ function UsinagemSVG({ usinagem, pieceX, pieceY, rotated }: { usinagem: Usinagem
   }
 
   if (usinagem.tipo === "canal") {
-    // Horizontal groove
-    const gw = usinagem.comprimento || usinagem.largura;
-    const gh = usinagem.largura || 12;
+    const gw = rotated ? (usinagem.largura || 12) : (usinagem.comprimento || usinagem.largura);
+    const gh = rotated ? (usinagem.comprimento || usinagem.largura) : (usinagem.largura || 12);
     return (
-      <rect x={x} y={y - gh / 2} width={gw} height={gh}
+      <rect x={x} y={y} width={gw} height={gh}
         fill="hsl(200 70% 50% / 0.2)" stroke="hsl(200 70% 50%)" strokeWidth={1} strokeDasharray="3,2" rx={1} />
     );
   }
