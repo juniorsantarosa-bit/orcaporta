@@ -2,6 +2,7 @@ import { DobradicaConfig, calcularPosicoesDobradicas } from "./types";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface Props {
   config: DobradicaConfig;
@@ -36,7 +37,6 @@ function PecaPreview({ config }: { config: DobradicaConfig }) {
             </text>
           </g>
         ))}
-        {/* dimension labels */}
         <text x={sw / 2} y={sh + 14} textAnchor="middle" fontSize={9} fill="hsl(var(--muted-foreground))" className="font-mono">
           {larguraPorta}mm
         </text>
@@ -117,6 +117,26 @@ export function DobradicaForm({ config, onChange }: Props) {
             <Input type="number" className="h-8 text-xs" value={config.diametroFresa} readOnly disabled />
           </div>
         </div>
+
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <Checkbox checked={config.cortarPeca} onCheckedChange={v => set("cortarPeca", !!v)} id="cortarDob" />
+            <Label htmlFor="cortarDob" className="text-xs">Cortar peça (contorno)</Label>
+          </div>
+        </div>
+
+        {!config.cortarPeca && (
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label className="text-xs">Afastamento X (mm)</Label>
+              <Input type="number" className="h-8 text-xs" value={config.afastamentoX} onChange={e => set("afastamentoX", +e.target.value)} />
+            </div>
+            <div>
+              <Label className="text-xs">Afastamento Y (mm)</Label>
+              <Input type="number" className="h-8 text-xs" value={config.afastamentoY} onChange={e => set("afastamentoY", +e.target.value)} />
+            </div>
+          </div>
+        )}
 
         <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
           Profundidade: {config.profundidade}mm da superfície | Fresa Forstner Ø{config.diametroFresa}mm

@@ -12,12 +12,18 @@ export interface DobradicaConfig {
   distanciaBordaLateral: number; // default 4mm from side edge
   diametroFresa: number; // 35mm
   profundidade: number; // 11.5mm from surface
+  cortarPeca: boolean;
+  afastamentoX: number;
+  afastamentoY: number;
 }
 
 export interface PrateleiraConfig {
   largura: number;
   altura: number;
   espessura: 15 | 18 | 25;
+  cortarPeca: boolean;
+  afastamentoX: number;
+  afastamentoY: number;
 }
 
 export interface CanalLEDConfig {
@@ -46,6 +52,8 @@ export interface CanalVentilacaoConfig {
   numCanais: number;
   distanciaBordaSuperior: number;
   distanciaBordaInferior: number;
+  distanciaTopos: number; // distance from channel ends to piece edges
+  espacamentoEntreCanais: number; // manual spacing between channels (when not equivalent)
   distribuicaoEquivalente: boolean;
   cortarPeca: boolean;
   afastamentoX: number;
@@ -63,6 +71,9 @@ export const DOBRADICA_DEFAULTS: DobradicaConfig = {
   distanciaBordaLateral: 4,
   diametroFresa: 35,
   profundidade: 11.5,
+  cortarPeca: true,
+  afastamentoX: 0,
+  afastamentoY: 0,
 };
 
 // Shelf standard: 5mm bit, 12mm depth, 4 holes at standard positions
@@ -70,6 +81,9 @@ export const PRATELEIRA_DEFAULTS: PrateleiraConfig = {
   largura: 500,
   altura: 400,
   espessura: 15,
+  cortarPeca: true,
+  afastamentoX: 0,
+  afastamentoY: 0,
 };
 
 export const CANAL_LED_DEFAULTS: CanalLEDConfig = {
@@ -98,6 +112,8 @@ export const CANAL_VENTILACAO_DEFAULTS: CanalVentilacaoConfig = {
   numCanais: 3,
   distanciaBordaSuperior: 60,
   distanciaBordaInferior: 60,
+  distanciaTopos: 20,
+  espacamentoEntreCanais: 100,
   distribuicaoEquivalente: true,
   cortarPeca: true,
   afastamentoX: 0,
@@ -137,28 +153,64 @@ export function calcularFurosPrateleira(config: PrateleiraConfig) {
   ];
 }
 
-/** Calculate ventilation channel Y positions */
+/** 
+ * Calculate ventilation channel positions.
+ * When distribuicaoEquivalente is ON:
+ *   - All gaps (top edge to first channel, between channels, last channel to bottom edge) are EQUAL.
+ *   - distanciaBordaSuperior and distanciaBordaInferior are used as fixed constraints if > 0.
+ * When OFF:
+ *   - Uses espacamentoEntreCanais for manual spacing, starting from distanciaBordaSuperior.
+ */
 export function calcularPosicoesCanaisVentilacao(config: CanalVentilacaoConfig): number[] {
-  const { altura, numCanais, distanciaBordaSuperior, distanciaBordaInferior, distribuicaoEquivalente } = config;
+  const { numCanais, distribuicaoEquivalente, espessuraCanal } = config;
+  
+  // Determine the dimension along which channels are distributed
+  const isHorizontal = config.ladoReferencia === "esquerda" || config.ladoReferencia === "direita";
+  const dimensao = isHorizontal ? config.altura : config.largura;
+  const bordaSup = config.distanciaBordaSuperior;
+  const bordaInf = config.distanciaBordaInferior;
   
   if (numCanais <= 0) return [];
   
   if (distribuicaoEquivalente) {
-    if (distanciaBordaSuperior > 0 || distanciaBordaInferior > 0) {
-      // Fixed edges + distribute between them
-      const topY = distanciaBordaSuperior;
-      const bottomY = altura - distanciaBordaInferior;
-      if (numCanais === 1) return [(topY + bottomY) / 2];
-      const step = (bottomY - topY) / (numCanais - 1);
-      return Array.from({ length: numCanais }, (_, i) => topY + step * i);
+    if (bordaSup > 0 || bordaInf > 0) {
+      // Fixed edges: distribute channels between them with equal gaps
+      const zonaUtil = dimensao - bordaSup - bordaInf;
+      // Total channel width
+      const totalChannelWidth = numCanais * espessuraCanal;
+      // Remaining space for gaps (numCanais + 1 gaps if no fixed edges, but here edges are fixed)
+      // Gaps between channels only: numCanais - 1 gaps
+      // But edges are already defined, so the channels fill the zone with equal gaps between them
+      if (numCanais === 1) {
+        // Center in the usable zone
+        return [bordaSup + zonaUtil / 2];
+      }
+      const gap = (zonaUtil - totalChannelWidth) / (numCanais - 1);
+      return Array.from({ length: numCanais }, (_, i) => 
+        bordaSup + espessuraCanal / 2 + i * (espessuraCanal + gap)
+      );
     } else {
-      // Full equal distribution
-      const step = altura / (numCanais + 1);
-      return Array.from({ length: numCanais }, (_, i) => step * (i + 1));
+      // Full equal distribution: all gaps equal (including edges)
+      // numCanais channels + (numCanais + 1) equal gaps = dimensao
+      // gap = (dimensao - numCanais * espessuraCanal) / (numCanais + 1)
+      const totalChannelWidth = numCanais * espessuraCanal;
+      const gap = (dimensao - totalChannelWidth) / (numCanais + 1);
+      return Array.from({ length: numCanais }, (_, i) => 
+        gap + espessuraCanal / 2 + i * (espessuraCanal + gap)
+      );
     }
   }
   
-  // Manual: just distribute evenly for now
-  const step = altura / (numCanais + 1);
-  return Array.from({ length: numCanais }, (_, i) => step * (i + 1));
+  // Manual: use espacamentoEntreCanais from the top edge
+  const startPos = bordaSup > 0 ? bordaSup + espessuraCanal / 2 : espessuraCanal / 2 + 20;
+  return Array.from({ length: numCanais }, (_, i) => 
+    startPos + i * (config.espacamentoEntreCanais + espessuraCanal)
+  );
+}
+
+/** Calculate the length of ventilation channels based on config */
+export function calcularComprimentoCanal(config: CanalVentilacaoConfig): number {
+  const isHorizontal = config.ladoReferencia === "esquerda" || config.ladoReferencia === "direita";
+  const dimensaoComprimento = isHorizontal ? config.largura : config.altura;
+  return dimensaoComprimento - config.distanciaTopos * 2;
 }

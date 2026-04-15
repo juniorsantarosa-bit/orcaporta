@@ -2,6 +2,7 @@ import { PrateleiraConfig, calcularFurosPrateleira } from "./types";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface Props {
   config: PrateleiraConfig;
@@ -64,6 +65,27 @@ export function PrateleiraForm({ config, onChange }: Props) {
             </SelectContent>
           </Select>
         </div>
+
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <Checkbox checked={config.cortarPeca} onCheckedChange={v => set("cortarPeca", !!v)} id="cortarPrat" />
+            <Label htmlFor="cortarPrat" className="text-xs">Cortar peça (contorno)</Label>
+          </div>
+        </div>
+
+        {!config.cortarPeca && (
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label className="text-xs">Afastamento X (mm)</Label>
+              <Input type="number" className="h-8 text-xs" value={config.afastamentoX} onChange={e => set("afastamentoX", +e.target.value)} />
+            </div>
+            <div>
+              <Label className="text-xs">Afastamento Y (mm)</Label>
+              <Input type="number" className="h-8 text-xs" value={config.afastamentoY} onChange={e => set("afastamentoY", +e.target.value)} />
+            </div>
+          </div>
+        )}
+
         <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
           4 furos padrão | Ø5mm | Prof: 12mm | Recuo: 37mm × 9.5mm das bordas
         </div>
