@@ -82,7 +82,7 @@ export function CuttingPlanReport({ layout }: CuttingPlanReportProps) {
               {piece.bordaDir && <line x1={piece.x + piece.width} y1={piece.y} x2={piece.x + piece.width} y2={piece.y + piece.height} stroke="#D97706" strokeWidth={3} />}
 
               {piece.furos?.map((h, i) => (
-                <circle key={i} cx={piece.x + h.X} cy={piece.y + h.Y}
+                <circle key={i} cx={piece.x + (piece.rotated ? h.Y : h.X)} cy={piece.y + (piece.rotated ? h.X : h.Y)}
                   r={Math.max(h.DIAM / 2, 2)}
                   fill={h.DIAM >= 15 ? "#D97706" : h.DIAM >= 5 ? "#3B82F6" : "#EF4444"}
                   opacity={0.7} />
