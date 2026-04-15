@@ -7,7 +7,7 @@ import { PromobHole, Usinagem } from "@/types/promob";
 import {
   UsinagemAvulsaTipo, DobradicaConfig, PrateleiraConfig, CanalLEDConfig, CanalVentilacaoConfig,
   DOBRADICA_DEFAULTS, PRATELEIRA_DEFAULTS, CANAL_LED_DEFAULTS, CANAL_VENTILACAO_DEFAULTS,
-  calcularPosicoesDobradicas, calcularFurosPrateleira, calcularPosicoesCanaisVentilacao,
+  calcularPosicoesDobradicas, calcularFurosPrateleira, calcularPosicoesCanaisVentilacao, calcularComprimentoCanal,
 } from "./types";
 import { DobradicaForm } from "./DobradicaForm";
 import { PrateleiraForm } from "./PrateleiraForm";
@@ -71,7 +71,7 @@ export function UsinagensAvulsasDialog({ open, onOpenChange, onAddPiece, nextPie
         quantidade: 1,
         bordaInf: true, bordaSup: true, bordaEsq: true, bordaDir: true,
         veio: false,
-        observacao: `Dobradiça lado ${dobradicaCfg.lado}`,
+        observacao: `Dobradiça lado ${dobradicaCfg.lado}${!dobradicaCfg.cortarPeca ? " | Apenas usinagem" : ""}`,
         furos,
         usinagens: [],
       };
@@ -97,7 +97,7 @@ export function UsinagensAvulsasDialog({ open, onOpenChange, onAddPiece, nextPie
         quantidade: 1,
         bordaInf: true, bordaSup: false, bordaEsq: false, bordaDir: false,
         veio: false,
-        observacao: "Prateleira padrão",
+        observacao: `Prateleira padrão${!prateleiraCfg.cortarPeca ? " | Apenas usinagem" : ""}`,
         furos,
         usinagens: [],
       };
@@ -137,14 +137,16 @@ export function UsinagensAvulsasDialog({ open, onOpenChange, onAddPiece, nextPie
     } else if (tipo === "canal_ventilacao") {
       const positions = calcularPosicoesCanaisVentilacao(canalVentCfg);
       const isHoriz = canalVentCfg.ladoReferencia === "esquerda" || canalVentCfg.ladoReferencia === "direita";
+      const comprimentoCanal = calcularComprimentoCanal(canalVentCfg);
 
       const usinagens: Usinagem[] = positions.map(pos => ({
         tipo: "canal" as const,
-        x: isHoriz ? 0 : pos - canalVentCfg.espessuraCanal / 2,
-        y: isHoriz ? pos - canalVentCfg.espessuraCanal / 2 : 0,
+        // pos is center of channel; store top-left corner for rendering
+        x: isHoriz ? canalVentCfg.distanciaTopos : pos - canalVentCfg.espessuraCanal / 2,
+        y: isHoriz ? pos - canalVentCfg.espessuraCanal / 2 : canalVentCfg.distanciaTopos,
         largura: canalVentCfg.espessuraCanal,
         profundidade: canalVentCfg.profundidadeCanal,
-        comprimento: isHoriz ? canalVentCfg.largura : canalVentCfg.altura,
+        comprimento: comprimentoCanal,
         face: "SUP" as const,
         passante: false,
       }));
