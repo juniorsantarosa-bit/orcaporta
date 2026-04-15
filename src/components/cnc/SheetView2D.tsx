@@ -22,9 +22,9 @@ function getPieceColor(idx: number): string {
   return PIECE_COLORS[idx % PIECE_COLORS.length];
 }
 
-function DrillHoleSVG({ hole, pieceX, pieceY }: { hole: PromobHole; pieceX: number; pieceY: number }) {
-  const cx = pieceX + hole.X;
-  const cy = pieceY + hole.Y;
+function DrillHoleSVG({ hole, pieceX, pieceY, rotated }: { hole: PromobHole; pieceX: number; pieceY: number; rotated?: boolean }) {
+  const cx = pieceX + (rotated ? hole.Y : hole.X);
+  const cy = pieceY + (rotated ? hole.X : hole.Y);
   const r = Math.max(hole.DIAM / 2, 2);
   let color = "hsl(var(--destructive))";
   let opacity = 0.8;
@@ -57,9 +57,11 @@ function EdgeBandIndicator({ piece, side }: { piece: PlacedNestingPiece; side: "
   return <rect x={x} y={y} width={w} height={h} fill="hsl(var(--warning))" opacity={0.85} rx={1} />;
 }
 
-function UsinagemSVG({ usinagem, pieceX, pieceY }: { usinagem: Usinagem; pieceX: number; pieceY: number }) {
-  const x = pieceX + (usinagem.x || 0);
-  const y = pieceY + (usinagem.y || 0);
+function UsinagemSVG({ usinagem, pieceX, pieceY, rotated }: { usinagem: Usinagem; pieceX: number; pieceY: number; rotated?: boolean }) {
+  const ux = usinagem.x || 0;
+  const uy = usinagem.y || 0;
+  const x = pieceX + (rotated ? uy : ux);
+  const y = pieceY + (rotated ? ux : uy);
 
   if (usinagem.tipo === "recorte_circular") {
     const r = usinagem.largura / 2;
@@ -74,11 +76,10 @@ function UsinagemSVG({ usinagem, pieceX, pieceY }: { usinagem: Usinagem; pieceX:
   }
 
   if (usinagem.tipo === "canal") {
-    // Horizontal groove
-    const gw = usinagem.comprimento || usinagem.largura;
-    const gh = usinagem.largura || 12;
+    const gw = rotated ? (usinagem.largura || 12) : (usinagem.comprimento || usinagem.largura);
+    const gh = rotated ? (usinagem.comprimento || usinagem.largura) : (usinagem.largura || 12);
     return (
-      <rect x={x} y={y - gh / 2} width={gw} height={gh}
+      <rect x={x} y={y} width={gw} height={gh}
         fill="hsl(200 70% 50% / 0.2)" stroke="hsl(200 70% 50%)" strokeWidth={1} strokeDasharray="3,2" rx={1} />
     );
   }
@@ -390,12 +391,12 @@ export const SheetView2D = forwardRef<SheetView2DHandle, SheetView2DProps>(({ la
                 {piece.bordaDir && <EdgeBandIndicator piece={piece} side="right" />}
 
                 {piece.furos?.map((hole, hi) => (
-                  <DrillHoleSVG key={hi} hole={hole} pieceX={piece.x} pieceY={piece.y} />
+                  <DrillHoleSVG key={hi} hole={hole} pieceX={piece.x} pieceY={piece.y} rotated={piece.rotated} />
                 ))}
 
                 {/* Machining operations (grooves, circular cutouts, etc.) */}
                 {piece.usinagens?.map((u, ui) => (
-                  <UsinagemSVG key={`u-${ui}`} usinagem={u} pieceX={piece.x} pieceY={piece.y} />
+                  <UsinagemSVG key={`u-${ui}`} usinagem={u} pieceX={piece.x} pieceY={piece.y} rotated={piece.rotated} />
                 ))}
 
                 {showDetail && (

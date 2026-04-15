@@ -183,8 +183,8 @@ export function NestingPreview({ layouts, selectedPieceId, onSelectPiece, onLayo
           if (piece.bordaDir) svgPieces += '<line x1="' + (piece.x + piece.width) + '" y1="' + piece.y + '" x2="' + (piece.x + piece.width) + '" y2="' + (piece.y + piece.height) + '" stroke="#D97706" stroke-width="3"/>';
           if (piece.furos && piece.furos.length > 0) {
             piece.furos.forEach((hole: PromobHole) => {
-              const cx = piece.x + hole.X;
-              const cy = piece.y + hole.Y;
+              const cx = piece.x + (piece.rotated ? hole.Y : hole.X);
+              const cy = piece.y + (piece.rotated ? hole.X : hole.Y);
               const r = Math.max(hole.DIAM / 2, 2);
               const holeColor = hole.DIAM >= 15 ? "#D97706" : hole.DIAM >= 5 ? "#3B82F6" : "#EF4444";
               svgPieces += '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="' + holeColor + '" opacity="0.7"/>';

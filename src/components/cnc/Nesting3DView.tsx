@@ -171,7 +171,7 @@ const Scene3D = forwardRef<Nesting3DViewHandle, Nesting3DViewProps>(({ layout, s
         <group key={`${piece.pieceId}-${piece.x}-${piece.y}`}>
           <PieceMesh piece={piece} isSelected={piece.pieceId === selectedPieceId} espessura={layout.espessura} wireframe={wireframe} />
           {piece.furos?.map((hole, hi) => (
-            <DrillHole3D key={hi} x={hole.X} y={hole.Y} diam={hole.DIAM} depth={hole.Z} pieceX={piece.x} pieceY={piece.y} espessura={layout.espessura} wireframe={wireframe} />
+            <DrillHole3D key={hi} x={piece.rotated ? hole.Y : hole.X} y={piece.rotated ? hole.X : hole.Y} diam={hole.DIAM} depth={hole.Z} pieceX={piece.x} pieceY={piece.y} espessura={layout.espessura} wireframe={wireframe} />
           ))}
         </group>
       ))}
