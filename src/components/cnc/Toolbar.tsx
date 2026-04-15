@@ -1,7 +1,7 @@
 import {
   FileUp, FilePlus, FileCode, Layers, Box, Settings, Scissors,
   BarChart3, Grid3X3, FileDown, FileText, Cog, Image, ChevronDown,
-  Loader2, Save, FolderPlus, Calculator, Play,
+  Loader2, Save, FolderPlus, Calculator, Play, Drill,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -76,6 +76,7 @@ export function Toolbar({ config, onConfigChange, onOptimize, onAction, isOptimi
         <ToolbarButton icon={FileUp} label="Importar" onClick={() => act("importarPecas")} />
         <ToolbarButton icon={FileCode} label="DXF" onClick={() => act("importarDXF")} />
         <ToolbarButton icon={Box} label="Materiais" onClick={() => act("materiais")} />
+        <ToolbarButton icon={Drill} label="Usinagens" onClick={() => act("usinagensAvulsas")} accent />
       </ToolbarGroup>
 
       <Separator orientation="vertical" className="h-10 mx-0.5" />

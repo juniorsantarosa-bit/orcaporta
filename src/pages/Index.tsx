@@ -19,6 +19,7 @@ import { SobrasDialog } from "@/components/cnc/dialogs/SobrasDialog";
 import { SimulacaoCNCDialog } from "@/components/cnc/dialogs/SimulacaoCNCDialog";
 import { OrcamentoDialog } from "@/components/cnc/dialogs/OrcamentoDialog";
 import { OptimizationResultDialog } from "@/components/cnc/dialogs/OptimizationResultDialog";
+import { UsinagensAvulsasDialog } from "@/components/cnc/dialogs/usinagens-avulsas/UsinagensAvulsasDialog";
 import {
   ResizableHandle,
   ResizablePanel,
@@ -97,6 +98,7 @@ export default function Index() {
     configGerais: false, layers: false, estrategias: false,
     configMaquinas: false, configBitmap: false, sobras: false,
     optimizationResult: false, orcamento: false, simulacaoCNC: false,
+    usinagensAvulsas: false,
   });
 
   const openDialog = (key: keyof typeof dialogs) => setDialogs((prev) => ({ ...prev, [key]: true }));
@@ -274,6 +276,7 @@ export default function Index() {
       case "exportarRelatorio": handleExportReport(); break;
       case "orcamento": openDialog("orcamento"); break;
       case "simularCNC": openDialog("simulacaoCNC"); break;
+      case "usinagensAvulsas": openDialog("usinagensAvulsas"); break;
       default: break;
     }
   };
@@ -339,6 +342,16 @@ export default function Index() {
         onOpenChange={(v) => v ? openDialog("simulacaoCNC") : closeDialog("simulacaoCNC")}
         layouts={layouts}
         machineConfig={machineConfig}
+      />
+      <UsinagensAvulsasDialog
+        open={dialogs.usinagensAvulsas}
+        onOpenChange={(v) => v ? openDialog("usinagensAvulsas") : closeDialog("usinagensAvulsas")}
+        onAddPiece={(piece) => {
+          setPieces(prev => [...prev, piece]);
+          setLayouts([]);
+          setOptimizationResult(null);
+        }}
+        nextPieceId={pieces.length > 0 ? Math.max(...pieces.map(p => p.id)) + 1 : 1}
       />
       {optimizationResult && (
         <OptimizationResultDialog
