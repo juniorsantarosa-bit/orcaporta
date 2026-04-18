@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { NestingSheet } from "@/types/promob";
 import { Button } from "@/components/ui/button";
 import { ZoomIn, ZoomOut, Maximize, ChevronLeft, ChevronRight } from "lucide-react";
@@ -11,75 +11,48 @@ interface Props {
 
 /** 12 cores claras distintas — espelha SheetView2D original */
 const PIECE_COLORS = [
-  "180 55% 72%", "30 80% 72%", "270 55% 75%", "120 50% 68%",
-  "340 60% 72%", "50 75% 70%", "200 65% 70%", "90 50% 65%",
-  "310 55% 72%", "15 70% 70%", "160 50% 68%", "240 55% 75%",
+  "#A8DADC", "#F4A261", "#C9B1FF", "#8FBC8F",
+  "#F28B82", "#FFD166", "#7EC8E3", "#B5D99C",
+  "#E0A8D0", "#FFB385", "#80CBC4", "#B0A0E8",
 ];
 const getPieceColor = (i: number) => PIECE_COLORS[i % PIECE_COLORS.length];
 
 /**
- * Visualização 2D simples do plano de corte (modo Serra).
- * Mostra peças com labels, cortes guilhotinados e dimensões da chapa.
- * Sem interação de drag, sem geração de plano/etiquetas.
+ * Visualização 2D simples (modo Serra) — replica abordagem do SheetView2D original:
+ * SVG com viewBox em coordenadas reais da chapa + flex centralizado + zoom via CSS scale.
  */
 export function SimpleSheetView({ layouts, selectedPieceId, onSelectPiece }: Props) {
   const [sheetIdx, setSheetIdx] = useState(0);
   const [zoom, setZoom] = useState(1);
-  const [pan, setPan] = useState({ x: 0, y: 0 });
-  const [size, setSize] = useState({ w: 800, h: 600 });
-  const containerRef = useRef<HTMLDivElement>(null);
-  const isDraggingRef = useRef(false);
-  const lastMouseRef = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
     if (sheetIdx >= layouts.length) setSheetIdx(0);
   }, [layouts.length, sheetIdx]);
 
-  // Observa mudanças de tamanho do container (resize de painel, janela, etc.)
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const update = () => {
-      setSize({ w: el.clientWidth || 800, h: el.clientHeight || 600 });
-    };
-    update();
-    const ro = new ResizeObserver(update);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
-
   const sheet = layouts[sheetIdx];
 
-  const handleFit = useCallback(() => {
-    setZoom(1);
-    setPan({ x: 0, y: 0 });
-  }, []);
+  const handleFit = useCallback(() => setZoom(1), []);
 
   if (!sheet) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-muted/30 text-muted-foreground text-sm">
-        <div className="text-center space-y-2">
-          <p>Nenhum plano de corte ainda.</p>
-          <p className="text-xs">Importe peças e clique em <b>Otimizar</b>.</p>
+      <div className="flex flex-col h-full bg-muted/20">
+        <div className="flex items-center gap-2 px-3 py-2 bg-card border-b border-border h-10" />
+        <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">
+          <div className="text-center space-y-2">
+            <p>Nenhum plano de corte ainda.</p>
+            <p className="text-xs">Importe peças e clique em <b>Otimizar</b>.</p>
+          </div>
         </div>
       </div>
     );
   }
 
-  const padding = 60;
-  const containerW = size.w;
-  const containerH = size.h;
-  const scaleX = (containerW - padding * 2) / sheet.sheetWidth;
-  const scaleY = (containerH - padding * 2) / sheet.sheetHeight;
-  const baseScale = Math.min(scaleX, scaleY);
-  const scale = baseScale * zoom;
-  const sheetPxW = sheet.sheetWidth * scale;
-  const sheetPxH = sheet.sheetHeight * scale;
-  const offsetX = (containerW - sheetPxW) / 2 + pan.x;
-  const offsetY = (containerH - sheetPxH) / 2 + pan.y;
+  // viewBox com pequena margem para dimensões e bordas
+  const margin = 30;
+  const vb = `-${margin} -${margin} ${sheet.sheetWidth + margin * 2} ${sheet.sheetHeight + margin * 2}`;
 
   return (
-    <div className="flex-1 flex flex-col bg-muted/20 min-h-0">
+    <div className="flex flex-col h-full bg-muted/20 min-h-0">
       {/* Header com tabs de chapas */}
       <div className="flex items-center gap-2 px-3 py-2 bg-card border-b border-border">
         <Button
@@ -114,10 +87,10 @@ export function SimpleSheetView({ layouts, selectedPieceId, onSelectPiece }: Pro
         </div>
 
         <div className="flex items-center gap-1 ml-2">
-          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setZoom(z => z * 1.2)}>
+          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setZoom(z => Math.min(5, z * 1.2))}>
             <ZoomIn className="h-3.5 w-3.5" />
           </Button>
-          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setZoom(z => z / 1.2)}>
+          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setZoom(z => Math.max(0.3, z / 1.2))}>
             <ZoomOut className="h-3.5 w-3.5" />
           </Button>
           <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={handleFit}>
@@ -126,148 +99,134 @@ export function SimpleSheetView({ layouts, selectedPieceId, onSelectPiece }: Pro
         </div>
       </div>
 
-      {/* Área de desenho */}
-      <div
-        ref={containerRef}
-        className="flex-1 relative overflow-hidden cursor-grab active:cursor-grabbing"
-        onMouseDown={(e) => {
-          isDraggingRef.current = true;
-          lastMouseRef.current = { x: e.clientX, y: e.clientY };
-        }}
-        onMouseMove={(e) => {
-          if (!isDraggingRef.current) return;
-          const dx = e.clientX - lastMouseRef.current.x;
-          const dy = e.clientY - lastMouseRef.current.y;
-          lastMouseRef.current = { x: e.clientX, y: e.clientY };
-          setPan(p => ({ x: p.x + dx, y: p.y + dy }));
-        }}
-        onMouseUp={() => { isDraggingRef.current = false; }}
-        onMouseLeave={() => { isDraggingRef.current = false; }}
-        onWheel={(e) => {
-          e.preventDefault();
-          const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
-          setZoom(z => Math.max(0.2, Math.min(10, z * factor)));
-        }}
-      >
-        <svg
-          width="100%"
-          height="100%"
-          viewBox={`0 0 ${containerW} ${containerH}`}
-          preserveAspectRatio="xMidYMid meet"
-          className="absolute inset-0 block"
+      {/* Área de desenho (flex centralizado, igual ao original) */}
+      <div className="flex-1 overflow-auto p-4 flex items-center justify-center">
+        <div
+          className="origin-center transition-transform duration-150"
+          style={{
+            transform: `scale(${zoom})`,
+            // Aspecto da chapa, ocupando o máximo do container
+            width: "min(95%, 90vh * " + (sheet.sheetWidth / sheet.sheetHeight) + ")",
+            aspectRatio: `${sheet.sheetWidth} / ${sheet.sheetHeight}`,
+            maxHeight: "95%",
+          }}
         >
-          {/* Chapa */}
-          <rect
-            x={offsetX}
-            y={offsetY}
-            width={sheetPxW}
-            height={sheetPxH}
-            fill="hsl(var(--card))"
-            stroke="hsl(var(--border))"
-            strokeWidth={2}
-          />
+          <svg
+            viewBox={vb}
+            preserveAspectRatio="xMidYMid meet"
+            className="w-full h-full block"
+          >
+            {/* Chapa */}
+            <rect
+              x={0}
+              y={0}
+              width={sheet.sheetWidth}
+              height={sheet.sheetHeight}
+              fill="hsl(var(--card))"
+              stroke="hsl(var(--border))"
+              strokeWidth={3}
+            />
 
-          {/* Peças (origem SVG: top-left; flip Y para origem inferior) */}
-          {sheet.pieces.map((p, i) => {
-            const px = offsetX + p.x * scale;
-            const py = offsetY + sheetPxH - (p.y + p.height) * scale;
-            const pw = p.width * scale;
-            const ph = p.height * scale;
-            const fontSize = Math.max(9, Math.min(16, Math.min(pw, ph) / 8));
-            const color = getPieceColor(i);
-            const isSelected = selectedPieceId !== null && selectedPieceId !== undefined && p.pieceId === selectedPieceId;
+            {/* Peças (origem inferior — flip Y) */}
+            {sheet.pieces.map((p, i) => {
+              const px = p.x;
+              const py = sheet.sheetHeight - (p.y + p.height);
+              const color = getPieceColor(i);
+              const isSelected =
+                selectedPieceId !== null &&
+                selectedPieceId !== undefined &&
+                p.pieceId === selectedPieceId;
 
-            return (
-              <g
-                key={`${p.pieceId}-${i}`}
-                style={{ cursor: onSelectPiece ? "pointer" : "default" }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (onSelectPiece && p.pieceId !== undefined) onSelectPiece(p.pieceId);
-                }}
-              >
-                <rect
-                  x={px}
-                  y={py}
-                  width={pw}
-                  height={ph}
-                  fill={isSelected ? `hsl(50 95% 60% / 0.55)` : `hsl(${color} / 0.55)`}
-                  stroke={isSelected ? "hsl(50 95% 55%)" : `hsl(${color})`}
-                  strokeWidth={isSelected ? 2.5 : 1}
-                />
-                {/* Furos */}
-                {(p.furos || []).map((h, hi) => {
-                  const hx = px + h.X * scale;
-                  const hy = py + ph - h.Y * scale;
-                  const r = Math.max(2, (h.DIAM / 2) * scale);
-                  let holeColor = "hsl(var(--destructive))";
-                  let opacity = 0.8;
-                  if (h.DIAM >= 15) { holeColor = "hsl(45 95% 55%)"; opacity = 0.9; }
-                  else if (h.DIAM >= 5) { holeColor = "hsl(217 91% 50%)"; }
-                  return (
-                    <circle
-                      key={hi}
-                      cx={hx}
-                      cy={hy}
-                      r={r}
-                      fill={holeColor}
-                      opacity={opacity}
-                    />
-                  );
-                })}
-                {/* Label (número sequencial + dimensões) */}
-                {pw > 30 && ph > 20 && (
-                  <>
-                    <text
-                      x={px + pw / 2}
-                      y={py + ph / 2 - 2}
-                      textAnchor="middle"
-                      fontSize={fontSize}
-                      fontWeight="700"
-                      fill="hsl(0 0% 10%)"
-                      pointerEvents="none"
-                    >
-                      {p.label}
-                    </text>
-                    {pw > 80 && ph > 40 && (
+              const fontSize = Math.min(p.width / 6, p.height / 4, 60);
+              const fontSize2 = Math.min(p.width / 10, p.height / 6, 28);
+
+              return (
+                <g
+                  key={`${p.pieceId}-${i}`}
+                  style={{ cursor: onSelectPiece ? "pointer" : "default" }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (onSelectPiece && p.pieceId !== undefined) onSelectPiece(p.pieceId);
+                  }}
+                >
+                  <rect
+                    x={px}
+                    y={py}
+                    width={p.width}
+                    height={p.height}
+                    fill={isSelected ? "#FACC15" : color}
+                    fillOpacity={isSelected ? 0.85 : 0.75}
+                    stroke={isSelected ? "#CA8A04" : "#444"}
+                    strokeWidth={isSelected ? 6 : 2}
+                    rx={2}
+                  />
+                  {/* Furos */}
+                  {(p.furos || []).map((h, hi) => {
+                    const cx = px + h.X;
+                    const cy = py + p.height - h.Y;
+                    const r = Math.max(h.DIAM / 2, 3);
+                    const holeColor = h.DIAM >= 15 ? "#D97706" : h.DIAM >= 5 ? "#3B82F6" : "#EF4444";
+                    return (
+                      <circle key={hi} cx={cx} cy={cy} r={r} fill={holeColor} opacity={0.75} />
+                    );
+                  })}
+                  {/* Label */}
+                  {p.width > 60 && p.height > 30 && (
+                    <>
                       <text
-                        x={px + pw / 2}
-                        y={py + ph / 2 + fontSize}
+                        x={px + p.width / 2}
+                        y={py + p.height / 2 - 4}
                         textAnchor="middle"
-                        fontSize={fontSize * 0.7}
-                        fill="hsl(0 0% 25%)"
+                        dominantBaseline="central"
+                        fontSize={fontSize}
+                        fontWeight="700"
+                        fill="#1a1a1a"
                         pointerEvents="none"
                       >
-                        {Math.round(p.width)}×{Math.round(p.height)}
+                        {p.label}
                       </text>
-                    )}
-                  </>
-                )}
-              </g>
-            );
-          })}
+                      {p.width > 100 && p.height > 60 && (
+                        <text
+                          x={px + p.width / 2}
+                          y={py + p.height / 2 + fontSize * 0.7}
+                          textAnchor="middle"
+                          dominantBaseline="central"
+                          fontSize={fontSize2}
+                          fill="#444"
+                          pointerEvents="none"
+                        >
+                          {Math.round(p.width)}×{Math.round(p.height)}
+                        </text>
+                      )}
+                    </>
+                  )}
+                </g>
+              );
+            })}
 
-          {/* Dimensões da chapa */}
-          <text
-            x={offsetX + sheetPxW / 2}
-            y={offsetY - 8}
-            textAnchor="middle"
-            fontSize={11}
-            fill="hsl(var(--muted-foreground))"
-          >
-            {sheet.sheetWidth} mm
-          </text>
-          <text
-            x={offsetX - 8}
-            y={offsetY + sheetPxH / 2}
-            textAnchor="middle"
-            fontSize={11}
-            fill="hsl(var(--muted-foreground))"
-            transform={`rotate(-90 ${offsetX - 8} ${offsetY + sheetPxH / 2})`}
-          >
-            {sheet.sheetHeight} mm
-          </text>
-        </svg>
+            {/* Dimensões da chapa */}
+            <text
+              x={sheet.sheetWidth / 2}
+              y={-10}
+              textAnchor="middle"
+              fontSize={18}
+              fill="hsl(var(--muted-foreground))"
+            >
+              {sheet.sheetWidth} mm
+            </text>
+            <text
+              x={-10}
+              y={sheet.sheetHeight / 2}
+              textAnchor="middle"
+              dominantBaseline="central"
+              fontSize={18}
+              fill="hsl(var(--muted-foreground))"
+              transform={`rotate(-90, -10, ${sheet.sheetHeight / 2})`}
+            >
+              {sheet.sheetHeight} mm
+            </text>
+          </svg>
+        </div>
       </div>
     </div>
   );
