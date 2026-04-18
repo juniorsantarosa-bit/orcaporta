@@ -154,7 +154,10 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts }: Props) {
           Subtotal Furos: <b>R$ ${totals.valorFuros.toFixed(2)}</b>
         </div>
       </div>
-      <div class="grand">VALOR TOTAL: R$ ${totals.total.toFixed(2)}</div>
+      <div class="grand" style="display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:13px;font-weight:600;color:#555">Total sem furos: R$ ${(totals.total - totals.valorFuros).toFixed(2)}</span>
+        <span>Total com furos: R$ ${totals.total.toFixed(2)}</span>
+      </div>
       <div class="footer">Orçamento gerado em ${today} — Válido por 30 dias</div>
     </body></html>`);
     w.document.close();
