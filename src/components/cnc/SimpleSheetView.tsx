@@ -5,14 +5,24 @@ import { ZoomIn, ZoomOut, Maximize, ChevronLeft, ChevronRight } from "lucide-rea
 
 interface Props {
   layouts: NestingSheet[];
+  selectedPieceId?: number | null;
+  onSelectPiece?: (id: number) => void;
 }
+
+/** 12 cores claras distintas — espelha SheetView2D original */
+const PIECE_COLORS = [
+  "180 55% 72%", "30 80% 72%", "270 55% 75%", "120 50% 68%",
+  "340 60% 72%", "50 75% 70%", "200 65% 70%", "90 50% 65%",
+  "310 55% 72%", "15 70% 70%", "160 50% 68%", "240 55% 75%",
+];
+const getPieceColor = (i: number) => PIECE_COLORS[i % PIECE_COLORS.length];
 
 /**
  * Visualização 2D simples do plano de corte (modo Serra).
  * Mostra peças com labels, cortes guilhotinados e dimensões da chapa.
  * Sem interação de drag, sem geração de plano/etiquetas.
  */
-export function SimpleSheetView({ layouts }: Props) {
+export function SimpleSheetView({ layouts, selectedPieceId, onSelectPiece }: Props) {
   const [sheetIdx, setSheetIdx] = useState(0);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -129,7 +139,6 @@ export function SimpleSheetView({ layouts }: Props) {
           width={containerW}
           height={containerH}
           className="absolute inset-0"
-          style={{ pointerEvents: "none" }}
         >
           {/* Chapa */}
           <rect
@@ -149,36 +158,48 @@ export function SimpleSheetView({ layouts }: Props) {
             const pw = p.width * scale;
             const ph = p.height * scale;
             const fontSize = Math.max(9, Math.min(16, Math.min(pw, ph) / 8));
+            const color = getPieceColor(i);
+            const isSelected = selectedPieceId !== null && selectedPieceId !== undefined && p.pieceId === selectedPieceId;
 
             return (
-              <g key={`${p.pieceId}-${i}`}>
+              <g
+                key={`${p.pieceId}-${i}`}
+                style={{ cursor: onSelectPiece ? "pointer" : "default" }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (onSelectPiece && p.pieceId !== undefined) onSelectPiece(p.pieceId);
+                }}
+              >
                 <rect
                   x={px}
                   y={py}
                   width={pw}
                   height={ph}
-                  fill="hsl(var(--primary) / 0.18)"
-                  stroke="hsl(var(--primary))"
-                  strokeWidth={1}
+                  fill={isSelected ? `hsl(50 95% 60% / 0.55)` : `hsl(${color} / 0.55)`}
+                  stroke={isSelected ? "hsl(50 95% 55%)" : `hsl(${color})`}
+                  strokeWidth={isSelected ? 2.5 : 1}
                 />
                 {/* Furos */}
                 {(p.furos || []).map((h, hi) => {
                   const hx = px + h.X * scale;
                   const hy = py + ph - h.Y * scale;
                   const r = Math.max(2, (h.DIAM / 2) * scale);
+                  let holeColor = "hsl(var(--destructive))";
+                  let opacity = 0.8;
+                  if (h.DIAM >= 15) { holeColor = "hsl(45 95% 55%)"; opacity = 0.9; }
+                  else if (h.DIAM >= 5) { holeColor = "hsl(217 91% 50%)"; }
                   return (
                     <circle
                       key={hi}
                       cx={hx}
                       cy={hy}
                       r={r}
-                      fill="hsl(var(--destructive) / 0.6)"
-                      stroke="hsl(var(--destructive))"
-                      strokeWidth={0.5}
+                      fill={holeColor}
+                      opacity={opacity}
                     />
                   );
                 })}
-                {/* Label */}
+                {/* Label (número sequencial + dimensões) */}
                 {pw > 30 && ph > 20 && (
                   <>
                     <text
@@ -187,7 +208,8 @@ export function SimpleSheetView({ layouts }: Props) {
                       textAnchor="middle"
                       fontSize={fontSize}
                       fontWeight="700"
-                      fill="hsl(var(--foreground))"
+                      fill="hsl(0 0% 10%)"
+                      pointerEvents="none"
                     >
                       {p.label}
                     </text>
@@ -197,7 +219,8 @@ export function SimpleSheetView({ layouts }: Props) {
                         y={py + ph / 2 + fontSize}
                         textAnchor="middle"
                         fontSize={fontSize * 0.7}
-                        fill="hsl(var(--muted-foreground))"
+                        fill="hsl(0 0% 25%)"
+                        pointerEvents="none"
                       >
                         {Math.round(p.width)}×{Math.round(p.height)}
                       </text>

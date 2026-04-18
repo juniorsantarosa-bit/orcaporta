@@ -3,20 +3,26 @@ import { Zap } from "lucide-react";
 import { toast } from "sonner";
 import { SimpleToolbar } from "@/components/cnc/SimpleToolbar";
 import { SimpleSheetView } from "@/components/cnc/SimpleSheetView";
+import { SimplePartsTable } from "@/components/cnc/SimplePartsTable";
 import { ImportarPecasDialog } from "@/components/cnc/dialogs/ImportarPecasDialog";
 import { OrcamentoSimplesDialog } from "@/components/cnc/dialogs/OrcamentoSimplesDialog";
 import { CuttingPiece } from "@/types/cutting";
 import { NestingSheet } from "@/types/promob";
 import { optimizeSerra } from "@/lib/serraOptimizer";
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable";
 
 /**
  * Versão simplificada — apenas para geração de orçamentos.
- * Modo serra fixo. Sem edição, configurações, sobras, simulador ou gerador.
- * Fluxo: Importar peças → Otimizar → Visualizar 2D → Gerar orçamento.
+ * Modo serra fixo. Layout split: lista de peças à esquerda, plano de corte 2D à direita.
  */
 export default function OrcamentoSimples() {
   const [pieces, setPieces] = useState<CuttingPiece[]>([]);
   const [layouts, setLayouts] = useState<NestingSheet[]>([]);
+  const [selectedPieceId, setSelectedPieceId] = useState<number | null>(null);
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [showOrcamento, setShowOrcamento] = useState(false);
@@ -24,6 +30,7 @@ export default function OrcamentoSimples() {
   const handleImport = useCallback((newPieces: CuttingPiece[]) => {
     setPieces(newPieces);
     setLayouts([]);
+    setSelectedPieceId(newPieces.length > 0 ? newPieces[0].id : null);
     toast.success(`${newPieces.length} peças importadas.`);
   }, []);
 
@@ -82,7 +89,26 @@ export default function OrcamentoSimples() {
         hasLayouts={layouts.length > 0}
       />
 
-      <SimpleSheetView layouts={layouts} />
+      <div className="flex-1 min-h-0">
+        <ResizablePanelGroup direction="horizontal">
+          <ResizablePanel defaultSize={30} minSize={20}>
+            <SimplePartsTable
+              pieces={pieces}
+              selectedId={selectedPieceId}
+              onSelect={setSelectedPieceId}
+              layouts={layouts}
+            />
+          </ResizablePanel>
+          <ResizableHandle withHandle />
+          <ResizablePanel defaultSize={70} minSize={40}>
+            <SimpleSheetView
+              layouts={layouts}
+              selectedPieceId={selectedPieceId}
+              onSelectPiece={setSelectedPieceId}
+            />
+          </ResizablePanel>
+        </ResizablePanelGroup>
+      </div>
 
       <ImportarPecasDialog
         open={showImport}
