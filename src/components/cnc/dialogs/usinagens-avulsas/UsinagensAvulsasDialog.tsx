@@ -74,6 +74,7 @@ export function UsinagensAvulsasDialog({ open, onOpenChange, onAddPiece, nextPie
         observacao: `Dobradiça lado ${dobradicaCfg.lado}${!dobradicaCfg.cortarPeca ? " | Apenas usinagem" : ""}`,
         furos,
         usinagens: [],
+        noContour: !dobradicaCfg.cortarPeca,
       };
     } else if (tipo === "prateleira") {
       const holes = calcularFurosPrateleira(prateleiraCfg);
@@ -100,6 +101,7 @@ export function UsinagensAvulsasDialog({ open, onOpenChange, onAddPiece, nextPie
         observacao: `Prateleira padrão${!prateleiraCfg.cortarPeca ? " | Apenas usinagem" : ""}`,
         furos,
         usinagens: [],
+        noContour: !prateleiraCfg.cortarPeca,
       };
     } else if (tipo === "canal_led") {
       const usinagens: Usinagem[] = [{
@@ -133,6 +135,7 @@ export function UsinagensAvulsasDialog({ open, onOpenChange, onAddPiece, nextPie
         observacao: `Canal LED ${canalLedCfg.ladoReferencia}${!canalLedCfg.cortarPeca ? " | Apenas usinagem" : ""}`,
         furos: [],
         usinagens,
+        noContour: !canalLedCfg.cortarPeca,
       };
     } else if (tipo === "canal_ventilacao") {
       const positions = calcularPosicoesCanaisVentilacao(canalVentCfg);
@@ -166,6 +169,7 @@ export function UsinagensAvulsasDialog({ open, onOpenChange, onAddPiece, nextPie
         observacao: `Ventilação${!canalVentCfg.cortarPeca ? " | Apenas usinagem" : ""}`,
         furos: [],
         usinagens,
+        noContour: !canalVentCfg.cortarPeca,
       };
     } else return;
 
