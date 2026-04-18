@@ -34,6 +34,15 @@ export default function OrcamentoSimples() {
     toast.success(`${newPieces.length} peças importadas.`);
   }, []);
 
+  const handleNew = useCallback(() => {
+    if (pieces.length === 0 && layouts.length === 0) return;
+    if (!confirm("Iniciar um novo projeto? As peças e o plano atual serão descartados.")) return;
+    setPieces([]);
+    setLayouts([]);
+    setSelectedPieceId(null);
+    toast.info("Novo projeto iniciado.");
+  }, [pieces.length, layouts.length]);
+
   const handleOptimize = useCallback(() => {
     if (pieces.length === 0) {
       toast.error("Importe peças antes de otimizar.");
