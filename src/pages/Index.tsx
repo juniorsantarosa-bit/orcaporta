@@ -348,7 +348,7 @@ export default function Index() {
       <ImportarPecasDialog open={dialogs.importarPecas} onOpenChange={(v) => v ? openDialog("importarPecas") : closeDialog("importarPecas")} onImport={handleImportPieces} />
       <ImportarDXFDialog open={dialogs.importarDXF || dialogs.importarChapa} onOpenChange={(v) => { closeDialog("importarDXF"); closeDialog("importarChapa"); if (v) openDialog("importarDXF"); }} onImport={() => {}} />
       <SobrasDialog open={dialogs.sobras} onOpenChange={(v) => v ? openDialog("sobras") : closeDialog("sobras")} sobras={sobras} onSave={setSobras} />
-      <OrcamentoDialog open={dialogs.orcamento} onOpenChange={(v) => v ? openDialog("orcamento") : closeDialog("orcamento")} layouts={layouts} companyLogo={generalConfig.companyLogo} />
+      <OrcamentoDialog open={dialogs.orcamento} onOpenChange={(v) => v ? openDialog("orcamento") : closeDialog("orcamento")} layouts={layouts} companyLogo={generalConfig.companyLogo} cutMode={cutMode} />
       <SimulacaoCNCDialog
         open={dialogs.simulacaoCNC}
         onOpenChange={(v) => v ? openDialog("simulacaoCNC") : closeDialog("simulacaoCNC")}

@@ -1,159 +1,132 @@
 /**
  * Serra (guillotine) optimizer.
- * Uses Best-Fit Decreasing Height (BFDH) — strips chosen by best fit, with rotation.
- * Significantly better packing than naive NFDH for panel saws.
+ *
+ * All cuts go from one edge of the panel to the other (full-width or full-height),
+ * matching how a panel/table saw works. Uses recursive guillotine partitioning,
+ * trying both horizontal-first and vertical-first splits at each step and picking
+ * whichever places more pieces. This is significantly more efficient than BFDH
+ * because remainder regions are themselves recursively packed.
  */
 import { CuttingPiece } from "@/types/cutting";
-import { NestingSheet, PlacedNestingPiece } from "@/types/promob";
+import { NestingSheet } from "@/types/promob";
 
 export interface SerraOptions {
   sheetWidth: number;
   sheetHeight: number;
   espessura: number;
   material: string;
-  gap: number;
+  gap: number; // kerf / blade thickness
   refiloX: number;
   refiloY: number;
   allowRotation: boolean;
 }
 
+interface Rect {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
 interface ExpandedPiece {
   piece: CuttingPiece;
+  width: number;
+  height: number;
+  index: number;
+}
+
+interface PlacedResult {
+  ep: ExpandedPiece;
+  x: number;
+  y: number;
   w: number;
   h: number;
   rotated: boolean;
-  index: number;
-  placed: boolean;
 }
 
-interface Strip {
-  y: number;
-  height: number;
-  usedWidth: number; // includes refiloX offset
-  pieces: { ep: ExpandedPiece; x: number; w: number; h: number; rotated: boolean }[];
-}
-
-function expandPieces(pieces: CuttingPiece[]): ExpandedPiece[] {
-  const out: ExpandedPiece[] = [];
-  let idx = 0;
-  for (const p of pieces) {
-    for (let i = 0; i < p.quantidade; i++) {
-      // Normalize so longer side is height (helps BFDH)
-      const w = p.largura;
-      const h = p.altura;
-      out.push({ piece: p, w, h, rotated: false, index: idx++, placed: false });
-    }
-  }
-  return out;
-}
+let globalLabel = 1;
 
 /**
- * Pack a single sheet using Best-Fit Decreasing Height.
- * Returns indices of placed pieces and the placement list.
+ * Recursive guillotine packer: places one best-fit piece in `rect`, then splits
+ * the remainder into two sub-rectangles. Tries horizontal-first and vertical-first
+ * splits and returns the variant that places the most pieces.
  */
-function packSheet(
-  pool: ExpandedPiece[],
-  opts: SerraOptions,
-): PlacedNestingPiece[] {
-  const usableW = opts.sheetWidth - opts.refiloX * 2;
-  const usableH = opts.sheetHeight - opts.refiloY * 2;
-  const placed: PlacedNestingPiece[] = [];
-  const strips: Strip[] = [];
+function guillotinePack(
+  remaining: ExpandedPiece[],
+  rect: Rect,
+  gap: number,
+  allowRotation: boolean,
+): PlacedResult[] {
+  if (remaining.length === 0 || rect.w < 10 || rect.h < 10) return [];
 
-  // Helper: orient a piece so it fits a given strip height (or returns null)
-  const orientForStrip = (ep: ExpandedPiece, stripH: number): { w: number; h: number; rotated: boolean } | null => {
-    if (ep.h <= stripH) return { w: ep.w, h: ep.h, rotated: false };
-    if (opts.allowRotation && ep.w <= stripH) return { w: ep.h, h: ep.w, rotated: true };
-    return null;
-  };
+  // Pick the piece that fits and leaves the least area waste in this rect.
+  let bestIdx = -1;
+  let bestRotated = false;
+  let bestWaste = Infinity;
 
-  // Sort pieces by max(w,h) desc — biggest first
-  const sortable = pool
-    .filter(p => !p.placed)
-    .slice()
-    .sort((a, b) => Math.max(b.w, b.h) - Math.max(a.w, a.h) || (b.w * b.h) - (a.w * a.h));
-
-  let labelN = 1;
-  let totalUsedHeight = 0; // refiloY consumed by strips so far
-
-  for (const ep of sortable) {
-    if (ep.placed) continue;
-
-    // Try to fit in existing strips (best fit by remaining width)
-    let bestStrip: Strip | null = null;
-    let bestOrient: { w: number; h: number; rotated: boolean } | null = null;
-    let bestRemaining = Infinity;
-
-    for (const s of strips) {
-      const orient = orientForStrip(ep, s.height);
-      if (!orient) continue;
-      const remainingW = (opts.refiloX + usableW) - s.usedWidth;
-      const needed = orient.w + (s.pieces.length > 0 ? opts.gap : 0);
-      if (needed > remainingW) continue;
-      const leftover = remainingW - needed;
-      if (leftover < bestRemaining) {
-        bestRemaining = leftover;
-        bestStrip = s;
-        bestOrient = orient;
+  for (let i = 0; i < remaining.length; i++) {
+    const ep = remaining[i];
+    if (ep.width <= rect.w && ep.height <= rect.h) {
+      const waste = rect.w * rect.h - ep.width * ep.height;
+      if (waste < bestWaste) {
+        bestWaste = waste;
+        bestIdx = i;
+        bestRotated = false;
       }
     }
-
-    if (bestStrip && bestOrient) {
-      const x = bestStrip.usedWidth + (bestStrip.pieces.length > 0 ? opts.gap : 0);
-      bestStrip.pieces.push({ ep, x, w: bestOrient.w, h: bestOrient.h, rotated: bestOrient.rotated });
-      bestStrip.usedWidth = x + bestOrient.w;
-      ep.placed = true;
-      continue;
-    }
-
-    // Create a new strip if there's vertical room
-    // Try original orientation first
-    let candidates: { w: number; h: number; rotated: boolean }[] = [{ w: ep.w, h: ep.h, rotated: false }];
-    if (opts.allowRotation) candidates.push({ w: ep.h, h: ep.w, rotated: true });
-    // Choose the orientation that fits and minimizes height (less wasted strip height)
-    candidates = candidates.filter(c => c.w <= usableW && totalUsedHeight + c.h <= usableH);
-    if (candidates.length === 0) continue;
-    candidates.sort((a, b) => a.h - b.h);
-    const orient = candidates[0];
-
-    const newStrip: Strip = {
-      y: opts.refiloY + totalUsedHeight,
-      height: orient.h,
-      usedWidth: opts.refiloX + orient.w,
-      pieces: [{ ep, x: opts.refiloX, w: orient.w, h: orient.h, rotated: orient.rotated }],
-    };
-    strips.push(newStrip);
-    totalUsedHeight += orient.h + opts.gap;
-    ep.placed = true;
-  }
-
-  // Emit placements
-  for (const s of strips) {
-    for (const item of s.pieces) {
-      placed.push({
-        pieceId: item.ep.piece.id,
-        label: String(labelN++),
-        x: item.x,
-        y: s.y,
-        width: item.w,
-        height: item.h,
-        rotated: item.rotated,
-        descricao: item.ep.piece.descricao,
-        furos: item.ep.piece.furos || [],
-        usinagens: item.ep.piece.usinagens || [],
-        bordaSup: item.ep.piece.bordaSup,
-        bordaInf: item.ep.piece.bordaInf,
-        bordaEsq: item.ep.piece.bordaEsq,
-        bordaDir: item.ep.piece.bordaDir,
-        cliente: item.ep.piece.cliente,
-        ambiente: "",
-        moduloDesc: "",
-        espessura: item.ep.piece.espessura,
-        noContour: item.ep.piece.noContour,
-      });
+    if (allowRotation && ep.width !== ep.height) {
+      if (ep.height <= rect.w && ep.width <= rect.h) {
+        const waste = rect.w * rect.h - ep.width * ep.height;
+        if (waste < bestWaste) {
+          bestWaste = waste;
+          bestIdx = i;
+          bestRotated = true;
+        }
+      }
     }
   }
-  return placed;
+
+  if (bestIdx === -1) return [];
+
+  const ep = remaining[bestIdx];
+  const pw = bestRotated ? ep.height : ep.width;
+  const ph = bestRotated ? ep.width : ep.height;
+
+  const placed: PlacedResult = {
+    ep,
+    x: rect.x,
+    y: rect.y,
+    w: pw,
+    h: ph,
+    rotated: bestRotated,
+  };
+
+  const rest = [...remaining];
+  rest.splice(bestIdx, 1);
+
+  const results: PlacedResult[][] = [];
+
+  // Horizontal-first split
+  {
+    const r1: Rect = { x: rect.x + pw + gap, y: rect.y, w: rect.w - pw - gap, h: ph };
+    const r2: Rect = { x: rect.x, y: rect.y + ph + gap, w: rect.w, h: rect.h - ph - gap };
+    const p1 = guillotinePack([...rest], r1, gap, allowRotation);
+    const leftover1 = rest.filter(e => !p1.some(p => p.ep === e));
+    const p2 = guillotinePack(leftover1, r2, gap, allowRotation);
+    results.push([placed, ...p1, ...p2]);
+  }
+
+  // Vertical-first split
+  {
+    const r1: Rect = { x: rect.x, y: rect.y + ph + gap, w: pw, h: rect.h - ph - gap };
+    const r2: Rect = { x: rect.x + pw + gap, y: rect.y, w: rect.w - pw - gap, h: rect.h };
+    const p1 = guillotinePack([...rest], r1, gap, allowRotation);
+    const leftover1 = rest.filter(e => !p1.some(p => p.ep === e));
+    const p2 = guillotinePack(leftover1, r2, gap, allowRotation);
+    results.push([placed, ...p1, ...p2]);
+  }
+
+  return results.reduce((best, curr) => (curr.length > best.length ? curr : best), results[0]);
 }
 
 export function optimizeSerra(
@@ -172,55 +145,147 @@ export function optimizeSerra(
     ...options,
   };
 
-  // Group by material+espessura so we don't mix
-  const groups = new Map<string, CuttingPiece[]>();
-  for (const p of pieces) {
-    const key = `${p.material}__${p.espessura}`;
-    if (!groups.has(key)) groups.set(key, []);
-    groups.get(key)!.push(p);
+  globalLabel = 1;
+
+  // Group by material + thickness
+  const byMaterial = new Map<string, CuttingPiece[]>();
+  for (const piece of pieces) {
+    const normalizedMaterial = piece.material.trim().toLowerCase();
+    const key = `${normalizedMaterial}|${piece.espessura}`;
+    if (!byMaterial.has(key)) byMaterial.set(key, []);
+    byMaterial.get(key)!.push(piece);
   }
 
-  const sheets: NestingSheet[] = [];
-  for (const [, groupPieces] of groups) {
-    const pool = expandPieces(groupPieces);
+  const allSheets: NestingSheet[] = [];
+  let sheetIdCounter = 1;
+
+  for (const [, matPieces] of byMaterial) {
+    const material = matPieces[0].material;
+    const espessura = matPieces[0].espessura;
+
+    // Expand quantities
+    const expanded: ExpandedPiece[] = [];
+    let idx = 0;
+    for (const piece of matPieces) {
+      const qty = Math.max(1, Math.round(piece.quantidade || 1));
+      for (let q = 0; q < qty; q++) {
+        expanded.push({ piece, width: piece.largura, height: piece.altura, index: idx++ });
+      }
+    }
+
+    // Sort by area desc — biggest pieces first
+    let remaining = [...expanded].sort((a, b) => (b.width * b.height) - (a.width * a.height));
+
+    const usableW = opts.sheetWidth - opts.refiloX * 2;
+    const usableH = opts.sheetHeight - opts.refiloY * 2;
+
     let safety = 0;
-    while (pool.some(p => !p.placed) && safety++ < 200) {
-      const placed = packSheet(pool, {
-        ...opts,
-        material: groupPieces[0].material,
-        espessura: groupPieces[0].espessura,
-      });
-      if (placed.length === 0) break;
+    while (remaining.length > 0 && safety++ < 200) {
+      const rect: Rect = { x: 0, y: 0, w: usableW, h: usableH };
+      const placed = guillotinePack(remaining, rect, opts.gap, opts.allowRotation);
+
+      if (placed.length === 0) {
+        console.warn(`[Serra] ${remaining.length} peças não cabem na chapa ${opts.sheetWidth}x${opts.sheetHeight}`);
+        break;
+      }
+
+      const placedSet = new Set(placed.map(p => p.ep));
+      remaining = remaining.filter(e => !placedSet.has(e));
+
       const totalArea = opts.sheetWidth * opts.sheetHeight;
-      const usedArea = placed.reduce((a, p) => a + p.width * p.height, 0);
-      sheets.push({
-        id: sheets.length + 1,
-        codCorte: sheets.length + 1,
+      const usedArea = placed.reduce((a, p) => a + p.w * p.h, 0);
+
+      allSheets.push({
+        id: sheetIdCounter,
+        codCorte: 7000 + sheetIdCounter,
         sheetWidth: opts.sheetWidth,
         sheetHeight: opts.sheetHeight,
-        material: groupPieces[0].material,
-        espessura: groupPieces[0].espessura,
-        pieces: placed,
+        espessura,
+        material,
         efficiency: (usedArea / totalArea) * 100,
+        pieces: placed.map(p => ({
+          pieceId: p.ep.piece.id,
+          x: p.x + opts.refiloX,
+          y: p.y + opts.refiloY,
+          width: p.w,
+          height: p.h,
+          rotated: p.rotated,
+          label: String(globalLabel++),
+          descricao: p.ep.piece.descricao,
+          furos: p.ep.piece.furos || [],
+          usinagens: p.ep.piece.usinagens || [],
+          bordaSup: p.ep.piece.bordaSup,
+          bordaInf: p.ep.piece.bordaInf,
+          bordaEsq: p.ep.piece.bordaEsq,
+          bordaDir: p.ep.piece.bordaDir,
+          cliente: p.ep.piece.cliente,
+          ambiente: p.ep.piece.observacao || "",
+          moduloDesc: p.ep.piece.projeto,
+          espessura,
+          noContour: p.ep.piece.noContour,
+        })),
       });
+      sheetIdCounter++;
     }
   }
 
-  return sheets;
+  return allSheets;
 }
 
-/** Count guillotine cuts (transversal strips + longitudinal divisions per strip). */
+/**
+ * Count guillotine cuts on a sheet. Each cut goes edge-to-edge (full-width or
+ * full-height). Cuts within `gap` distance of each other are merged. Adds refilo
+ * (edge trim) cuts when pieces sit at sheet borders.
+ */
 export function countSerraCuts(sheet: NestingSheet): number {
-  if (sheet.pieces.length === 0) return 0;
-  const rows = new Map<number, number>();
-  for (const p of sheet.pieces) {
-    rows.set(p.y, (rows.get(p.y) || 0) + 1);
+  const pieces = sheet.pieces;
+  if (pieces.length === 0) return 0;
+
+  const hCuts = new Set<number>();
+  const vCuts = new Set<number>();
+
+  const refiloX = 8;
+  const refiloY = 8;
+
+  let hasTop = false, hasBottom = false, hasLeft = false, hasRight = false;
+
+  for (const p of pieces) {
+    const top = p.y + p.height;
+    const right = p.x + p.width;
+
+    if (p.y <= refiloY + 2) hasBottom = true;
+    if (top >= sheet.sheetHeight - refiloY - 2) hasTop = true;
+    if (p.x <= refiloX + 2) hasLeft = true;
+    if (right >= sheet.sheetWidth - refiloX - 2) hasRight = true;
+
+    if (p.y > refiloY + 1) hCuts.add(Math.round(p.y));
+    if (top < sheet.sheetHeight - refiloY - 1) hCuts.add(Math.round(top));
+    if (p.x > refiloX + 1) vCuts.add(Math.round(p.x));
+    if (right < sheet.sheetWidth - refiloX - 1) vCuts.add(Math.round(right));
   }
-  let cuts = rows.size;
-  for (const n of rows.values()) cuts += Math.max(0, n - 1);
-  return cuts;
+
+  const gap = 6;
+  const mergeSet = (s: Set<number>): number => {
+    const sorted = [...s].sort((a, b) => a - b);
+    let count = 0;
+    let last = -Infinity;
+    for (const v of sorted) {
+      if (v - last > gap) {
+        count++;
+        last = v;
+      }
+    }
+    return count;
+  };
+
+  let totalCuts = mergeSet(hCuts) + mergeSet(vCuts);
+  if (hasTop) totalCuts++;
+  if (hasBottom) totalCuts++;
+  if (hasLeft) totalCuts++;
+  if (hasRight) totalCuts++;
+  return totalCuts;
 }
 
 export function countTotalSerraCuts(sheets: NestingSheet[]): number {
-  return sheets.reduce((a, s) => a + countSerraCuts(s), 0);
+  return sheets.reduce((total, sheet) => total + countSerraCuts(sheet), 0);
 }
