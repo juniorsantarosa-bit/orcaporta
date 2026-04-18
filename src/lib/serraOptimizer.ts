@@ -99,7 +99,7 @@ function packSheet(
     let cx = opts.refiloX;
     for (const sp of stripPieces) {
       placed.push({
-        id: sp.piece.id,
+        pieceId: sp.piece.id,
         label: String(labelN++),
         x: cx,
         y: cursorY,
@@ -107,15 +107,16 @@ function packSheet(
         height: sp.height,
         rotated: sp.rotated,
         descricao: sp.piece.descricao,
-        material: sp.piece.material,
-        espessura: sp.piece.espessura,
-        bordaInf: sp.piece.bordaInf,
+        furos: sp.piece.furos || [],
+        usinagens: sp.piece.usinagens || [],
         bordaSup: sp.piece.bordaSup,
+        bordaInf: sp.piece.bordaInf,
         bordaEsq: sp.piece.bordaEsq,
         bordaDir: sp.piece.bordaDir,
-        veio: sp.piece.veio,
-        furos: sp.piece.furos,
-        usinagens: sp.piece.usinagens,
+        cliente: sp.piece.cliente,
+        ambiente: "",
+        moduloDesc: "",
+        espessura: sp.piece.espessura,
         noContour: sp.piece.noContour,
       });
       cx += sp.width + opts.gap;
@@ -158,6 +159,8 @@ export function optimizeSerra(
     const totalArea = opts.sheetWidth * opts.sheetHeight;
     const usedArea = placed.reduce((a, p) => a + p.width * p.height, 0);
     sheets.push({
+      id: sheets.length + 1,
+      codCorte: sheets.length + 1,
       sheetWidth: opts.sheetWidth,
       sheetHeight: opts.sheetHeight,
       material: opts.material,
