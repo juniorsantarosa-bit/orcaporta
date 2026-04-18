@@ -1,9 +1,10 @@
-import { FileUp, Scissors, Calculator, Loader2 } from "lucide-react";
+import { FileUp, Scissors, Calculator, Loader2, FilePlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface SimpleToolbarProps {
+  onNew: () => void;
   onImport: () => void;
   onOptimize: () => void;
   onOrcamento: () => void;
@@ -35,10 +36,11 @@ function TBtn({
 }
 
 export function SimpleToolbar({
-  onImport, onOptimize, onOrcamento, isOptimizing, hasPieces, hasLayouts,
+  onNew, onImport, onOptimize, onOrcamento, isOptimizing, hasPieces, hasLayouts,
 }: SimpleToolbarProps) {
   return (
     <div className="flex items-center gap-2 px-4 py-2 bg-card border-b border-border">
+      <TBtn icon={FilePlus} label="Novo" onClick={onNew} />
       <TBtn icon={FileUp} label="Importar Peças" onClick={onImport} />
       <Separator orientation="vertical" className="h-10 mx-1" />
       <TBtn
