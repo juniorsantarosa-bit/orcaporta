@@ -81,6 +81,7 @@ export default function OrcamentoSimples() {
       </div>
 
       <SimpleToolbar
+        onNew={handleNew}
         onImport={() => setShowImport(true)}
         onOptimize={handleOptimize}
         onOrcamento={() => setShowOrcamento(true)}
