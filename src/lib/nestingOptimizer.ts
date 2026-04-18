@@ -265,6 +265,7 @@ export function optimizeNesting(
             descricao: p.ep.piece.descricao,
             furos: holes,
             usinagens: (p.ep.piece as any).usinagens || [],
+            noContour: (p.ep.piece as any).noContour === true,
             bordaSup: p.ep.piece.bordaSup,
             bordaInf: p.ep.piece.bordaInf,
             bordaEsq: p.ep.piece.bordaEsq,

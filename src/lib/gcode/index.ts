@@ -226,16 +226,18 @@ export function generateGCode(
   }
 
   // === INDIVIDUAL CONTOURS ===
+  // Exclude machining-only pieces (cortarPeca = false)
+  const contourPieces = sheet.pieces.filter(p => !p.noContour);
   const smallPieces = pp.usarDoisPasses
-    ? sheet.pieces.filter(p =>
+    ? contourPieces.filter(p =>
         p.width <= pp.larguraPequena || (p.width * p.height) <= pp.areaPequena
       )
     : [];
   const largePieces = pp.usarDoisPasses
-    ? sheet.pieces.filter(p =>
+    ? contourPieces.filter(p =>
         p.width > pp.larguraPequena && (p.width * p.height) > pp.areaPequena
       )
-    : sheet.pieces;
+    : contourPieces;
 
   // Two-pass for small pieces
   if (pp.usarDoisPasses && smallPieces.length > 0) {
