@@ -132,6 +132,7 @@ export function SimpleSheetView({ layouts, selectedPieceId, onSelectPiece }: Pro
               const px = p.x;
               const py = sheet.sheetHeight - (p.y + p.height);
               const color = getPieceColor(i);
+              const rotated = (p as any).rotated;
               const isSelected =
                 selectedPieceId !== null &&
                 selectedPieceId !== undefined &&
