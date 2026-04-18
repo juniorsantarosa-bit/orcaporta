@@ -240,9 +240,15 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts }: Props) {
               </div>
             </div>
 
-            <div className="rounded border-2 border-primary/40 bg-primary/5 p-4 flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">VALOR TOTAL</span>
-              <span className="text-2xl font-bold text-primary">R$ {totals.total.toFixed(2)}</span>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="rounded border border-border bg-muted/40 p-3 flex flex-col">
+                <span className="text-[10px] uppercase text-muted-foreground">Total sem Furos</span>
+                <span className="text-lg font-bold">R$ {(totals.total - totals.valorFuros).toFixed(2)}</span>
+              </div>
+              <div className="rounded border-2 border-primary/40 bg-primary/5 p-3 flex flex-col">
+                <span className="text-[10px] uppercase text-muted-foreground">Total com Furos</span>
+                <span className="text-lg font-bold text-primary">R$ {totals.total.toFixed(2)}</span>
+              </div>
             </div>
           </>
         )}
