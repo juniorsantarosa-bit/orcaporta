@@ -132,6 +132,7 @@ export function SimpleSheetView({ layouts, selectedPieceId, onSelectPiece }: Pro
               const px = p.x;
               const py = sheet.sheetHeight - (p.y + p.height);
               const color = getPieceColor(i);
+              const rotated = (p as any).rotated;
               const isSelected =
                 selectedPieceId !== null &&
                 selectedPieceId !== undefined &&
@@ -160,14 +161,16 @@ export function SimpleSheetView({ layouts, selectedPieceId, onSelectPiece }: Pro
                     strokeWidth={isSelected ? 6 : 2}
                     rx={2}
                   />
-                  {/* Furos */}
+                  {/* Furos — coordenadas locais da peça (com rotação), espelhando Y para origem inferior */}
                   {(p.furos || []).map((h, hi) => {
-                    const cx = px + h.X;
-                    const cy = py + p.height - h.Y;
+                    const localX = rotated ? h.Y : h.X;
+                    const localY = rotated ? h.X : h.Y;
+                    const cx = px + localX;
+                    const cy = py + p.height - localY;
                     const r = Math.max(h.DIAM / 2, 3);
                     const holeColor = h.DIAM >= 15 ? "#D97706" : h.DIAM >= 5 ? "#3B82F6" : "#EF4444";
                     return (
-                      <circle key={hi} cx={cx} cy={cy} r={r} fill={holeColor} opacity={0.75} />
+                      <circle key={hi} cx={cx} cy={cy} r={r} fill={holeColor} opacity={0.85} stroke="#000" strokeWidth={0.5} />
                     );
                   })}
                   {/* Label */}

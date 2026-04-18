@@ -154,7 +154,10 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts }: Props) {
           Subtotal Furos: <b>R$ ${totals.valorFuros.toFixed(2)}</b>
         </div>
       </div>
-      <div class="grand">VALOR TOTAL: R$ ${totals.total.toFixed(2)}</div>
+      <div class="grand" style="display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:13px;font-weight:600;color:#555">Total sem furos: R$ ${(totals.total - totals.valorFuros).toFixed(2)}</span>
+        <span>Total com furos: R$ ${totals.total.toFixed(2)}</span>
+      </div>
       <div class="footer">Orçamento gerado em ${today} — Válido por 30 dias</div>
     </body></html>`);
     w.document.close();
@@ -240,9 +243,15 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts }: Props) {
               </div>
             </div>
 
-            <div className="rounded border-2 border-primary/40 bg-primary/5 p-4 flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">VALOR TOTAL</span>
-              <span className="text-2xl font-bold text-primary">R$ {totals.total.toFixed(2)}</span>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="rounded border border-border bg-muted/40 p-3 flex flex-col">
+                <span className="text-[10px] uppercase text-muted-foreground">Total sem Furos</span>
+                <span className="text-lg font-bold">R$ {(totals.total - totals.valorFuros).toFixed(2)}</span>
+              </div>
+              <div className="rounded border-2 border-primary/40 bg-primary/5 p-3 flex flex-col">
+                <span className="text-[10px] uppercase text-muted-foreground">Total com Furos</span>
+                <span className="text-lg font-bold text-primary">R$ {totals.total.toFixed(2)}</span>
+              </div>
             </div>
           </>
         )}
