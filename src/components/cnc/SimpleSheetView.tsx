@@ -26,6 +26,7 @@ export function SimpleSheetView({ layouts, selectedPieceId, onSelectPiece }: Pro
   const [sheetIdx, setSheetIdx] = useState(0);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [size, setSize] = useState({ w: 800, h: 600 });
   const containerRef = useRef<HTMLDivElement>(null);
   const isDraggingRef = useRef(false);
   const lastMouseRef = useRef({ x: 0, y: 0 });
@@ -33,6 +34,19 @@ export function SimpleSheetView({ layouts, selectedPieceId, onSelectPiece }: Pro
   useEffect(() => {
     if (sheetIdx >= layouts.length) setSheetIdx(0);
   }, [layouts.length, sheetIdx]);
+
+  // Observa mudanças de tamanho do container (resize de painel, janela, etc.)
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const update = () => {
+      setSize({ w: el.clientWidth || 800, h: el.clientHeight || 600 });
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   const sheet = layouts[sheetIdx];
 
@@ -53,8 +67,8 @@ export function SimpleSheetView({ layouts, selectedPieceId, onSelectPiece }: Pro
   }
 
   const padding = 60;
-  const containerW = containerRef.current?.clientWidth || 800;
-  const containerH = containerRef.current?.clientHeight || 600;
+  const containerW = size.w;
+  const containerH = size.h;
   const scaleX = (containerW - padding * 2) / sheet.sheetWidth;
   const scaleY = (containerH - padding * 2) / sheet.sheetHeight;
   const baseScale = Math.min(scaleX, scaleY);
