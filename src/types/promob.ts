@@ -118,6 +118,8 @@ export interface PlacedNestingPiece {
   ambiente: string;
   moduloDesc: string;
   espessura: number;
+  /** When true, skip outer contour cutting (machining-only piece) */
+  noContour?: boolean;
 }
 
 export interface NestingSheet {

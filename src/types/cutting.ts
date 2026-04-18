@@ -18,6 +18,8 @@ export interface CuttingPiece {
   observacao: string;
   furos?: PromobHole[];
   usinagens?: Usinagem[];
+  /** When true, skip outer contour cutting (machining-only piece) */
+  noContour?: boolean;
 }
 
 export interface SheetLayout {

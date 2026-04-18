@@ -1,6 +1,6 @@
 import { Canvas, useThree } from "@react-three/fiber";
 import { OrbitControls, PerspectiveCamera, ContactShadows, Html } from "@react-three/drei";
-import { NestingSheet, PlacedNestingPiece } from "@/types/promob";
+import { NestingSheet, PlacedNestingPiece, Usinagem } from "@/types/promob";
 import { useMemo, useState, useRef, useImperativeHandle, forwardRef, useEffect } from "react";
 import * as THREE from "three";
 
@@ -51,6 +51,51 @@ function DrillHole3D({ x, y, diam, depth, pieceX, pieceY, espessura, wireframe }
         <meshStandardMaterial color={color} wireframe={wireframe} />
       </mesh>
     </group>
+  );
+}
+
+function Channel3D({ usinagem, pieceX, pieceY, pieceW, pieceH, espessura, rotated, wireframe }: {
+  usinagem: Usinagem; pieceX: number; pieceY: number; pieceW: number; pieceH: number;
+  espessura: number; rotated: boolean; wireframe: boolean;
+}) {
+  const scale = 0.01;
+  // Apply rotation to local coords (same logic as 2D)
+  const ux = usinagem.x || 0;
+  const uy = usinagem.y || 0;
+  const localX = rotated ? uy : ux;
+  const localY = rotated ? ux : uy;
+
+  // Determine channel orientation: width along X if comprimento > largura horizontally
+  // Convention from CanalVentilacaoForm: x/y = top-left corner
+  const rawW = usinagem.comprimento || usinagem.largura;
+  const rawH = usinagem.largura;
+  // If rotated, swap channel dims too
+  const chW = rotated ? rawH : rawW;
+  const chH = rotated ? rawW : rawH;
+
+  const depth = Math.min(usinagem.profundidade, espessura);
+  const yTop = espessura * scale;
+  const yCenter = yTop - (depth * scale) / 2;
+
+  const cx = (pieceX + localX + chW / 2) * scale;
+  const cz = (pieceY + localY + chH / 2) * scale;
+
+  const isCircular = usinagem.tipo === "recorte_circular";
+  if (isCircular) {
+    const r = (usinagem.largura / 2) * scale;
+    return (
+      <mesh position={[(pieceX + localX) * scale, yCenter, (pieceY + localY) * scale]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[r, r, depth * scale, 24]} />
+        <meshStandardMaterial color="#22c55e" transparent opacity={0.75} wireframe={wireframe} />
+      </mesh>
+    );
+  }
+
+  return (
+    <mesh position={[cx, yCenter, cz]}>
+      <boxGeometry args={[chW * scale, depth * scale, chH * scale]} />
+      <meshStandardMaterial color="#0ea5e9" transparent opacity={0.6} wireframe={wireframe} />
+    </mesh>
   );
 }
 
@@ -171,7 +216,10 @@ const Scene3D = forwardRef<Nesting3DViewHandle, Nesting3DViewProps>(({ layout, s
         <group key={`${piece.pieceId}-${piece.x}-${piece.y}`}>
           <PieceMesh piece={piece} isSelected={piece.pieceId === selectedPieceId} espessura={layout.espessura} wireframe={wireframe} />
           {piece.furos?.map((hole, hi) => (
-            <DrillHole3D key={hi} x={piece.rotated ? hole.Y : hole.X} y={piece.rotated ? hole.X : hole.Y} diam={hole.DIAM} depth={hole.Z} pieceX={piece.x} pieceY={piece.y} espessura={layout.espessura} wireframe={wireframe} />
+            <DrillHole3D key={`h-${hi}`} x={piece.rotated ? hole.Y : hole.X} y={piece.rotated ? hole.X : hole.Y} diam={hole.DIAM} depth={hole.Z} pieceX={piece.x} pieceY={piece.y} espessura={layout.espessura} wireframe={wireframe} />
+          ))}
+          {piece.usinagens?.map((u, ui) => (
+            <Channel3D key={`u-${ui}`} usinagem={u} pieceX={piece.x} pieceY={piece.y} pieceW={piece.width} pieceH={piece.height} espessura={layout.espessura} rotated={piece.rotated} wireframe={wireframe} />
           ))}
         </group>
       ))}
