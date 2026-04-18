@@ -22,7 +22,7 @@ const getPieceColor = (i: number) => PIECE_COLORS[i % PIECE_COLORS.length];
  * Mostra peças com labels, cortes guilhotinados e dimensões da chapa.
  * Sem interação de drag, sem geração de plano/etiquetas.
  */
-export function SimpleSheetView({ layouts }: Props) {
+export function SimpleSheetView({ layouts, selectedPieceId, onSelectPiece }: Props) {
   const [sheetIdx, setSheetIdx] = useState(0);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
