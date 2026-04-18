@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { optimizeNesting, calculateNestingStats, NestingOptions } from "@/lib/nestingOptimizer";
+import { optimizeSerra, countTotalSerraCuts } from "@/lib/serraOptimizer";
 
 export default function Index() {
   const [activeTab, setActiveTab] = useState("otimizacao");
@@ -44,6 +45,7 @@ export default function Index() {
   const [pieces, setPieces] = useState<CuttingPiece[]>(mockPieces);
   const [layouts, setLayouts] = useState<NestingSheet[]>(mockSheetLayouts);
   const [sobras, setSobras] = useState<SobraMaterial[]>([]);
+  const [cutMode, setCutMode] = useState<"cnc" | "serra">("cnc");
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [projectName, setProjectName] = useState("Projeto sem título");
   const [pendingAction, setPendingAction] = useState<"import" | "new" | null>(null);
@@ -184,27 +186,34 @@ export default function Index() {
     }
 
     setIsOptimizing(true);
-    toast.loading("Otimizando nesting...", { id: "optimize" });
+    const modeLabel = cutMode === "serra" ? "serra" : "nesting";
+    toast.loading(`Otimizando ${modeLabel}...`, { id: "optimize" });
 
     setTimeout(() => {
       const start = performance.now();
-      const opts: Partial<NestingOptions> = {
+      const commonOpts = {
         sheetWidth: generalConfig.chapaX,
         sheetHeight: generalConfig.chapaY,
         gap: nestingConfig.espessuraCorte,
         refiloX: nestingConfig.refiloX,
         refiloY: nestingConfig.refiloY,
         allowRotation: config.permitirRotacao,
-        direction: nestingConfig.direcaoNesting,
-        optimizationLevel: nestingConfig.otimizacao,
+        material: pieces[0]?.material,
+        espessura: pieces[0]?.espessura,
       };
 
-      if (pieces.length > 0) {
-        opts.material = pieces[0].material;
-        opts.espessura = pieces[0].espessura;
+      let sheets;
+      if (cutMode === "serra") {
+        sheets = optimizeSerra(pieces, commonOpts);
+      } else {
+        const opts: Partial<NestingOptions> = {
+          ...commonOpts,
+          direction: nestingConfig.direcaoNesting,
+          optimizationLevel: nestingConfig.otimizacao,
+        };
+        sheets = optimizeNesting(pieces, opts);
       }
 
-      const sheets = optimizeNesting(pieces, opts);
       const elapsed = performance.now() - start;
       const stats = calculateNestingStats(sheets);
 
@@ -213,8 +222,9 @@ export default function Index() {
       setOptimizationResult({ sheets, stats, elapsed });
       openDialog("optimizationResult");
 
+      const extra = cutMode === "serra" ? ` (${countTotalSerraCuts(sheets)} cortes)` : "";
       toast.success(
-        `Otimizado! ${stats.totalSheets} chapas, ${stats.avgEfficiency.toFixed(1)}% aproveitamento`,
+        `Otimizado! ${stats.totalSheets} chapas, ${stats.avgEfficiency.toFixed(1)}% aproveitamento${extra}`,
         { id: "optimize" }
       );
     }, 100);
@@ -290,6 +300,8 @@ export default function Index() {
         onOptimize={handleOptimize}
         onAction={handleToolbarAction}
         isOptimizing={isOptimizing}
+        cutMode={cutMode}
+        onCutModeChange={setCutMode}
       />
       <div className="flex-1 min-h-0">
         <ResizablePanelGroup direction="horizontal">

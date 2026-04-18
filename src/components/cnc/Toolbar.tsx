@@ -1,7 +1,7 @@
 import {
   FileUp, FilePlus, FileCode, Layers, Box, Settings, Scissors,
   BarChart3, Grid3X3, FileDown, FileText, Cog, Image, ChevronDown,
-  Loader2, Save, FolderPlus, Calculator, Play, Drill,
+  Loader2, Save, FolderPlus, Calculator, Play, Drill, Wrench, Slice,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -24,6 +24,8 @@ interface ToolbarProps {
   onOptimize: () => void;
   onAction?: (action: string) => void;
   isOptimizing?: boolean;
+  cutMode?: "cnc" | "serra";
+  onCutModeChange?: (mode: "cnc" | "serra") => void;
 }
 
 function ToolbarButton({ icon: Icon, label, onClick, accent, disabled }: { icon: React.ElementType; label: string; onClick?: () => void; accent?: boolean; disabled?: boolean }) {
@@ -59,11 +61,44 @@ function ToolbarGroup({ label, children }: { label: string; children: React.Reac
   );
 }
 
-export function Toolbar({ config, onConfigChange, onOptimize, onAction, isOptimizing }: ToolbarProps) {
+export function Toolbar({ config, onConfigChange, onOptimize, onAction, isOptimizing, cutMode = "cnc", onCutModeChange }: ToolbarProps) {
   const act = (action: string) => onAction?.(action);
 
   return (
     <div className="flex items-center gap-1.5 px-3 py-1.5 bg-card border-b border-border print:hidden">
+      <ToolbarGroup label="Modo">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant={cutMode === "cnc" ? "default" : "ghost"}
+              size="sm"
+              className="flex flex-col items-center gap-0.5 h-auto py-1 px-2 rounded-md"
+              onClick={() => onCutModeChange?.("cnc")}
+            >
+              <Wrench className="h-4 w-4" />
+              <span className="text-[9px] font-medium leading-tight">CNC</span>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="text-xs">Router CNC (nesting)</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant={cutMode === "serra" ? "default" : "ghost"}
+              size="sm"
+              className="flex flex-col items-center gap-0.5 h-auto py-1 px-2 rounded-md"
+              onClick={() => onCutModeChange?.("serra")}
+            >
+              <Slice className="h-4 w-4" />
+              <span className="text-[9px] font-medium leading-tight">Serra</span>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="text-xs">Serra esquadrejadeira (guilhotina)</TooltipContent>
+        </Tooltip>
+      </ToolbarGroup>
+
+      <Separator orientation="vertical" className="h-10 mx-0.5" />
+
       <ToolbarGroup label="Projeto">
         <ToolbarButton icon={FolderPlus} label="Novo" onClick={() => act("novoProjeto")} />
         <ToolbarButton icon={Save} label="Salvar" onClick={() => act("salvarProjeto")} />
