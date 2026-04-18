@@ -5,7 +5,17 @@ import { ZoomIn, ZoomOut, Maximize, ChevronLeft, ChevronRight } from "lucide-rea
 
 interface Props {
   layouts: NestingSheet[];
+  selectedPieceId?: number | null;
+  onSelectPiece?: (id: number) => void;
 }
+
+/** 12 cores claras distintas — espelha SheetView2D original */
+const PIECE_COLORS = [
+  "180 55% 72%", "30 80% 72%", "270 55% 75%", "120 50% 68%",
+  "340 60% 72%", "50 75% 70%", "200 65% 70%", "90 50% 65%",
+  "310 55% 72%", "15 70% 70%", "160 50% 68%", "240 55% 75%",
+];
+const getPieceColor = (i: number) => PIECE_COLORS[i % PIECE_COLORS.length];
 
 /**
  * Visualização 2D simples do plano de corte (modo Serra).
