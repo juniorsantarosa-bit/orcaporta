@@ -150,9 +150,11 @@ export function SimpleSheetView({ layouts, selectedPieceId, onSelectPiece }: Pro
         }}
       >
         <svg
-          width={containerW}
-          height={containerH}
-          className="absolute inset-0"
+          width="100%"
+          height="100%"
+          viewBox={`0 0 ${containerW} ${containerH}`}
+          preserveAspectRatio="xMidYMid meet"
+          className="absolute inset-0 block"
         >
           {/* Chapa */}
           <rect
