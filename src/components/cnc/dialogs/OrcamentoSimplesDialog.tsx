@@ -149,10 +149,12 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
       const perimeterMm = p.aspirePerimeter ?? sides.reduce((a, s) => a + s.lengthMm, 0);
       const numFurosUnit = p.numFurosOrcamento ?? p.furos?.length ?? 0;
 
-      // Soma comprimentos por tipo de corte. Frisos = sempre fresa.
+      // Soma comprimentos por tipo de corte. Frisos = todos seguem aspireFrisoCutType.
       let fresaMm = 0, serraMm = 0;
       if (isFrisos) {
-        fresaMm = perimeterMm;
+        const ft = p.aspireFrisoCutType ?? "fresa";
+        if (ft === "fresa") fresaMm = perimeterMm;
+        else serraMm = perimeterMm;
       } else {
         sides.forEach(s => {
           const ct = s.cutType ?? (s.kind === "curvo" ? "fresa" : "serra");
