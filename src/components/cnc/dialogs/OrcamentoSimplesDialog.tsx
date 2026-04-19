@@ -66,15 +66,18 @@ interface AspireBudget {
   quantidade: number;
   width: number;
   height: number;
-  perimeterMm: number;            // total contour length per unit
-  sides: { index: number; lengthMm: number; kind: "reto" | "curvo"; banded: boolean }[];
-  fitaMetrosUnit: number;         // edge banding metres per single piece
+  perimeterMm: number;
+  sides: { index: number; lengthMm: number; kind: "reto" | "curvo"; banded: boolean; cutType: "fresa" | "serra" }[];
+  fresaMmUnit: number;
+  serraMmUnit: number;
+  fitaMetrosUnit: number;
   numFurosUnit: number;
   valorFresaUnit: number;
+  valorSerraUnit: number;
   valorFitaUnit: number;
   valorFurosUnit: number;
   valorTotalUnit: number;
-  valorTotalAll: number;          // × quantidade
+  valorTotalAll: number;
 }
 
 export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: Props) {
