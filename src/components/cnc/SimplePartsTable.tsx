@@ -70,7 +70,7 @@ export function SimplePartsTable({ pieces, selectedId, onSelect, onUpdate, layou
                 const isAspire = piece.source === "aspire";
                 const isFrisos = piece.aspireMode === "frisos";
                 const aspireCutSummary = isFrisos
-                  ? `${piece.aspireFrisoCount ?? 0} frisos`
+                  ? `${piece.aspireFrisoCount ?? 0} frisos × ${(piece.aspireFrisoBilledLengthMm ?? piece.aspireFrisoLengthMm ?? 0).toFixed(0)}mm`
                   : `${piece.aspireSides?.length ?? 0} lados`;
                 return (
                   <tr
@@ -87,13 +87,31 @@ export function SimplePartsTable({ pieces, selectedId, onSelect, onUpdate, layou
                       {isAspire && <span className="text-[9px] mr-1 px-1 py-px rounded bg-primary/20 text-primary uppercase">Aspire</span>}
                       {piece.descricao}
                     </td>
-                    <td className="px-2 py-1 text-right font-mono text-[10px]">{piece.largura}</td>
-                    <td className="px-2 py-1 text-right font-mono text-[10px]">{piece.altura}</td>
+                    <td className="px-1 py-1 text-right" onClick={(e) => e.stopPropagation()}>
+                      <Input
+                        type="number" min={0} value={piece.largura}
+                        onChange={(e) => onUpdate(piece.id, { largura: Math.max(0, parseFloat(e.target.value) || 0) })}
+                        className="h-6 text-[10px] text-right px-1 w-14 ml-auto font-mono"
+                      />
+                    </td>
+                    <td className="px-1 py-1 text-right" onClick={(e) => e.stopPropagation()}>
+                      <Input
+                        type="number" min={0} value={piece.altura}
+                        onChange={(e) => onUpdate(piece.id, { altura: Math.max(0, parseFloat(e.target.value) || 0) })}
+                        className="h-6 text-[10px] text-right px-1 w-14 ml-auto font-mono"
+                      />
+                    </td>
                     <td className="px-2 py-1 text-right font-mono text-[10px]">{piece.espessura}</td>
                     <td className="px-2 py-1 truncate max-w-[80px] text-muted-foreground text-[10px]">
                       {piece.material.split(" ")[0]}
                     </td>
-                    <td className="px-2 py-1 text-right font-medium">{piece.quantidade}</td>
+                    <td className="px-1 py-1 text-right" onClick={(e) => e.stopPropagation()}>
+                      <Input
+                        type="number" min={1} value={piece.quantidade}
+                        onChange={(e) => onUpdate(piece.id, { quantidade: Math.max(1, parseInt(e.target.value) || 1) })}
+                        className="h-6 text-[10px] text-right px-1 w-12 ml-auto font-medium"
+                      />
+                    </td>
 
                     {isAspire ? (
                       // Aspire: per-side popover (contour) ou global (frisos) — sempre presente
@@ -114,12 +132,70 @@ export function SimplePartsTable({ pieces, selectedId, onSelect, onUpdate, layou
                           <PopoverContent className="w-[340px] p-3" onClick={(e) => e.stopPropagation()}>
                             {isFrisos ? (
                               <>
-                                <div className="text-xs font-semibold mb-2">Tipo de corte dos frisos</div>
+                                <div className="text-xs font-semibold mb-2">Configuração dos frisos (editável)</div>
+                                <div className="grid grid-cols-2 gap-2 mb-3">
+                                  <div>
+                                    <label className="text-[9px] uppercase text-muted-foreground">Qtd. frisos</label>
+                                    <Input
+                                      type="number" min={1}
+                                      value={piece.aspireFrisoCount ?? 0}
+                                      onChange={(e) => onUpdate(piece.id, { aspireFrisoCount: Math.max(1, parseInt(e.target.value) || 1) })}
+                                      className="h-7 text-[11px]"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="text-[9px] uppercase text-muted-foreground">Compr. cobrado / friso (mm)</label>
+                                    <Input
+                                      type="number" min={0} step="0.1"
+                                      value={piece.aspireFrisoBilledLengthMm ?? piece.aspireFrisoLengthMm ?? 0}
+                                      onChange={(e) => onUpdate(piece.id, { aspireFrisoBilledLengthMm: Math.max(0, parseFloat(e.target.value) || 0) })}
+                                      className="h-7 text-[11px] font-semibold"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="text-[9px] uppercase text-muted-foreground">Largura do vão (mm)</label>
+                                    <Input
+                                      type="number" min={0} step="0.1"
+                                      value={piece.aspireFrisoLarguraMm ?? 0}
+                                      onChange={(e) => {
+                                        const largura = Math.max(0, parseFloat(e.target.value) || 0);
+                                        const altura = piece.aspireFrisoAlturaMm ?? piece.aspireToolDiameter ?? 6;
+                                        const fresa = piece.aspireToolDiameter ?? 6;
+                                        // Recalcula automaticamente o comprimento cobrado
+                                        const billed = 2 * (largura + fresa) + 2 * altura;
+                                        onUpdate(piece.id, {
+                                          aspireFrisoLarguraMm: largura,
+                                          aspireFrisoBilledLengthMm: Math.round(billed * 10) / 10,
+                                        });
+                                      }}
+                                      className="h-7 text-[11px]"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="text-[9px] uppercase text-muted-foreground">Altura do vão (mm)</label>
+                                    <Input
+                                      type="number" min={0} step="0.1"
+                                      value={piece.aspireFrisoAlturaMm ?? piece.aspireToolDiameter ?? 6}
+                                      onChange={(e) => {
+                                        const altura = Math.max(0, parseFloat(e.target.value) || 0);
+                                        const largura = piece.aspireFrisoLarguraMm ?? 0;
+                                        const fresa = piece.aspireToolDiameter ?? 6;
+                                        const billed = 2 * (largura + fresa) + 2 * altura;
+                                        onUpdate(piece.id, {
+                                          aspireFrisoAlturaMm: altura,
+                                          aspireFrisoBilledLengthMm: Math.round(billed * 10) / 10,
+                                        });
+                                      }}
+                                      className="h-7 text-[11px]"
+                                    />
+                                  </div>
+                                </div>
                                 <div className="text-[10px] text-muted-foreground mb-2">
-                                  {piece.aspireFrisoCount} frisos × {piece.aspireFrisoLengthMm?.toFixed(0)}mm — todos serão usinados pelo mesmo método.
+                                  Total cobrado: <b className="text-foreground">{((piece.aspireFrisoCount ?? 0) * (piece.aspireFrisoBilledLengthMm ?? 0) / 1000).toFixed(2)} m</b>
+                                  {" · "}fresa Ø{piece.aspireToolDiameter ?? 6}mm
                                 </div>
                                 <div className="flex items-center gap-2">
-                                  <label className="text-[11px] font-medium">Aplicar a todos:</label>
+                                  <label className="text-[11px] font-medium">Tipo de corte:</label>
                                   <select
                                     value={piece.aspireFrisoCutType ?? "fresa"}
                                     onChange={(e) =>
@@ -132,7 +208,7 @@ export function SimplePartsTable({ pieces, selectedId, onSelect, onUpdate, layou
                                   </select>
                                 </div>
                                 <div className="mt-2 pt-2 border-t border-border text-[9px] text-muted-foreground">
-                                  💡 Frisos retos contínuos podem sair mais barato na <b>serra</b>; frisos curvos ou interrompidos exigem <b>fresa</b>.
+                                  💡 Comprimento cobrado = 2 × (largura + Ø) + 2 × altura — ida + volta + subida/descida nas pontas.
                                 </div>
                               </>
                             ) : (

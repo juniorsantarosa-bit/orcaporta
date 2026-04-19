@@ -51,7 +51,7 @@ export function ImportarPecasDialog({ open, onOpenChange, onImport }: Props) {
     }
     const isFrisos = r.mode === "frisos";
     const observacao = isFrisos
-      ? `Aspire · ${r.frisoCount} frisos × ${r.frisoLengthMm}mm · total ${(r.perimeter/1000).toFixed(2)}m · fresa Ø${r.toolDiameter}mm`
+      ? `Aspire · ${r.frisoCount} frisos · vão ${r.frisoLarguraMm}×${r.frisoAlturaMm}mm · cobrado ${r.frisoBilledLengthMm}mm/friso · fresa Ø${r.toolDiameter}mm`
       : `Aspire · ${r.sides.length} lados · perímetro ${(r.perimeter/1000).toFixed(2)}m · fresa Ø${r.toolDiameter}mm`;
     const cleanName = file.name.replace(/\.(tap|nc)$/i, "").replace(/[_]+/g, " ").trim();
     const piece: CuttingPiece = {
@@ -81,11 +81,14 @@ export function ImportarPecasDialog({ open, onOpenChange, onImport }: Props) {
       aspireMode: r.mode,
       aspireFrisoCount: r.frisoCount,
       aspireFrisoLengthMm: r.frisoLengthMm,
+      aspireFrisoLarguraMm: r.frisoLarguraMm,
+      aspireFrisoAlturaMm: r.frisoAlturaMm,
+      aspireFrisoBilledLengthMm: r.frisoBilledLengthMm,
       aspireFrisoCutType: r.mode === "frisos" ? "fresa" : undefined,
     };
     onImport([piece]);
     const successMsg = isFrisos
-      ? `Frisos importados · ${r.frisoCount} usinagens × ${r.frisoLengthMm}mm.`
+      ? `Frisos importados · ${r.frisoCount} usinagens · vão ${r.frisoLarguraMm}×${r.frisoAlturaMm}mm.`
       : `Peça Aspire importada · ${r.sides.length} lados detectados (W ${r.width}mm × H ${r.height}mm).`;
     toast.success(successMsg);
     onOpenChange(false);

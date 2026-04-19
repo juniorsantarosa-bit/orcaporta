@@ -47,9 +47,27 @@ export interface CuttingPiece {
   aspireOrigin?: { minX: number; minY: number; maxX: number; maxY: number };
   /** "contour" = peça com contorno fechado · "frisos" = N passagens individuais (sem fita) */
   aspireMode?: "contour" | "frisos";
-  /** Quando aspireMode = "frisos": número de frisos */
+  /** Quando aspireMode = "frisos": número de frisos (editável) */
   aspireFrisoCount?: number;
-  /** Quando aspireMode = "frisos": comprimento em mm de cada friso */
+  /**
+   * Quando aspireMode = "frisos": LARGURA do vão (medida principal visível
+   * para o cliente, ex: 600mm). Editável.
+   */
+  aspireFrisoLarguraMm?: number;
+  /**
+   * Quando aspireMode = "frisos": ALTURA do vão (medida perpendicular, ex:
+   * 10mm). Default = Ø fresa. Editável.
+   */
+  aspireFrisoAlturaMm?: number;
+  /**
+   * Quando aspireMode = "frisos": comprimento por friso usado no ORÇAMENTO
+   * (em mm). Calculado automaticamente como
+   *   2 × (largura + Ø) + 2 × altura
+   * mas pode ser sobrescrito manualmente pelo usuário. Quando presente,
+   * SUBSTITUI a soma dos `aspireSides` no cálculo de orçamento de frisos.
+   */
+  aspireFrisoBilledLengthMm?: number;
+  /** @deprecated alias de aspireFrisoLarguraMm — mantido para retrocompat */
   aspireFrisoLengthMm?: number;
   /** Quando aspireMode = "frisos": tipo de corte aplicado a TODOS os frisos */
   aspireFrisoCutType?: "fresa" | "serra";
