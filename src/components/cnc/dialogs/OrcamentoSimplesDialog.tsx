@@ -496,7 +496,7 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
                                         {s.cutType}
                                       </span>
                                       <span className="font-mono">{s.lengthMm.toFixed(1)}mm</span>
-                                      {s.banded && <span className="text-[9px] px-1 rounded bg-yellow-500/20 text-yellow-500">fita</span>}
+                                      {s.banded && <span className="text-[9px] px-1 rounded bg-accent text-accent-foreground">fita</span>}
                                     </div>
                                   ))
                                 )}
