@@ -421,29 +421,41 @@ export function parseAspireFile(text: string): AspirePiece {
   let mode: "contour" | "frisos" = "contour";
   let frisoCount: number | undefined;
   let frisoLengthMm: number | undefined;
+  let frisoLarguraMm: number | undefined;
+  let frisoAlturaMm: number | undefined;
+  let frisoBilledLengthMm: number | undefined;
   let perimeterFinal = perimeter;
   let sidesFinal = sides;
 
   if (isFrisos) {
     mode = "frisos";
     frisoCount = longPasses.length;
-    // Para frisos, a fresa percorre o canal IDA e VOLTA dentro do mesmo trilho.
-    // O comprimento EFETIVO do vão (medida que interessa ao cliente) é:
-    //     vão = (percurso / 2) − Ø fresa
-    // O percurso bruto inclui ida+volta+lead-in; ao dividir por 2 isolamos
-    // um sentido, e ao subtrair o diâmetro descontamos a sobra de ferramenta
-    // que ultrapassa as extremidades do canal.
-    const effectiveLen = (raw: number) =>
-      Math.max(0, raw / 2 - toolDiameter);
-    const totalEffective = longPasses.reduce((a, p) => a + effectiveLen(p.length), 0);
-    frisoLengthMm = Math.round((totalEffective / longPasses.length) * 10) / 10;
-    perimeterFinal = Math.round(totalEffective * 10) / 10;
-    // Em modo frisos NÃO há "lados" para banding — uma linha por friso
-    // (apenas para informação visual, não selecionável). Comprimentos já
-    // ajustados para a medida efetiva do vão.
+    // Largura do vão = (percurso/2) − Ø fresa.
+    // Como a fresa vai e volta no mesmo trilho, dividir por 2 isola um sentido,
+    // e subtrair o diâmetro desconta a "sobra" da ferramenta nas extremidades.
+    const larguraVao = (raw: number) => Math.max(0, raw / 2 - toolDiameter);
+    // Comprimento que a fresa REALMENTE usina (ida + volta + subida + descida).
+    // Default: altura do canal = Ø (uma passada). Fórmula:
+    //   billed = 2 × (largura + Ø) + 2 × altura
+    const alturaDefault = toolDiameter;
+    const billed = (largura: number, altura: number) =>
+      2 * (largura + toolDiameter) + 2 * altura;
+
+    const totalLargura = longPasses.reduce((a, p) => a + larguraVao(p.length), 0);
+    const avgLargura = totalLargura / longPasses.length;
+    const billedPerFriso = billed(avgLargura, alturaDefault);
+
+    frisoLarguraMm = Math.round(avgLargura * 10) / 10;
+    frisoAlturaMm = Math.round(alturaDefault * 10) / 10;
+    frisoLengthMm = frisoLarguraMm;
+    frisoBilledLengthMm = Math.round(billedPerFriso * 10) / 10;
+    // Perímetro = soma dos comprimentos cobrados de todos os frisos
+    perimeterFinal = Math.round(billedPerFriso * longPasses.length * 10) / 10;
+    // Em modo frisos cada friso vira um "lado" informativo com o COMPRIMENTO
+    // COBRADO (que é o que será multiplicado por R$/m no orçamento).
     sidesFinal = longPasses.map((p, i) => ({
       index: i + 1,
-      lengthMm: Math.round(effectiveLen(p.length) * 10) / 10,
+      lengthMm: Math.round(billed(larguraVao(p.length), alturaDefault) * 10) / 10,
       kind: "reto" as const,
     }));
   }
@@ -477,5 +489,8 @@ export function parseAspireFile(text: string): AspirePiece {
     mode,
     frisoCount,
     frisoLengthMm,
+    frisoLarguraMm,
+    frisoAlturaMm,
+    frisoBilledLengthMm,
   };
 }
