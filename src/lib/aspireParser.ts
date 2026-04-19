@@ -218,7 +218,6 @@ export function parseAspireFile(text: string): AspirePiece {
         cx = it.from.x + (it.m.i ?? 0);
         cy = it.from.y + (it.m.j ?? 0);
       } else if (it.m.r !== undefined) {
-        // R-format: solve for center on the perpendicular bisector.
         const r = it.m.r;
         const mx = (it.from.x + it.to.x) / 2;
         const my = (it.from.y + it.to.y) / 2;
@@ -226,18 +225,21 @@ export function parseAspireFile(text: string): AspirePiece {
         const d = Math.hypot(dx, dy);
         const h2 = Math.max(0, r * r - (d * d) / 4);
         const h = Math.sqrt(h2);
-        // perpendicular unit
         const px = -dy / (d || 1), py = dx / (d || 1);
-        // pick side based on direction (G2 cw → centre on right of motion)
         const sign = (k === "G2") ? -1 : 1;
         cx = mx + sign * h * px;
         cy = my + sign * h * py;
       } else {
         continue;
       }
-      segs.push({ kind: "arc", a: it.from, b: it.to, cx, cy, cw: k === "G2" });
+      seg = { kind: "arc", a: it.from, b: it.to, cx, cy, cw: k === "G2" };
+    }
+    if (seg) {
+      segs.push(seg);
+      curPass.push(seg);
     }
   }
+  flushPass();
 
   // Compute bounding box from segments (sample arcs for accuracy).
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
