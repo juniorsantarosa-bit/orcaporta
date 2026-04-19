@@ -81,6 +81,7 @@ export function ImportarPecasDialog({ open, onOpenChange, onImport }: Props) {
       aspireMode: r.mode,
       aspireFrisoCount: r.frisoCount,
       aspireFrisoLengthMm: r.frisoLengthMm,
+      aspireFrisoCutType: r.mode === "frisos" ? "fresa" : undefined,
     };
     onImport([piece]);
     const successMsg = isFrisos
