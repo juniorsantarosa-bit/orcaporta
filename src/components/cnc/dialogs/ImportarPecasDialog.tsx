@@ -36,9 +36,9 @@ export function ImportarPecasDialog({ open, onOpenChange, onImport }: Props) {
     else if (file.name.endsWith(".csv")) setFormato("PromobCSV");
     else if (isAspireExt(file.name)) {
       setFormato("Aspire");
-      // Pré-preenche descrição a partir do nome do arquivo (remove ext + troca _ por espaço)
+      // Sempre sobrescreve a descrição com o nome do arquivo recém-carregado
       const base = file.name.replace(/\.(tap|nc)$/i, "").replace(/[_]+/g, " ").trim();
-      if (!aspireDescricao) setAspireDescricao(base);
+      setAspireDescricao(base);
     }
   };
 
