@@ -64,6 +64,7 @@ export function ImportarPecasDialog({ open, onOpenChange, onImport }: Props) {
       aspireSides: r.sides.map(s => ({ ...s, banded: false })),
       aspirePerimeter: r.perimeter,
       aspireToolDiameter: r.toolDiameter,
+      aspireContour: r.contour,
     };
     onImport([piece]);
     toast.success(`Peça Aspire importada · ${r.sides.length} lados detectados (W ${r.width}mm × H ${r.height}mm).`);

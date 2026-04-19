@@ -24,6 +24,11 @@ export interface AspireSide {
   kind: "reto" | "curvo";
 }
 
+/** Contour segment in LOCAL piece coords (0..width × 0..height) */
+export type AspireContourSeg =
+  | { kind: "line"; x1: number; y1: number; x2: number; y2: number }
+  | { kind: "arc"; x1: number; y1: number; x2: number; y2: number; cx: number; cy: number; cw: boolean };
+
 export interface AspirePiece {
   /** Outer width in mm (X span of the contour) */
   width: number;
@@ -37,6 +42,8 @@ export interface AspirePiece {
   toolDiameter: number;
   /** Z final cut depth (most negative Z reached on G1), for info only */
   zCutDepth: number;
+  /** Outer contour segments in local piece coordinates (0..width × 0..height) */
+  contour: AspireContourSeg[];
 }
 
 interface Pt { x: number; y: number }
@@ -313,6 +320,15 @@ export function parseAspireFile(text: string): AspirePiece {
   const descMatch = text.match(/Descricao\s*:\s*[^()\n]*\(( \d+(?:\.\d+)?)/i);
   if (descMatch) toolDiameter = parseFloat(descMatch[1]);
 
+  // Build local-coordinate contour (0..width × 0..height) for visualization.
+  const ox = isFinite(minX) ? minX : 0;
+  const oy = isFinite(minY) ? minY : 0;
+  const contour: AspireContourSeg[] = segs.map(s =>
+    s.kind === "line"
+      ? { kind: "line", x1: s.a.x - ox, y1: s.a.y - oy, x2: s.b.x - ox, y2: s.b.y - oy }
+      : { kind: "arc", x1: s.a.x - ox, y1: s.a.y - oy, x2: s.b.x - ox, y2: s.b.y - oy, cx: s.cx - ox, cy: s.cy - oy, cw: s.cw }
+  );
+
   return {
     width,
     height,
@@ -320,5 +336,6 @@ export function parseAspireFile(text: string): AspirePiece {
     sides,
     toolDiameter,
     zCutDepth: minZ,
+    contour,
   };
 }
