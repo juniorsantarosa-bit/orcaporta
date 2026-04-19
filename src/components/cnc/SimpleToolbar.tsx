@@ -1,6 +1,4 @@
-import { FileUp, Scissors, Calculator, Loader2, FilePlus, LogOut } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { FileUp, Scissors, Calculator, Loader2, FilePlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -43,7 +41,7 @@ export function SimpleToolbar({
   return (
     <div className="flex items-center gap-2 px-4 py-2 bg-card border-b border-border">
       <TBtn icon={FilePlus} label="Novo" onClick={onNew} />
-      <TBtn icon={FileUp} label="Importar Peças" onClick={onImport} />
+      <TBtn icon={FileUp} label="Importar Peças / Aspire" onClick={onImport} />
       <Separator orientation="vertical" className="h-10 mx-1" />
       <TBtn
         icon={isOptimizing ? Loader2 : Scissors}
@@ -59,14 +57,6 @@ export function SimpleToolbar({
       <span className="text-[10px] text-muted-foreground uppercase tracking-wider mr-2">
         Modo Serra · Versão Orçamento
       </span>
-      <TBtn
-        icon={LogOut}
-        label="Sair"
-        onClick={async () => {
-          await supabase.auth.signOut();
-          toast.info("Sessão encerrada.");
-        }}
-      />
     </div>
   );
 }

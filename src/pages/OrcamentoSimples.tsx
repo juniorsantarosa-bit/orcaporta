@@ -28,10 +28,17 @@ export default function OrcamentoSimples() {
   const [showOrcamento, setShowOrcamento] = useState(false);
 
   const handleImport = useCallback((newPieces: CuttingPiece[]) => {
-    setPieces(newPieces);
+    // Append imports so we can mix Promob + multiple Aspire files in the same budget.
+    setPieces(prev => {
+      const merged = [...prev, ...newPieces];
+      setSelectedPieceId(prev.length === 0 && newPieces.length > 0 ? newPieces[0].id : selectedPieceId);
+      return merged;
+    });
     setLayouts([]);
-    setSelectedPieceId(newPieces.length > 0 ? newPieces[0].id : null);
-    toast.success(`${newPieces.length} peças importadas.`);
+  }, [selectedPieceId]);
+
+  const handleUpdatePiece = useCallback((id: number, patch: Partial<CuttingPiece>) => {
+    setPieces(prev => prev.map(p => p.id === id ? { ...p, ...patch } : p));
   }, []);
 
   const handleNew = useCallback(() => {
@@ -48,25 +55,34 @@ export default function OrcamentoSimples() {
       toast.error("Importe peças antes de otimizar.");
       return;
     }
+    // Aspire pieces are NOT nested into a saw sheet — they are billed by the
+    // real machined perimeter (each one is its own "panel" on the router).
+    const sawPieces = pieces.filter(p => p.source !== "aspire");
+    const aspireCount = pieces.length - sawPieces.length;
+
     setIsOptimizing(true);
     toast.loading("Otimizando (modo Serra)...", { id: "opt" });
 
     setTimeout(() => {
-      const sheets = optimizeSerra(pieces, {
-        sheetWidth: 1840,
-        sheetHeight: 2750,
-        gap: 4,
-        refiloX: 8,
-        refiloY: 8,
-        allowRotation: true,
-      });
+      const sheets = sawPieces.length > 0
+        ? optimizeSerra(sawPieces, {
+            sheetWidth: 1840,
+            sheetHeight: 2750,
+            espessura: sawPieces[0]?.espessura ?? 15,
+            material: sawPieces[0]?.material ?? "MDF",
+            gap: 4,
+            refiloX: 8,
+            refiloY: 8,
+            allowRotation: true,
+          })
+        : [];
       setLayouts(sheets);
       setIsOptimizing(false);
       const avgEff = sheets.length > 0
         ? sheets.reduce((a, s) => a + s.efficiency, 0) / sheets.length
         : 0;
       toast.success(
-        `Otimizado! ${sheets.length} chapas · ${avgEff.toFixed(1)}% aproveitamento`,
+        `Otimizado! ${sheets.length} chapas · ${avgEff.toFixed(1)}% aprov.${aspireCount ? ` · ${aspireCount} peça(s) Aspire` : ""}`,
         { id: "opt" }
       );
     }, 100);
@@ -96,7 +112,7 @@ export default function OrcamentoSimples() {
         onOrcamento={() => setShowOrcamento(true)}
         isOptimizing={isOptimizing}
         hasPieces={pieces.length > 0}
-        hasLayouts={layouts.length > 0}
+        hasLayouts={layouts.length > 0 || pieces.some(p => p.source === "aspire")}
       />
 
       <div className="flex-1 min-h-0">
@@ -106,6 +122,7 @@ export default function OrcamentoSimples() {
               pieces={pieces}
               selectedId={selectedPieceId}
               onSelect={setSelectedPieceId}
+              onUpdate={handleUpdatePiece}
               layouts={layouts}
             />
           </ResizablePanel>
@@ -130,6 +147,7 @@ export default function OrcamentoSimples() {
         open={showOrcamento}
         onOpenChange={setShowOrcamento}
         layouts={layouts}
+        pieces={pieces}
       />
     </div>
   );
