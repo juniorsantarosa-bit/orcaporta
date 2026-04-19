@@ -1,5 +1,13 @@
 import { PromobHole, Usinagem } from "./promob";
 
+export interface AspireSideInfo {
+  index: number;
+  lengthMm: number;
+  kind: "reto" | "curvo";
+  /** When true, this side gets edge-banding tape */
+  banded: boolean;
+}
+
 export interface CuttingPiece {
   id: number;
   projeto: string;
@@ -20,6 +28,16 @@ export interface CuttingPiece {
   usinagens?: Usinagem[];
   /** When true, skip outer contour cutting (machining-only piece) */
   noContour?: boolean;
+  /** Number of holes counted for budget purposes (overrides furos.length) */
+  numFurosOrcamento?: number;
+  /** Source of the piece — "aspire" means imported from a Vectric .tap/.nc file */
+  source?: "promob" | "aspire" | "manual";
+  /** Aspire-specific: detected sides with their real machined lengths */
+  aspireSides?: AspireSideInfo[];
+  /** Aspire-specific: total perimeter actually machined (mm) */
+  aspirePerimeter?: number;
+  /** Aspire-specific: tool diameter detected (mm) */
+  aspireToolDiameter?: number;
 }
 
 export interface SheetLayout {
