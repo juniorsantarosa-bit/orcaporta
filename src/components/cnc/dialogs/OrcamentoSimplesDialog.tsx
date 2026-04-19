@@ -82,6 +82,14 @@ interface AspireBudget {
   valorFitaUnit: number;
   valorTotalUnit: number;
   valorTotalAll: number;
+  /** Modo da peça: contour = lados/banding · frisos = N passes individuais */
+  mode: "contour" | "frisos";
+  /** Quando mode=frisos: número de frisos detectados */
+  frisoCount?: number;
+  /** Quando mode=frisos: comprimento efetivo (mm) de cada friso (vão útil) */
+  frisoLengthMm?: number;
+  /** Quando mode=frisos: tipo de corte aplicado (fresa | serra) */
+  frisoCutType?: "fresa" | "serra";
 }
 
 export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: Props) {
