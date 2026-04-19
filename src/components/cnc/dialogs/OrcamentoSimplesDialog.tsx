@@ -18,14 +18,15 @@ interface Props {
 
 interface Prices {
   corte: number;     // R$ per saw cut (chapas inteiras na esquadrejadeira)
+  cortePeca: number; // R$ per saw cut on Aspire piece sides
   fita: number;      // R$ per metre of edge banding
   furo: number;      // R$ per hole
   fresaMetro: number; // R$ per metre of router travel (Aspire — lado curvo)
   serraMetro: number; // R$ per metre of saw cut (Aspire — lados retos)
 }
 
-const DEFAULT_PRICES: Prices = { corte: 3.0, fita: 4.5, furo: 0.10, fresaMetro: 8.0, serraMetro: 5.0 };
-const PRICES_KEY = "maxcut.orcamento.prices.v2";
+const DEFAULT_PRICES: Prices = { corte: 3.0, cortePeca: 2.0, fita: 4.5, furo: 0.10, fresaMetro: 8.0, serraMetro: 5.0 };
+const PRICES_KEY = "maxcut.orcamento.prices.v3";
 
 function loadPrices(): Prices {
   try {
@@ -34,6 +35,7 @@ function loadPrices(): Prices {
     const v = JSON.parse(raw);
     return {
       corte: Number(v.corte) || DEFAULT_PRICES.corte,
+      cortePeca: Number(v.cortePeca) || DEFAULT_PRICES.cortePeca,
       fita: Number(v.fita) || DEFAULT_PRICES.fita,
       furo: Number(v.furo) || DEFAULT_PRICES.furo,
       fresaMetro: Number(v.fresaMetro) || DEFAULT_PRICES.fresaMetro,
