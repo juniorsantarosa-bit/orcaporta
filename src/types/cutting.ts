@@ -1,4 +1,5 @@
 import { PromobHole, Usinagem } from "./promob";
+import type { AspireContourSeg } from "@/lib/aspireParser";
 
 export interface AspireSideInfo {
   index: number;
@@ -38,6 +39,8 @@ export interface CuttingPiece {
   aspirePerimeter?: number;
   /** Aspire-specific: tool diameter detected (mm) */
   aspireToolDiameter?: number;
+  /** Aspire-specific: outer contour in local coords (0..largura × 0..altura) */
+  aspireContour?: AspireContourSeg[];
 }
 
 export interface SheetLayout {

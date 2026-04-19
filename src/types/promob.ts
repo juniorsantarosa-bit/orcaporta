@@ -120,6 +120,10 @@ export interface PlacedNestingPiece {
   espessura: number;
   /** When true, skip outer contour cutting (machining-only piece) */
   noContour?: boolean;
+  /** When true, this came from an Aspire .tap/.nc — render its real contour */
+  isAspire?: boolean;
+  /** Aspire contour segments in local piece coords (0..width × 0..height) */
+  aspireContour?: import("@/lib/aspireParser").AspireContourSeg[];
 }
 
 export interface NestingSheet {
