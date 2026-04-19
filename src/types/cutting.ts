@@ -71,6 +71,16 @@ export interface CuttingPiece {
   aspireFrisoLengthMm?: number;
   /** Quando aspireMode = "frisos": tipo de corte aplicado a TODOS os frisos */
   aspireFrisoCutType?: "fresa" | "serra";
+
+  // -------- Comercial / gestão de pedido (por peça) --------
+  /** Ordem de Serviço vinculada ao material desta peça */
+  os?: string;
+  /** Data ISO em que o material desta peça foi recebido */
+  dataRecebimento?: string;
+  /** true quando o material já foi recebido */
+  materialRecebido?: boolean;
+  /** Endereço de entrega específico desta peça (se diferente do padrão) */
+  enderecoEntrega?: string;
 }
 
 export interface SheetLayout {

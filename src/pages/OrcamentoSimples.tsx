@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { Zap } from "lucide-react";
 import { toast } from "sonner";
 import { SimpleToolbar } from "@/components/cnc/SimpleToolbar";
@@ -6,14 +6,21 @@ import { SimpleSheetView } from "@/components/cnc/SimpleSheetView";
 import { SimplePartsTable } from "@/components/cnc/SimplePartsTable";
 import { ImportarPecasDialog } from "@/components/cnc/dialogs/ImportarPecasDialog";
 import { OrcamentoSimplesDialog } from "@/components/cnc/dialogs/OrcamentoSimplesDialog";
+import { ClientesDialog } from "@/components/cnc/dialogs/ClientesDialog";
+import { OrcamentosListDialog } from "@/components/cnc/dialogs/OrcamentosListDialog";
+import { RelatoriosDialog } from "@/components/cnc/dialogs/RelatoriosDialog";
 import { CuttingPiece } from "@/types/cutting";
 import { NestingSheet } from "@/types/promob";
+import { Client, SavedQuote } from "@/types/commercial";
+import { getClient } from "@/lib/commercialStore";
 import { optimizeSerra } from "@/lib/serraOptimizer";
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
+
+const SELECTED_CLIENT_KEY = "maxcut.orcamento.selectedClientId";
 
 /**
  * Versão simplificada — apenas para geração de orçamentos.
@@ -27,18 +34,23 @@ export default function OrcamentoSimples() {
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [showOrcamento, setShowOrcamento] = useState(false);
+  const [showClientes, setShowClientes] = useState(false);
+  const [showOrcamentosSalvos, setShowOrcamentosSalvos] = useState(false);
+  const [showRelatorios, setShowRelatorios] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  /** Quando carregamos um orçamento salvo, mantemos o id para "Atualizar" em vez de criar novo */
+  const [editingQuoteId, setEditingQuoteId] = useState<string | null>(null);
 
-  /** Build one full 1840×2750 sheet per Aspire piece unit. The piece is
-   *  placed using the file's machine-zero offset (where X=0/Y=0 of the .tap
-   *  file sits relative to the piece bounding box):
-   *
-   *    • If X is negative in the file (origin to the right), the piece sits
-   *      against the RIGHT edge of the sheet, offset by |maxX| from it.
-   *    • If X is positive (origin to the left), it sits against the LEFT edge,
-   *      offset by minX from it.
-   *    • Same logic for Y (bottom vs top).
-   *
-   *  Falls back to the bottom-left corner when no origin info is present. */
+  // Restaura cliente selecionado entre sessões
+  useEffect(() => {
+    const id = localStorage.getItem(SELECTED_CLIENT_KEY);
+    if (id) {
+      const c = getClient(id);
+      if (c) setSelectedClient(c);
+    }
+  }, []);
+
+  /** Build one full 1840×2750 sheet per Aspire piece unit. (mesma lógica) */
   const buildAspireSheets = useCallback((aspirePieces: CuttingPiece[], startId = 1, startLabel = 1): NestingSheet[] => {
     const out: NestingSheet[] = [];
     const SHEET_W = 1840;
@@ -47,30 +59,16 @@ export default function OrcamentoSimples() {
     let id = startId, label = startLabel;
     for (const p of aspirePieces) {
       const qty = Math.max(1, Math.round(p.quantidade || 1));
-      // Resolve placement from the .tap origin info.
       let placedX = REFILO;
       let placedY = REFILO;
       const o = p.aspireOrigin;
       if (o) {
-        // X axis
-        if (o.maxX <= 0) {
-          // origin to the right of the piece
-          placedX = SHEET_W - Math.abs(o.maxX) - p.largura;
-        } else if (o.minX >= 0) {
-          placedX = o.minX;
-        } else {
-          // bbox straddles 0 → origin inside piece, anchor by minX from left edge
-          placedX = -o.minX;
-        }
-        // Y axis (sheet origin is bottom-left, Y up)
-        if (o.maxY <= 0) {
-          placedY = SHEET_H - Math.abs(o.maxY) - p.altura;
-        } else if (o.minY >= 0) {
-          placedY = o.minY;
-        } else {
-          placedY = -o.minY;
-        }
-        // Clamp inside the sheet (with refilo)
+        if (o.maxX <= 0) placedX = SHEET_W - Math.abs(o.maxX) - p.largura;
+        else if (o.minX >= 0) placedX = o.minX;
+        else placedX = -o.minX;
+        if (o.maxY <= 0) placedY = SHEET_H - Math.abs(o.maxY) - p.altura;
+        else if (o.minY >= 0) placedY = o.minY;
+        else placedY = -o.minY;
         placedX = Math.max(REFILO, Math.min(placedX, SHEET_W - p.largura - REFILO));
         placedY = Math.max(REFILO, Math.min(placedY, SHEET_H - p.altura - REFILO));
       }
@@ -86,10 +84,8 @@ export default function OrcamentoSimples() {
           efficiency: ((p.largura * p.altura) / (SHEET_W * SHEET_H)) * 100,
           pieces: [{
             pieceId: p.id,
-            x: placedX,
-            y: placedY,
-            width: p.largura,
-            height: p.altura,
+            x: placedX, y: placedY,
+            width: p.largura, height: p.altura,
             rotated: false,
             label: String(label++),
             descricao: p.descricao,
@@ -113,14 +109,11 @@ export default function OrcamentoSimples() {
 
 
   const handleImport = useCallback((newPieces: CuttingPiece[]) => {
-    // Append imports so we can mix Promob + multiple Aspire files in the same budget.
     setPieces(prev => {
       const merged = [...prev, ...newPieces];
       setSelectedPieceId(prev.length === 0 && newPieces.length > 0 ? newPieces[0].id : selectedPieceId);
       return merged;
     });
-    // Aspire pieces are visualizable immediately (no nesting needed).
-    // Saw-cut pieces need an explicit "Otimizar" — clear those layouts.
     const aspireOnly = newPieces.filter(p => p.source === "aspire");
     if (aspireOnly.length > 0) {
       setLayouts(prev => {
@@ -138,22 +131,20 @@ export default function OrcamentoSimples() {
   }, []);
 
   const handleNew = useCallback(() => {
-    if (pieces.length === 0 && layouts.length === 0) return;
+    if (pieces.length === 0 && layouts.length === 0 && !editingQuoteId) return;
     if (!confirm("Iniciar um novo projeto? As peças e o plano atual serão descartados.")) return;
     setPieces([]);
     setLayouts([]);
     setSelectedPieceId(null);
+    setEditingQuoteId(null);
     toast.info("Novo projeto iniciado.");
-  }, [pieces.length, layouts.length]);
+  }, [pieces.length, layouts.length, editingQuoteId]);
 
   const handleOptimize = useCallback(() => {
     if (pieces.length === 0) {
       toast.error("Importe peças antes de otimizar.");
       return;
     }
-    // Aspire pieces are NOT nested into a saw sheet — they are billed by the
-    // real machined perimeter. But we DO render each one as its own "sheet"
-    // so the user can visualize the contour in the cutting plan.
     const sawPieces = pieces.filter(p => p.source !== "aspire");
     const aspirePieces = pieces.filter(p => p.source === "aspire");
 
@@ -163,14 +154,10 @@ export default function OrcamentoSimples() {
     setTimeout(() => {
       const sawSheets = sawPieces.length > 0
         ? optimizeSerra(sawPieces, {
-            sheetWidth: 1840,
-            sheetHeight: 2750,
+            sheetWidth: 1840, sheetHeight: 2750,
             espessura: sawPieces[0]?.espessura ?? 15,
             material: sawPieces[0]?.material ?? "MDF",
-            gap: 4,
-            refiloX: 8,
-            refiloY: 8,
-            allowRotation: true,
+            gap: 4, refiloX: 8, refiloY: 8, allowRotation: true,
           })
         : [];
 
@@ -185,15 +172,32 @@ export default function OrcamentoSimples() {
         ? sawSheets.reduce((a, s) => a + s.efficiency, 0) / sawSheets.length
         : 0;
       toast.success(
-        `Otimizado! ${sawSheets.length} chapa(s) serra · ${avgEff.toFixed(1)}% aprov.${aspirePieces.length ? ` · ${aspireSheets.length} peça(s) Aspire` : ""}`,
+        `Otimizado! ${sawSheets.length} chapa(s) serra · ${avgEff.toFixed(1)}% aprov.${aspirePieces.length ? ` · ${aspireSheets.length} peça(s) usinadas` : ""}`,
         { id: "opt" }
       );
     }, 100);
   }, [pieces, buildAspireSheets]);
 
-  // Mapa pieceId → conjunto de sideIndex marcados com fita (banded). Usado pelo
-  // SimpleSheetView para destacar TODOS os lados com fita em vermelho tracejado
-  // enquanto o checkbox correspondente estiver marcado.
+  const handleSelectClient = (c: Client | null) => {
+    setSelectedClient(c);
+    if (c) {
+      localStorage.setItem(SELECTED_CLIENT_KEY, c.id);
+    } else {
+      localStorage.removeItem(SELECTED_CLIENT_KEY);
+    }
+  };
+
+  const handleLoadQuote = (q: SavedQuote) => {
+    setPieces(q.pieces);
+    setLayouts(q.layouts);
+    setEditingQuoteId(q.id);
+    if (q.clientId) {
+      const c = getClient(q.clientId);
+      if (c) handleSelectClient(c);
+    }
+    toast.success(`Orçamento #${q.numero} carregado`);
+  };
+
   const bandedSideIndexes = useMemo(() => {
     const map = new Map<number, Set<number>>();
     for (const p of pieces) {
@@ -217,6 +221,11 @@ export default function OrcamentoSimples() {
           </span>
         </span>
         <div className="flex-1" />
+        {editingQuoteId && (
+          <span className="text-[10px] text-amber-500 font-medium mr-3">
+            ✎ Editando orçamento salvo
+          </span>
+        )}
         <span className="text-[10px] text-muted-foreground">
           {pieces.length} peças · {layouts.length} chapas
         </span>
@@ -227,14 +236,18 @@ export default function OrcamentoSimples() {
         onImport={() => setShowImport(true)}
         onOptimize={handleOptimize}
         onOrcamento={() => setShowOrcamento(true)}
+        onClientes={() => setShowClientes(true)}
+        onOrcamentosSalvos={() => setShowOrcamentosSalvos(true)}
+        onRelatorios={() => setShowRelatorios(true)}
         isOptimizing={isOptimizing}
         hasPieces={pieces.length > 0}
         hasLayouts={layouts.length > 0 || pieces.some(p => p.source === "aspire")}
+        selectedClientName={selectedClient?.nome ?? null}
       />
 
       <div className="flex-1 min-h-0">
         <ResizablePanelGroup direction="horizontal">
-          <ResizablePanel defaultSize={30} minSize={20}>
+          <ResizablePanel defaultSize={36} minSize={25}>
             <SimplePartsTable
               pieces={pieces}
               selectedId={selectedPieceId}
@@ -249,7 +262,7 @@ export default function OrcamentoSimples() {
             />
           </ResizablePanel>
           <ResizableHandle withHandle />
-          <ResizablePanel defaultSize={70} minSize={40}>
+          <ResizablePanel defaultSize={64} minSize={40}>
             <SimpleSheetView
               layouts={layouts}
               selectedPieceId={selectedPieceId}
@@ -275,6 +288,28 @@ export default function OrcamentoSimples() {
         onOpenChange={setShowOrcamento}
         layouts={layouts}
         pieces={pieces}
+        client={selectedClient}
+        editingQuoteId={editingQuoteId}
+        onSavedQuote={(id) => setEditingQuoteId(id)}
+        onUpdatePiece={handleUpdatePiece}
+      />
+
+      <ClientesDialog
+        open={showClientes}
+        onOpenChange={setShowClientes}
+        selectedClientId={selectedClient?.id ?? null}
+        onSelect={handleSelectClient}
+      />
+
+      <OrcamentosListDialog
+        open={showOrcamentosSalvos}
+        onOpenChange={setShowOrcamentosSalvos}
+        onLoad={handleLoadQuote}
+      />
+
+      <RelatoriosDialog
+        open={showRelatorios}
+        onOpenChange={setShowRelatorios}
       />
     </div>
   );
