@@ -202,20 +202,22 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
     const sawValorFita = budgets.reduce((a, b) => a + b.valorFita, 0);
     const sawValorFuros = budgets.reduce((a, b) => a + b.valorFuros, 0);
 
-    const aspFresaM = aspireBudgets.reduce((a, b) => a + (b.perimeterMm / 1000) * b.quantidade, 0);
+    const aspFresaM = aspireBudgets.reduce((a, b) => a + (b.fresaMmUnit / 1000) * b.quantidade, 0);
+    const aspSerraM = aspireBudgets.reduce((a, b) => a + (b.serraMmUnit / 1000) * b.quantidade, 0);
     const aspFita = aspireBudgets.reduce((a, b) => a + b.fitaMetrosUnit * b.quantidade, 0);
     const aspFuros = aspireBudgets.reduce((a, b) => a + b.numFurosUnit * b.quantidade, 0);
     const aspValorFresa = aspireBudgets.reduce((a, b) => a + b.valorFresaUnit * b.quantidade, 0);
+    const aspValorSerra = aspireBudgets.reduce((a, b) => a + b.valorSerraUnit * b.quantidade, 0);
     const aspValorFita = aspireBudgets.reduce((a, b) => a + b.valorFitaUnit * b.quantidade, 0);
     const aspValorFuros = aspireBudgets.reduce((a, b) => a + b.valorFurosUnit * b.quantidade, 0);
 
     const valorFuros = sawValorFuros + aspValorFuros;
-    const valorTotal = sawValorCortes + sawValorFita + sawValorFuros + aspValorFresa + aspValorFita + aspValorFuros;
+    const valorTotal = sawValorCortes + sawValorFita + sawValorFuros + aspValorFresa + aspValorSerra + aspValorFita + aspValorFuros;
     const valorSemFuros = valorTotal - valorFuros;
 
     return {
       sawCortes, sawFita, sawFuros, sawValorCortes, sawValorFita, sawValorFuros,
-      aspFresaM, aspFita, aspFuros, aspValorFresa, aspValorFita, aspValorFuros,
+      aspFresaM, aspSerraM, aspFita, aspFuros, aspValorFresa, aspValorSerra, aspValorFita, aspValorFuros,
       valorTotal, valorSemFuros, valorFuros,
     };
   }, [budgets, aspireBudgets]);
