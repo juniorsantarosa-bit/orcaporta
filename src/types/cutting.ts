@@ -43,6 +43,12 @@ export interface CuttingPiece {
   aspireContour?: AspireContourSeg[];
   /** Aspire-specific: where the file's machine zero sits relative to the piece bbox (mm) */
   aspireOrigin?: { minX: number; minY: number; maxX: number; maxY: number };
+  /** "contour" = peça com contorno fechado · "frisos" = N passagens individuais (sem fita) */
+  aspireMode?: "contour" | "frisos";
+  /** Quando aspireMode = "frisos": número de frisos */
+  aspireFrisoCount?: number;
+  /** Quando aspireMode = "frisos": comprimento em mm de cada friso */
+  aspireFrisoLengthMm?: number;
 }
 
 export interface SheetLayout {

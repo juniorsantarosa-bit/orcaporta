@@ -52,6 +52,16 @@ export interface AspirePiece {
   originMaxX: number;
   /** Original machine Y of the bounding box max */
   originMaxY: number;
+  /**
+   * "contour" = peça com contorno fechado (lados/banding fazem sentido)
+   * "frisos"  = múltiplas passagens únicas (frisos / cortes individuais).
+   *             Não há lados — só conta o comprimento total × N usinagens.
+   */
+  mode: "contour" | "frisos";
+  /** Quando mode = "frisos": número de passagens (usinagens) detectadas */
+  frisoCount?: number;
+  /** Quando mode = "frisos": comprimento médio de cada passagem em mm */
+  frisoLengthMm?: number;
 }
 
 interface Pt { x: number; y: number }
@@ -175,16 +185,32 @@ export function parseAspireFile(text: string): AspirePiece {
   }
   if (!isFinite(minZ)) minZ = 0;
 
-  // Pass 2: keep only contour segments at the final depth.
+  // Pass 2: keep only contour segments at the final depth, grouped into
+  // PASSES (continuous paths broken by G0 rapids). Each pass = one
+  // uninterrupted machining stroke. A "friso" file is one with many
+  // separate single-stroke passes.
   const segs: Seg[] = [];
+  const passes: Seg[][] = [];
+  let curPass: Seg[] = [];
+  const flushPass = () => {
+    if (curPass.length > 0) {
+      passes.push(curPass);
+      curPass = [];
+    }
+  };
   const tol = 0.05; // mm
   for (const it of motions) {
     const k = it.m.kind!;
-    if (k === "G0") continue;
+    if (k === "G0") {
+      // rapid → break the current continuous pass
+      flushPass();
+      continue;
+    }
     if (Math.abs(it.z - minZ) > tol) continue; // not the final cut layer
     if (it.from.x === it.to.x && it.from.y === it.to.y) continue; // pure Z move
+    let seg: Seg | null = null;
     if (k === "G1") {
-      segs.push({ kind: "line", a: it.from, b: it.to });
+      seg = { kind: "line", a: it.from, b: it.to };
     } else {
       // Arc — need center
       let cx: number, cy: number;
@@ -192,7 +218,6 @@ export function parseAspireFile(text: string): AspirePiece {
         cx = it.from.x + (it.m.i ?? 0);
         cy = it.from.y + (it.m.j ?? 0);
       } else if (it.m.r !== undefined) {
-        // R-format: solve for center on the perpendicular bisector.
         const r = it.m.r;
         const mx = (it.from.x + it.to.x) / 2;
         const my = (it.from.y + it.to.y) / 2;
@@ -200,18 +225,21 @@ export function parseAspireFile(text: string): AspirePiece {
         const d = Math.hypot(dx, dy);
         const h2 = Math.max(0, r * r - (d * d) / 4);
         const h = Math.sqrt(h2);
-        // perpendicular unit
         const px = -dy / (d || 1), py = dx / (d || 1);
-        // pick side based on direction (G2 cw → centre on right of motion)
         const sign = (k === "G2") ? -1 : 1;
         cx = mx + sign * h * px;
         cy = my + sign * h * py;
       } else {
         continue;
       }
-      segs.push({ kind: "arc", a: it.from, b: it.to, cx, cy, cw: k === "G2" });
+      seg = { kind: "arc", a: it.from, b: it.to, cx, cy, cw: k === "G2" };
+    }
+    if (seg) {
+      segs.push(seg);
+      curPass.push(seg);
     }
   }
+  flushPass();
 
   // Compute bounding box from segments (sample arcs for accuracy).
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -328,6 +356,50 @@ export function parseAspireFile(text: string): AspirePiece {
   const descMatch = text.match(/Descricao\s*:\s*[^()\n]*\(( \d+(?:\.\d+)?)/i);
   if (descMatch) toolDiameter = parseFloat(descMatch[1]);
 
+  // ---- Detect "frisos" mode -----------------------------------------------
+  // Frisos = many separate single-stroke passes (não há contorno fechado).
+  // Heurística: para cada pass, removemos lead-in/lead-out (segmentos curtos
+  // <50mm) e ficamos com o "corte útil". Se ≥3 passes resultam em uma única
+  // linha reta de comprimento ≥ 100mm cada, é um arquivo de frisos.
+  const usefulPasses: { length: number; isStraight: boolean }[] = passes.map(p => {
+    // remover G1 muito curtos no início/fim (rampa de descida e lead-out)
+    const minLen = 50;
+    let i0 = 0, i1 = p.length - 1;
+    while (i0 <= i1 && p[i0].kind === "line" && segLength(p[i0]) < minLen) i0++;
+    while (i1 >= i0 && p[i1].kind === "line" && segLength(p[i1]) < minLen) i1--;
+    const core = p.slice(i0, i1 + 1);
+    const length = core.reduce((a, s) => a + segLength(s), 0);
+    const isStraight = core.length >= 1 && core.every(s => s.kind === "line");
+    return { length, isStraight };
+  });
+  const longPasses = usefulPasses.filter(p => p.length >= 100);
+  const allStraight = longPasses.length > 0 && longPasses.every(p => p.isStraight);
+  // Quando há ≥3 passes longos retos, e a soma dos comprimentos é
+  // significativamente maior que o "perímetro" do bbox (passes paralelos),
+  // tratamos como frisos.
+  const isFrisos = allStraight && longPasses.length >= 3;
+
+  let mode: "contour" | "frisos" = "contour";
+  let frisoCount: number | undefined;
+  let frisoLengthMm: number | undefined;
+  let perimeterFinal = perimeter;
+  let sidesFinal = sides;
+
+  if (isFrisos) {
+    mode = "frisos";
+    frisoCount = longPasses.length;
+    const totalLen = longPasses.reduce((a, p) => a + p.length, 0);
+    frisoLengthMm = Math.round((totalLen / longPasses.length) * 10) / 10;
+    perimeterFinal = Math.round(totalLen * 10) / 10;
+    // Em modo frisos NÃO há "lados" para banding — uma linha por friso
+    // (apenas para informação visual, não selecionável).
+    sidesFinal = longPasses.map((p, i) => ({
+      index: i + 1,
+      lengthMm: Math.round(p.length * 10) / 10,
+      kind: "reto" as const,
+    }));
+  }
+
   // Build local-coordinate contour (0..width × 0..height) for visualization.
   const ox = isFinite(minX) ? minX : 0;
   const oy = isFinite(minY) ? minY : 0;
@@ -340,8 +412,8 @@ export function parseAspireFile(text: string): AspirePiece {
   return {
     width,
     height,
-    perimeter: Math.round(perimeter * 10) / 10,
-    sides,
+    perimeter: Math.round(perimeterFinal * 10) / 10,
+    sides: sidesFinal,
     toolDiameter,
     zCutDepth: minZ,
     contour,
@@ -349,5 +421,8 @@ export function parseAspireFile(text: string): AspirePiece {
     originMinY: isFinite(minY) ? minY : 0,
     originMaxX: isFinite(maxX) ? maxX : 0,
     originMaxY: isFinite(maxY) ? maxY : 0,
+    mode,
+    frisoCount,
+    frisoLengthMm,
   };
 }

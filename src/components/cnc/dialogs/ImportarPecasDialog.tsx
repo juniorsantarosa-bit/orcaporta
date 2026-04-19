@@ -43,10 +43,14 @@ export function ImportarPecasDialog({ open, onOpenChange, onImport }: Props) {
   const importAspire = async (file: File) => {
     const text = await file.text();
     const r = parseAspireFile(text);
-    if (r.sides.length === 0 || r.width === 0) {
+    if (r.sides.length === 0 || (r.width === 0 && r.height === 0)) {
       toast.error("Não consegui extrair o contorno deste arquivo.");
       return;
     }
+    const isFrisos = r.mode === "frisos";
+    const observacao = isFrisos
+      ? `Aspire · ${r.frisoCount} frisos × ${r.frisoLengthMm}mm · total ${(r.perimeter/1000).toFixed(2)}m · fresa Ø${r.toolDiameter}mm`
+      : `Aspire · ${r.sides.length} lados · perímetro ${(r.perimeter/1000).toFixed(2)}m · fresa Ø${r.toolDiameter}mm`;
     const piece: CuttingPiece = {
       id: Date.now(),
       projeto: file.name,
@@ -59,16 +63,22 @@ export function ImportarPecasDialog({ open, onOpenChange, onImport }: Props) {
       quantidade: aspireQtd,
       bordaInf: false, bordaSup: false, bordaEsq: false, bordaDir: false,
       veio: false,
-      observacao: `Aspire · ${r.sides.length} lados · perímetro ${(r.perimeter/1000).toFixed(2)}m · fresa Ø${r.toolDiameter}mm`,
+      observacao,
       source: "aspire",
       aspireSides: r.sides.map(s => ({ ...s, banded: false })),
       aspirePerimeter: r.perimeter,
       aspireToolDiameter: r.toolDiameter,
       aspireContour: r.contour,
       aspireOrigin: { minX: r.originMinX, minY: r.originMinY, maxX: r.originMaxX, maxY: r.originMaxY },
+      aspireMode: r.mode,
+      aspireFrisoCount: r.frisoCount,
+      aspireFrisoLengthMm: r.frisoLengthMm,
     };
     onImport([piece]);
-    toast.success(`Peça Aspire importada · ${r.sides.length} lados detectados (W ${r.width}mm × H ${r.height}mm).`);
+    const successMsg = isFrisos
+      ? `Frisos importados · ${r.frisoCount} usinagens × ${r.frisoLengthMm}mm.`
+      : `Peça Aspire importada · ${r.sides.length} lados detectados (W ${r.width}mm × H ${r.height}mm).`;
+    toast.success(successMsg);
     onOpenChange(false);
   };
 

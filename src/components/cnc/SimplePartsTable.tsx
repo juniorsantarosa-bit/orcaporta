@@ -88,45 +88,51 @@ export function SimplePartsTable({ pieces, selectedId, onSelect, onUpdate, layou
                     <td className="px-2 py-1 text-right font-medium">{piece.quantidade}</td>
 
                     {isAspire ? (
-                      // Aspire: per-side popover instead of S/I/E/D columns
+                      // Aspire: per-side popover (modo contour) ou label de frisos
                       <td colSpan={4} className="px-1 py-1 text-center">
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={(e) => e.stopPropagation()}
-                              className="h-6 text-[10px] px-2 gap-1"
-                            >
-                              <Settings2 className="h-3 w-3" />
-                              {(piece.aspireSides ?? []).filter(s => s.banded).length}/{piece.aspireSides?.length ?? 0} fitas
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-64 p-3" onClick={(e) => e.stopPropagation()}>
-                            <div className="text-xs font-semibold mb-2">Fita por lado</div>
-                            <div className="space-y-1.5">
-                              {(piece.aspireSides ?? []).map((s) => (
-                                <label key={s.index} className="flex items-center gap-2 text-xs cursor-pointer">
-                                  <Checkbox
-                                    checked={s.banded}
-                                    onCheckedChange={(v) => {
-                                      const sides = (piece.aspireSides ?? []).map(ss =>
-                                        ss.index === s.index ? { ...ss, banded: !!v } : ss
-                                      );
-                                      onUpdate(piece.id, { aspireSides: sides });
-                                    }}
-                                  />
-                                  <span className="flex-1">
-                                    Lado {s.index} <span className="text-muted-foreground">({s.kind})</span>
-                                  </span>
-                                  <span className="font-mono text-[10px] text-muted-foreground">
-                                    {s.lengthMm.toFixed(1)}mm
-                                  </span>
-                                </label>
-                              ))}
-                            </div>
-                          </PopoverContent>
-                        </Popover>
+                        {piece.aspireMode === "frisos" ? (
+                          <span className="inline-flex items-center gap-1 text-[10px] px-2 py-1 rounded bg-muted text-muted-foreground font-mono">
+                            {piece.aspireFrisoCount} frisos × {piece.aspireFrisoLengthMm?.toFixed(0)}mm
+                          </span>
+                        ) : (
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => e.stopPropagation()}
+                                className="h-6 text-[10px] px-2 gap-1"
+                              >
+                                <Settings2 className="h-3 w-3" />
+                                {(piece.aspireSides ?? []).filter(s => s.banded).length}/{piece.aspireSides?.length ?? 0} fitas
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-64 p-3" onClick={(e) => e.stopPropagation()}>
+                              <div className="text-xs font-semibold mb-2">Fita por lado</div>
+                              <div className="space-y-1.5">
+                                {(piece.aspireSides ?? []).map((s) => (
+                                  <label key={s.index} className="flex items-center gap-2 text-xs cursor-pointer">
+                                    <Checkbox
+                                      checked={s.banded}
+                                      onCheckedChange={(v) => {
+                                        const sides = (piece.aspireSides ?? []).map(ss =>
+                                          ss.index === s.index ? { ...ss, banded: !!v } : ss
+                                        );
+                                        onUpdate(piece.id, { aspireSides: sides });
+                                      }}
+                                    />
+                                    <span className="flex-1">
+                                      Lado {s.index} <span className="text-muted-foreground">({s.kind})</span>
+                                    </span>
+                                    <span className="font-mono text-[10px] text-muted-foreground">
+                                      {s.lengthMm.toFixed(1)}mm
+                                    </span>
+                                  </label>
+                                ))}
+                              </div>
+                            </PopoverContent>
+                          </Popover>
+                        )}
                       </td>
                     ) : (
                       <>
