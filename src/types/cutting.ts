@@ -41,6 +41,8 @@ export interface CuttingPiece {
   aspireToolDiameter?: number;
   /** Aspire-specific: outer contour in local coords (0..largura × 0..altura) */
   aspireContour?: AspireContourSeg[];
+  /** Aspire-specific: where the file's machine zero sits relative to the piece bbox (mm) */
+  aspireOrigin?: { minX: number; minY: number; maxX: number; maxY: number };
 }
 
 export interface SheetLayout {
