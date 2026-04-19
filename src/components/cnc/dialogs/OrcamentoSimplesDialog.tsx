@@ -216,6 +216,10 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
         valorFitaUnit,
         valorTotalUnit,
         valorTotalAll: valorTotalUnit * p.quantidade,
+        mode: isFrisos ? "frisos" : "contour",
+        frisoCount: p.aspireFrisoCount,
+        frisoLengthMm: p.aspireFrisoLengthMm,
+        frisoCutType: p.aspireFrisoCutType,
       };
     });
   }, [aspirePieces, prices]);
