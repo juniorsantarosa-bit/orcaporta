@@ -26,8 +26,8 @@ export interface AspireSide {
 
 /** Contour segment in LOCAL piece coords (0..width × 0..height) */
 export type AspireContourSeg =
-  | { kind: "line"; x1: number; y1: number; x2: number; y2: number }
-  | { kind: "arc"; x1: number; y1: number; x2: number; y2: number; cx: number; cy: number; cw: boolean };
+  | { kind: "line"; x1: number; y1: number; x2: number; y2: number; sideIndex?: number }
+  | { kind: "arc"; x1: number; y1: number; x2: number; y2: number; cx: number; cy: number; cw: boolean; sideIndex?: number };
 
 export interface AspirePiece {
   /** Outer width in mm (X span of the contour) */
