@@ -107,28 +107,53 @@ export function SimplePartsTable({ pieces, selectedId, onSelect, onUpdate, layou
                                 {(piece.aspireSides ?? []).filter(s => s.banded).length}/{piece.aspireSides?.length ?? 0} fitas
                               </Button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-64 p-3" onClick={(e) => e.stopPropagation()}>
-                              <div className="text-xs font-semibold mb-2">Fita por lado</div>
-                              <div className="space-y-1.5">
-                                {(piece.aspireSides ?? []).map((s) => (
-                                  <label key={s.index} className="flex items-center gap-2 text-xs cursor-pointer">
-                                    <Checkbox
-                                      checked={s.banded}
-                                      onCheckedChange={(v) => {
-                                        const sides = (piece.aspireSides ?? []).map(ss =>
-                                          ss.index === s.index ? { ...ss, banded: !!v } : ss
-                                        );
-                                        onUpdate(piece.id, { aspireSides: sides });
-                                      }}
-                                    />
-                                    <span className="flex-1">
-                                      Lado {s.index} <span className="text-muted-foreground">({s.kind})</span>
-                                    </span>
-                                    <span className="font-mono text-[10px] text-muted-foreground">
-                                      {s.lengthMm.toFixed(1)}mm
-                                    </span>
-                                  </label>
-                                ))}
+                            <PopoverContent className="w-[340px] p-3" onClick={(e) => e.stopPropagation()}>
+                              <div className="text-xs font-semibold mb-2">Configuração por lado</div>
+                              <div className="grid grid-cols-[auto_1fr_auto_auto] gap-x-2 gap-y-1.5 items-center text-[10px]">
+                                <div className="text-muted-foreground font-semibold uppercase">Lado</div>
+                                <div className="text-muted-foreground font-semibold uppercase">Tipo de corte</div>
+                                <div className="text-muted-foreground font-semibold uppercase text-center">Fita</div>
+                                <div className="text-muted-foreground font-semibold uppercase text-right">mm</div>
+                                {(piece.aspireSides ?? []).map((s) => {
+                                  const cutType = s.cutType ?? (s.kind === "curvo" ? "fresa" : "serra");
+                                  return (
+                                    <div key={s.index} className="contents">
+                                      <span className="font-mono">
+                                        {s.index} <span className="text-muted-foreground">({s.kind})</span>
+                                      </span>
+                                      <select
+                                        value={cutType}
+                                        onChange={(e) => {
+                                          const sides = (piece.aspireSides ?? []).map(ss =>
+                                            ss.index === s.index ? { ...ss, cutType: e.target.value as "fresa" | "serra" } : ss
+                                          );
+                                          onUpdate(piece.id, { aspireSides: sides });
+                                        }}
+                                        className="h-6 text-[10px] rounded border border-input bg-background px-1"
+                                      >
+                                        <option value="fresa">Fresa</option>
+                                        <option value="serra">Serra</option>
+                                      </select>
+                                      <div className="flex justify-center">
+                                        <Checkbox
+                                          checked={s.banded}
+                                          onCheckedChange={(v) => {
+                                            const sides = (piece.aspireSides ?? []).map(ss =>
+                                              ss.index === s.index ? { ...ss, banded: !!v } : ss
+                                            );
+                                            onUpdate(piece.id, { aspireSides: sides });
+                                          }}
+                                        />
+                                      </div>
+                                      <span className="font-mono text-muted-foreground text-right">
+                                        {s.lengthMm.toFixed(1)}
+                                      </span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                              <div className="mt-2 pt-2 border-t border-border text-[9px] text-muted-foreground">
+                                💡 Lado curvo geralmente é <b>fresa</b>, lados retos podem ser <b>serra</b> (mais barato).
                               </div>
                             </PopoverContent>
                           </Popover>
