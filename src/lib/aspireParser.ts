@@ -309,6 +309,10 @@ export function parseAspireFile(text: string): AspirePiece {
   let curLen = 0;
   let curHasArc = false;
   let prevEnd: Pt | null = null;
+  // sideIndex (1-based) atribuído a cada segmento de `segs`. 0 = não pertence
+  // a nenhum lado (fillet, lead-in/out).
+  const segSideIdx: number[] = new Array(segs.length).fill(0);
+  let curSideIdx = 0; // 0 quando não há lado aberto
 
   const closeSide = () => {
     if (curLen <= 0.5) return; // ignore degenerate
@@ -319,10 +323,12 @@ export function parseAspireFile(text: string): AspirePiece {
     });
     curLen = 0;
     curHasArc = false;
+    curSideIdx = 0;
   };
 
   for (let i = 0; i < work.length; i++) {
     const s = work[i];
+    const globalIdx = i0 + i;
     const isFillet =
       s.kind === "arc" &&
       Math.hypot(s.a.x - s.cx, s.a.y - s.cy) <= FILLET_R_MAX;
@@ -339,6 +345,8 @@ export function parseAspireFile(text: string): AspirePiece {
       curLen = segLength(s);
       curHasArc = s.kind === "arc";
       prevEnd = tangentEnd(s);
+      curSideIdx = sides.length + 1;
+      segSideIdx[globalIdx] = curSideIdx;
       continue;
     }
 
@@ -350,10 +358,12 @@ export function parseAspireFile(text: string): AspirePiece {
       closeSide();
       curLen = segLength(s);
       curHasArc = s.kind === "arc";
+      curSideIdx = sides.length + 1;
     } else {
       curLen += segLength(s);
       if (s.kind === "arc") curHasArc = true;
     }
+    segSideIdx[globalIdx] = curSideIdx;
     prevEnd = tangentEnd(s);
   }
   closeSide();
@@ -415,6 +425,11 @@ export function parseAspireFile(text: string): AspirePiece {
       ? { kind: "line", x1: s.a.x - ox, y1: s.a.y - oy, x2: s.b.x - ox, y2: s.b.y - oy }
       : { kind: "arc", x1: s.a.x - ox, y1: s.a.y - oy, x2: s.b.x - ox, y2: s.b.y - oy, cx: s.cx - ox, cy: s.cy - oy, cw: s.cw }
   );
+  // Anota sideIndex em cada segmento do contour (0 = sem lado).
+  contour.forEach((c, i) => {
+    const idx = segSideIdx[i] ?? 0;
+    if (idx > 0) (c as any).sideIndex = idx;
+  });
 
   return {
     width,
