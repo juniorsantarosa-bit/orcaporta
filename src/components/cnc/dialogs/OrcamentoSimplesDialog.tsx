@@ -522,8 +522,8 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
                             <td className="px-2 py-1.5 text-center">{b.quantidade}</td>
                             <td className="px-2 py-1.5 text-right font-mono">{(b.fresaMmUnit/1000).toFixed(2)}m</td>
                             <td className="px-2 py-1.5 text-right font-mono">{(b.serraMmUnit/1000).toFixed(2)}m</td>
+                            <td className="px-2 py-1.5 text-center">{b.numCortesSerraUnit}</td>
                             <td className="px-2 py-1.5 text-right">{isFrisos ? "—" : `${b.fitaMetrosUnit.toFixed(2)}m`}</td>
-                            <td className="px-2 py-1.5 text-center">{b.numFurosUnit}</td>
                             <td className="px-2 py-1.5 text-right font-semibold">R$ {b.valorTotalAll.toFixed(2)}</td>
                           </tr>
                         );
