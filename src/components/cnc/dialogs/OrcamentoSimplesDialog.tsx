@@ -158,7 +158,20 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
       const isFrisos = p.aspireMode === "frisos";
       const fitaMmUnit = sides.reduce((a, s) => a + (s.banded ? s.lengthMm : 0), 0);
       const fitaMetrosUnit = fitaMmUnit / 1000;
-      const perimeterMm = p.aspirePerimeter ?? sides.reduce((a, s) => a + s.lengthMm, 0);
+
+      // Para FRISOS: comprimento cobrado por friso = aspireFrisoBilledLengthMm
+      // (editável). Multiplica pela quantidade de frisos para obter o
+      // perímetro total cobrado.
+      // Para CONTORNO: usa aspirePerimeter como sempre.
+      let perimeterMm: number;
+      if (isFrisos) {
+        const billedPerFriso = p.aspireFrisoBilledLengthMm
+          ?? (p.aspireFrisoLengthMm ?? 0); // fallback retrocompat
+        const count = p.aspireFrisoCount ?? sides.length;
+        perimeterMm = billedPerFriso * count;
+      } else {
+        perimeterMm = p.aspirePerimeter ?? sides.reduce((a, s) => a + s.lengthMm, 0);
+      }
 
       // Soma comprimentos por tipo de corte. Frisos = todos seguem aspireFrisoCutType.
       // numCortesSerraUnit = nº de lados/frisos serra (1 corte cada). Fresa nunca conta.
@@ -218,7 +231,7 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
         valorTotalAll: valorTotalUnit * p.quantidade,
         mode: isFrisos ? "frisos" : "contour",
         frisoCount: p.aspireFrisoCount,
-        frisoLengthMm: p.aspireFrisoLengthMm,
+        frisoLengthMm: p.aspireFrisoBilledLengthMm ?? p.aspireFrisoLengthMm,
         frisoCutType: p.aspireFrisoCutType,
       };
     });
