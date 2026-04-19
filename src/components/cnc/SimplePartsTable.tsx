@@ -64,6 +64,10 @@ export function SimplePartsTable({ pieces, selectedId, onSelect, onUpdate, layou
                 const sheetNum = pieceSheetMap.get(piece.id);
                 const numFuros = piece.numFurosOrcamento ?? piece.furos?.length ?? 0;
                 const isAspire = piece.source === "aspire";
+                const isFrisos = piece.aspireMode === "frisos";
+                const aspireCutSummary = isFrisos
+                  ? `${piece.aspireFrisoCount ?? 0} frisos`
+                  : `${piece.aspireSides?.length ?? 0} lados`;
                 return (
                   <tr
                     key={piece.id}
@@ -96,16 +100,15 @@ export function SimplePartsTable({ pieces, selectedId, onSelect, onUpdate, layou
                               variant="outline"
                               size="sm"
                               onClick={(e) => e.stopPropagation()}
-                              className="h-6 text-[10px] px-2 gap-1"
+                              title="Configurar tipo de corte desta peça"
+                              className="h-6 text-[10px] px-2 gap-1 border-primary/40 bg-primary/10 hover:bg-primary/15"
                             >
                               <Settings2 className="h-3 w-3" />
-                              {piece.aspireMode === "frisos"
-                                ? `${piece.aspireFrisoCount} × ${(piece.aspireFrisoCutType ?? "fresa").toUpperCase()}`
-                                : `${(piece.aspireSides ?? []).filter(s => s.banded).length}/${piece.aspireSides?.length ?? 0} fitas`}
+                              {`Configurar corte · ${aspireCutSummary}`}
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent className="w-[340px] p-3" onClick={(e) => e.stopPropagation()}>
-                            {piece.aspireMode === "frisos" ? (
+                            {isFrisos ? (
                               <>
                                 <div className="text-xs font-semibold mb-2">Tipo de corte dos frisos</div>
                                 <div className="text-[10px] text-muted-foreground mb-2">
