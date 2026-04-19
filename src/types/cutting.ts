@@ -7,6 +7,8 @@ export interface AspireSideInfo {
   kind: "reto" | "curvo";
   /** When true, this side gets edge-banding tape */
   banded: boolean;
+  /** Tipo de corte deste lado: "fresa" (router) ou "serra" (esquadrejadeira) */
+  cutType?: "fresa" | "serra";
 }
 
 export interface CuttingPiece {
