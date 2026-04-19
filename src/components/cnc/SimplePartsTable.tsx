@@ -160,9 +160,9 @@ export function SimplePartsTable({ pieces, selectedId, onSelect, onUpdate, layou
                                       onChange={(e) => {
                                         const largura = Math.max(0, parseFloat(e.target.value) || 0);
                                         const altura = piece.aspireFrisoAlturaMm ?? piece.aspireToolDiameter ?? 6;
-                                        const fresa = piece.aspireToolDiameter ?? 6;
-                                        // Recalcula automaticamente o comprimento cobrado
-                                        const billed = 2 * (largura + fresa) + 2 * altura;
+                                        // Largura/altura já incluem Ø fresa (medida total do vão).
+                                        // Percurso cobrado = 2×largura + 2×altura.
+                                        const billed = 2 * largura + 2 * altura;
                                         onUpdate(piece.id, {
                                           aspireFrisoLarguraMm: largura,
                                           aspireFrisoBilledLengthMm: Math.round(billed * 10) / 10,
@@ -179,8 +179,7 @@ export function SimplePartsTable({ pieces, selectedId, onSelect, onUpdate, layou
                                       onChange={(e) => {
                                         const altura = Math.max(0, parseFloat(e.target.value) || 0);
                                         const largura = piece.aspireFrisoLarguraMm ?? 0;
-                                        const fresa = piece.aspireToolDiameter ?? 6;
-                                        const billed = 2 * (largura + fresa) + 2 * altura;
+                                        const billed = 2 * largura + 2 * altura;
                                         onUpdate(piece.id, {
                                           aspireFrisoAlturaMm: altura,
                                           aspireFrisoBilledLengthMm: Math.round(billed * 10) / 10,
