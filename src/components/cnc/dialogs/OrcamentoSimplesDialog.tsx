@@ -178,7 +178,7 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
 
       const valorFresaUnit = (fresaMm / 1000) * prices.fresaMetro;
       const valorSerraUnit = (serraMm / 1000) * prices.serraMetro;
-      const valorCortesUnit = numCortesSerraUnit * prices.corte;
+      const valorCortesUnit = numCortesSerraUnit * prices.cortePeca;
       const valorFitaUnit = fitaMetrosUnit * prices.fita;
       const valorTotalUnit = valorFresaUnit + valorSerraUnit + valorCortesUnit + valorFitaUnit;
 
@@ -361,6 +361,7 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
         <div class="pricing-title">VALORES UNITÁRIOS APLICADOS</div>
         <div>
           Corte de serra (chapa): R$ ${prices.corte.toFixed(2)} cada · 
+          Corte de serra (peça Aspire): R$ ${prices.cortePeca.toFixed(2)} cada · 
           Fita de borda: R$ ${prices.fita.toFixed(2)}/m · 
           Furo: R$ ${prices.furo.toFixed(2)} cada · 
           Fresa router: R$ ${prices.fresaMetro.toFixed(2)}/m · 
@@ -408,11 +409,16 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
                   <RotateCcw className="h-3 w-3" /> Restaurar padrão
                 </Button>
               </div>
-              <div className="grid grid-cols-5 gap-2">
+              <div className="grid grid-cols-6 gap-2">
                 <div>
                   <Label className="text-[10px] uppercase text-muted-foreground">R$ corte (chapa)</Label>
                   <Input type="number" step="0.01" min={0} value={prices.corte}
                     onChange={(e) => updatePrice("corte", e.target.value)} className="h-7 text-xs" />
+                </div>
+                <div>
+                  <Label className="text-[10px] uppercase text-muted-foreground" title="Cobrado por cada lado/friso de uma peça Aspire configurado como Serra">R$ corte (peça)</Label>
+                  <Input type="number" step="0.01" min={0} value={prices.cortePeca}
+                    onChange={(e) => updatePrice("cortePeca", e.target.value)} className="h-7 text-xs" />
                 </div>
                 <div>
                   <Label className="text-[10px] uppercase text-muted-foreground">R$/m fita</Label>
