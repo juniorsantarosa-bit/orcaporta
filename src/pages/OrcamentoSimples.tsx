@@ -56,15 +56,16 @@ export default function OrcamentoSimples() {
       return;
     }
     // Aspire pieces are NOT nested into a saw sheet — they are billed by the
-    // real machined perimeter (each one is its own "panel" on the router).
+    // real machined perimeter. But we DO render each one as its own "sheet"
+    // so the user can visualize the contour in the cutting plan.
     const sawPieces = pieces.filter(p => p.source !== "aspire");
-    const aspireCount = pieces.length - sawPieces.length;
+    const aspirePieces = pieces.filter(p => p.source === "aspire");
 
     setIsOptimizing(true);
     toast.loading("Otimizando (modo Serra)...", { id: "opt" });
 
     setTimeout(() => {
-      const sheets = sawPieces.length > 0
+      const sawSheets = sawPieces.length > 0
         ? optimizeSerra(sawPieces, {
             sheetWidth: 1840,
             sheetHeight: 2750,
@@ -76,13 +77,58 @@ export default function OrcamentoSimples() {
             allowRotation: true,
           })
         : [];
+
+      // One "sheet" per Aspire piece (per quantity unit), sized to the piece itself.
+      let aspireLabel = sawSheets.reduce((m, s) => Math.max(m, s.pieces.length), 0) + 1;
+      let aspireSheetId = sawSheets.length + 1;
+      const aspireSheets: NestingSheet[] = [];
+      for (const p of aspirePieces) {
+        const qty = Math.max(1, Math.round(p.quantidade || 1));
+        for (let q = 0; q < qty; q++) {
+          const margin = 30;
+          aspireSheets.push({
+            id: aspireSheetId++,
+            codCorte: 8000 + aspireSheetId,
+            sheetWidth: p.largura + margin * 2,
+            sheetHeight: p.altura + margin * 2,
+            espessura: p.espessura,
+            material: p.material,
+            efficiency: 100,
+            pieces: [{
+              pieceId: p.id,
+              x: margin,
+              y: margin,
+              width: p.largura,
+              height: p.altura,
+              rotated: false,
+              label: String(aspireLabel++),
+              descricao: p.descricao,
+              furos: p.furos || [],
+              usinagens: p.usinagens || [],
+              bordaSup: p.bordaSup,
+              bordaInf: p.bordaInf,
+              bordaEsq: p.bordaEsq,
+              bordaDir: p.bordaDir,
+              cliente: p.cliente,
+              ambiente: p.observacao || "",
+              moduloDesc: p.projeto,
+              espessura: p.espessura,
+              noContour: p.noContour,
+              isAspire: true,
+              aspireContour: p.aspireContour,
+            }],
+          });
+        }
+      }
+
+      const sheets = [...sawSheets, ...aspireSheets];
       setLayouts(sheets);
       setIsOptimizing(false);
-      const avgEff = sheets.length > 0
-        ? sheets.reduce((a, s) => a + s.efficiency, 0) / sheets.length
+      const avgEff = sawSheets.length > 0
+        ? sawSheets.reduce((a, s) => a + s.efficiency, 0) / sawSheets.length
         : 0;
       toast.success(
-        `Otimizado! ${sheets.length} chapas · ${avgEff.toFixed(1)}% aprov.${aspireCount ? ` · ${aspireCount} peça(s) Aspire` : ""}`,
+        `Otimizado! ${sawSheets.length} chapa(s) serra · ${avgEff.toFixed(1)}% aprov.${aspirePieces.length ? ` · ${aspireSheets.length} peça(s) Aspire` : ""}`,
         { id: "opt" }
       );
     }, 100);
