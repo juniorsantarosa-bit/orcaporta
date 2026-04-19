@@ -345,5 +345,9 @@ export function parseAspireFile(text: string): AspirePiece {
     toolDiameter,
     zCutDepth: minZ,
     contour,
+    originMinX: isFinite(minX) ? minX : 0,
+    originMinY: isFinite(minY) ? minY : 0,
+    originMaxX: isFinite(maxX) ? maxX : 0,
+    originMaxY: isFinite(maxY) ? maxY : 0,
   };
 }
