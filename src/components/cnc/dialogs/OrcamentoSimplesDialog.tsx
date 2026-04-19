@@ -292,73 +292,68 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
       </tr>`;
     });
 
-    // Cada peça Aspire vira um GRUPO com:
-    //   - cabeçalho da peça (descrição, material, dimensões, qt, total)
-    //   - linhas separadas por serviço: Fresa (router), Serra (linear), Cortes (unidades), Fita
-    // Assim o cliente vê claramente o que está pagando em cada serviço.
+    // Cada peça vira um GRUPO com cabeçalho + sub-linhas por serviço.
+    // 7 colunas fixas: Peça/Serviço | Detalhe | Material | W×H | Quant. | Unitário | Subtotal
     let aspireRows = "";
     aspireBudgets.forEach(b => {
       const sidesList = b.sides
         .map(s => `Lado ${s.index} (${s.kind} · <i>${s.cutType}</i>): <b>${s.lengthMm.toFixed(1)}mm</b>${s.banded ? " ✓ fita" : ""}`)
         .join(" · ");
 
-      // Linha de cabeçalho da peça (sem valores de serviço — esses vêm nas sub-linhas)
+      // Cabeçalho da peça
       aspireRows += `<tr class="piece-header">
-        <td colspan="2"><b>${b.descricao}</b><div class="side-list">${sidesList}</div></td>
-        <td>${b.material} · ${b.espessura}mm</td>
+        <td><b>${b.descricao}</b><div class="side-list">${sidesList}</div></td>
+        <td class="c">—</td>
+        <td>${b.material}<br/><span style="font-size:9px;color:#666">${b.espessura}mm</span></td>
         <td class="c">${b.width}×${b.height}</td>
-        <td class="c">${b.quantidade}</td>
-        <td class="r" colspan="2">Total da peça</td>
-        <td class="r"><b>R$ ${b.valorTotalAll.toFixed(2)}</b></td>
+        <td class="c">${b.quantidade} un.</td>
+        <td class="r">—</td>
+        <td class="r piece-total"><b>R$ ${b.valorTotalAll.toFixed(2)}</b></td>
       </tr>`;
 
-      // Sub-linhas por serviço (apenas as que tiverem valor > 0)
       const fresaM = b.fresaMmUnit / 1000;
       const serraM = b.serraMmUnit / 1000;
-      const subRow = (servico: string, qt: string, unitario: string, totalUnit: number, totalAll: number) =>
+      // Sub-linha de serviço — mesmas 7 colunas, alinhadas com o cabeçalho.
+      const subRow = (servico: string, detalhe: string, unitario: string, totalAll: number) =>
         `<tr class="service-row">
-          <td colspan="2" class="service">↳ ${servico}</td>
-          <td class="c">${qt}</td>
-          <td class="c">${unitario}</td>
-          <td class="c">${b.quantidade}×</td>
-          <td class="r">R$ ${totalUnit.toFixed(2)}</td>
-          <td class="r">×${b.quantidade}</td>
-          <td class="r">R$ ${totalAll.toFixed(2)}</td>
+          <td class="service">↳ ${servico}</td>
+          <td>${detalhe}</td>
+          <td></td>
+          <td></td>
+          <td class="c">×${b.quantidade}</td>
+          <td class="r">${unitario}</td>
+          <td class="r subtotal">R$ ${totalAll.toFixed(2)}</td>
         </tr>`;
 
       if (fresaM > 0) {
         aspireRows += subRow(
           "Fresa (router)",
-          `${fresaM.toFixed(2)} m`,
+          `${fresaM.toFixed(2)} m por peça`,
           `R$ ${prices.fresaMetro.toFixed(2)}/m`,
-          b.valorFresaUnit,
           b.valorFresaUnit * b.quantidade,
         );
       }
       if (serraM > 0) {
         aspireRows += subRow(
           "Serra (metro linear)",
-          `${serraM.toFixed(2)} m`,
+          `${serraM.toFixed(2)} m por peça`,
           `R$ ${prices.serraMetro.toFixed(2)}/m`,
-          b.valorSerraUnit,
           b.valorSerraUnit * b.quantidade,
         );
       }
       if (b.numCortesSerraUnit > 0 && b.valorCortesUnit > 0) {
         aspireRows += subRow(
           "Cortes (peça)",
-          `${b.numCortesSerraUnit} corte(s)`,
+          `${b.numCortesSerraUnit} corte(s) por peça`,
           `R$ ${prices.cortePeca.toFixed(2)}/corte`,
-          b.valorCortesUnit,
           b.valorCortesUnit * b.quantidade,
         );
       }
       if (b.fitaMetrosUnit > 0) {
         aspireRows += subRow(
           "Fita de borda",
-          `${b.fitaMetrosUnit.toFixed(2)} m`,
+          `${b.fitaMetrosUnit.toFixed(2)} m por peça`,
           `R$ ${prices.fita.toFixed(2)}/m`,
-          b.valorFitaUnit,
           b.valorFitaUnit * b.quantidade,
         );
       }
