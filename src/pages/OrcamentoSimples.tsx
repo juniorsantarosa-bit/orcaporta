@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { Zap } from "lucide-react";
 import { toast } from "sonner";
 import { SimpleToolbar } from "@/components/cnc/SimpleToolbar";
