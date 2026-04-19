@@ -220,20 +220,23 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
 
     const aspFresaM = aspireBudgets.reduce((a, b) => a + (b.fresaMmUnit / 1000) * b.quantidade, 0);
     const aspSerraM = aspireBudgets.reduce((a, b) => a + (b.serraMmUnit / 1000) * b.quantidade, 0);
+    const aspCortes = aspireBudgets.reduce((a, b) => a + b.numCortesSerraUnit * b.quantidade, 0);
     const aspFita = aspireBudgets.reduce((a, b) => a + b.fitaMetrosUnit * b.quantidade, 0);
-    const aspFuros = aspireBudgets.reduce((a, b) => a + b.numFurosUnit * b.quantidade, 0);
     const aspValorFresa = aspireBudgets.reduce((a, b) => a + b.valorFresaUnit * b.quantidade, 0);
     const aspValorSerra = aspireBudgets.reduce((a, b) => a + b.valorSerraUnit * b.quantidade, 0);
+    const aspValorCortes = aspireBudgets.reduce((a, b) => a + b.valorCortesUnit * b.quantidade, 0);
     const aspValorFita = aspireBudgets.reduce((a, b) => a + b.valorFitaUnit * b.quantidade, 0);
-    const aspValorFuros = aspireBudgets.reduce((a, b) => a + b.valorFurosUnit * b.quantidade, 0);
 
-    const valorFuros = sawValorFuros + aspValorFuros;
-    const valorTotal = sawValorCortes + sawValorFita + sawValorFuros + aspValorFresa + aspValorSerra + aspValorFita + aspValorFuros;
+    // Furos só existem no fluxo de Serra (chapas). Aspire não cobra furos.
+    const valorFuros = sawValorFuros;
+    const valorTotal = sawValorCortes + sawValorFita + sawValorFuros
+      + aspValorFresa + aspValorSerra + aspValorCortes + aspValorFita;
     const valorSemFuros = valorTotal - valorFuros;
 
     return {
       sawCortes, sawFita, sawFuros, sawValorCortes, sawValorFita, sawValorFuros,
-      aspFresaM, aspSerraM, aspFita, aspFuros, aspValorFresa, aspValorSerra, aspValorFita, aspValorFuros,
+      aspFresaM, aspSerraM, aspCortes, aspFita,
+      aspValorFresa, aspValorSerra, aspValorCortes, aspValorFita,
       valorTotal, valorSemFuros, valorFuros,
     };
   }, [budgets, aspireBudgets]);
