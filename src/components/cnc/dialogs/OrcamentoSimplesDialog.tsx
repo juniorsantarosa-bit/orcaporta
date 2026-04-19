@@ -268,11 +268,14 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
       .pricing-title { font-weight:700; margin-bottom:3px; }
       .grand { display:flex; justify-content:space-between; align-items:center; font-size:18px; font-weight:800; margin-top:12px; padding:12px; border:2px solid #333; border-radius:4px; }
       .footer { margin-top:18px; font-size:9px; color:#888; text-align:center; border-top:1px solid #ddd; padding-top:6px; }
-      .side-list { font-size:9px; color:#555; margin-top:2px; }
+      .side-list { font-size:9px; color:#555; margin-top:2px; line-height:1.4; }
       .side-list b { color:#000; }
-      .piece-header td { background:#f5f5f5; border-top:2px solid #999; padding-top:6px; padding-bottom:6px; }
-      .service-row td { font-size:10px; color:#333; border-bottom:1px dashed #e5e5e5; }
-      .service-row td.service { padding-left:14px; color:#555; font-style:italic; }
+      table.aspire { table-layout:fixed; }
+      .piece-header td { background:#eef2f7; border-top:2px solid #555; border-bottom:1px solid #bbb; padding:7px 5px; vertical-align:top; }
+      .piece-header td.piece-total { background:#dde6f0; }
+      .service-row td { font-size:10px; color:#222; border-bottom:1px dashed #e0e0e0; padding:5px; }
+      .service-row td.service { padding-left:18px; color:#444; font-style:italic; }
+      .service-row td.subtotal { font-weight:600; }
     `;
 
     let sheetRows = "";
@@ -289,73 +292,68 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
       </tr>`;
     });
 
-    // Cada peça Aspire vira um GRUPO com:
-    //   - cabeçalho da peça (descrição, material, dimensões, qt, total)
-    //   - linhas separadas por serviço: Fresa (router), Serra (linear), Cortes (unidades), Fita
-    // Assim o cliente vê claramente o que está pagando em cada serviço.
+    // Cada peça vira um GRUPO com cabeçalho + sub-linhas por serviço.
+    // 7 colunas fixas: Peça/Serviço | Detalhe | Material | W×H | Quant. | Unitário | Subtotal
     let aspireRows = "";
     aspireBudgets.forEach(b => {
       const sidesList = b.sides
         .map(s => `Lado ${s.index} (${s.kind} · <i>${s.cutType}</i>): <b>${s.lengthMm.toFixed(1)}mm</b>${s.banded ? " ✓ fita" : ""}`)
         .join(" · ");
 
-      // Linha de cabeçalho da peça (sem valores de serviço — esses vêm nas sub-linhas)
+      // Cabeçalho da peça
       aspireRows += `<tr class="piece-header">
-        <td colspan="2"><b>${b.descricao}</b><div class="side-list">${sidesList}</div></td>
-        <td>${b.material} · ${b.espessura}mm</td>
+        <td><b>${b.descricao}</b><div class="side-list">${sidesList}</div></td>
+        <td class="c">—</td>
+        <td>${b.material}<br/><span style="font-size:9px;color:#666">${b.espessura}mm</span></td>
         <td class="c">${b.width}×${b.height}</td>
-        <td class="c">${b.quantidade}</td>
-        <td class="r" colspan="2">Total da peça</td>
-        <td class="r"><b>R$ ${b.valorTotalAll.toFixed(2)}</b></td>
+        <td class="c">${b.quantidade} un.</td>
+        <td class="r">—</td>
+        <td class="r piece-total"><b>R$ ${b.valorTotalAll.toFixed(2)}</b></td>
       </tr>`;
 
-      // Sub-linhas por serviço (apenas as que tiverem valor > 0)
       const fresaM = b.fresaMmUnit / 1000;
       const serraM = b.serraMmUnit / 1000;
-      const subRow = (servico: string, qt: string, unitario: string, totalUnit: number, totalAll: number) =>
+      // Sub-linha de serviço — mesmas 7 colunas, alinhadas com o cabeçalho.
+      const subRow = (servico: string, detalhe: string, unitario: string, totalAll: number) =>
         `<tr class="service-row">
-          <td colspan="2" class="service">↳ ${servico}</td>
-          <td class="c">${qt}</td>
-          <td class="c">${unitario}</td>
-          <td class="c">${b.quantidade}×</td>
-          <td class="r">R$ ${totalUnit.toFixed(2)}</td>
-          <td class="r">×${b.quantidade}</td>
-          <td class="r">R$ ${totalAll.toFixed(2)}</td>
+          <td class="service">↳ ${servico}</td>
+          <td>${detalhe}</td>
+          <td></td>
+          <td></td>
+          <td class="c">×${b.quantidade}</td>
+          <td class="r">${unitario}</td>
+          <td class="r subtotal">R$ ${totalAll.toFixed(2)}</td>
         </tr>`;
 
       if (fresaM > 0) {
         aspireRows += subRow(
           "Fresa (router)",
-          `${fresaM.toFixed(2)} m`,
+          `${fresaM.toFixed(2)} m por peça`,
           `R$ ${prices.fresaMetro.toFixed(2)}/m`,
-          b.valorFresaUnit,
           b.valorFresaUnit * b.quantidade,
         );
       }
       if (serraM > 0) {
         aspireRows += subRow(
           "Serra (metro linear)",
-          `${serraM.toFixed(2)} m`,
+          `${serraM.toFixed(2)} m por peça`,
           `R$ ${prices.serraMetro.toFixed(2)}/m`,
-          b.valorSerraUnit,
           b.valorSerraUnit * b.quantidade,
         );
       }
       if (b.numCortesSerraUnit > 0 && b.valorCortesUnit > 0) {
         aspireRows += subRow(
           "Cortes (peça)",
-          `${b.numCortesSerraUnit} corte(s)`,
+          `${b.numCortesSerraUnit} corte(s) por peça`,
           `R$ ${prices.cortePeca.toFixed(2)}/corte`,
-          b.valorCortesUnit,
           b.valorCortesUnit * b.quantidade,
         );
       }
       if (b.fitaMetrosUnit > 0) {
         aspireRows += subRow(
           "Fita de borda",
-          `${b.fitaMetrosUnit.toFixed(2)} m`,
+          `${b.fitaMetrosUnit.toFixed(2)} m por peça`,
           `R$ ${prices.fita.toFixed(2)}/m`,
-          b.valorFitaUnit,
           b.valorFitaUnit * b.quantidade,
         );
       }
@@ -372,7 +370,7 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
       <div class="info">
         <div><b>Data:</b> ${today}</div>
         <div><b>Chapas:</b> ${budgets.length}</div>
-        <div><b>Peças Aspire:</b> ${aspireBudgets.length}</div>
+        <div><b>Peças usinadas:</b> ${aspireBudgets.length}</div>
       </div>
 
       ${budgets.length > 0 ? `
@@ -394,22 +392,30 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
       </table>` : ""}
 
       ${aspireBudgets.length > 0 ? `
-      <h2>Peças Usinadas (Aspire / Router) — composição por serviço</h2>
-      <table>
+      <h2>Peças Usinadas — composição por serviço</h2>
+      <table class="aspire">
+        <colgroup>
+          <col style="width:26%" />
+          <col style="width:22%" />
+          <col style="width:14%" />
+          <col style="width:11%" />
+          <col style="width:9%" />
+          <col style="width:9%" />
+          <col style="width:9%" />
+        </colgroup>
         <thead><tr>
-          <th colspan="2">Peça / Serviço</th>
+          <th>Peça / Serviço</th>
+          <th>Detalhe</th>
           <th>Material</th>
           <th class="c">W×H</th>
-          <th class="c">Qt</th>
-          <th class="c">Unitário</th>
-          <th class="r">Subtotal/un.</th>
-          <th class="r">×Qt</th>
-          <th class="r">Total</th>
+          <th class="c">Quant.</th>
+          <th class="r">Unitário</th>
+          <th class="r">Subtotal</th>
         </tr></thead>
         <tbody>${aspireRows}
           <tr class="total-row">
             <td colspan="6" class="r">TOTAL PEÇAS USINADAS</td>
-            <td class="r" colspan="3">R$ ${(totals.aspValorFresa + totals.aspValorSerra + totals.aspValorCortes + totals.aspValorFita).toFixed(2)}</td>
+            <td class="r">R$ ${(totals.aspValorFresa + totals.aspValorSerra + totals.aspValorCortes + totals.aspValorFita).toFixed(2)}</td>
           </tr>
         </tbody>
       </table>` : ""}
@@ -418,11 +424,11 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
         <div class="pricing-title">VALORES UNITÁRIOS APLICADOS</div>
         <div>
           Corte de serra (chapa): R$ ${prices.corte.toFixed(2)} cada · 
-          Corte de serra (peça Aspire): R$ ${prices.cortePeca.toFixed(2)} cada · 
+          Corte por peça: R$ ${prices.cortePeca.toFixed(2)} cada · 
           Fita de borda: R$ ${prices.fita.toFixed(2)}/m · 
           Furo: R$ ${prices.furo.toFixed(2)} cada · 
-          Fresa router: R$ ${prices.fresaMetro.toFixed(2)}/m · 
-          Serra (Aspire): R$ ${prices.serraMetro.toFixed(2)}/m
+          Fresa (router): R$ ${prices.fresaMetro.toFixed(2)}/m · 
+          Serra (metro linear): R$ ${prices.serraMetro.toFixed(2)}/m
         </div>
       </div>
 
