@@ -485,8 +485,8 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
                         <th className="px-2 py-2 text-center">Qt</th>
                         <th className="px-2 py-2 text-right">Fresa/un.</th>
                         <th className="px-2 py-2 text-right">Serra/un.</th>
+                        <th className="px-2 py-2 text-center" title="Lados/frisos com cutType=serra. Multiplica pelo R$ corte.">Cortes/un.</th>
                         <th className="px-2 py-2 text-right">Fita/un.</th>
-                        <th className="px-2 py-2 text-center">Furos/un.</th>
                         <th className="px-2 py-2 text-right">Total</th>
                       </tr>
                     </thead>
