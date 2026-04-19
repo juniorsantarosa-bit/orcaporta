@@ -7,6 +7,8 @@ interface Props {
   layouts: NestingSheet[];
   selectedPieceId?: number | null;
   onSelectPiece?: (id: number) => void;
+  /** Índice (1-based) do lado Aspire a destacar com linha tracejada vermelha */
+  selectedSideIndex?: number | null;
 }
 
 /** 12 cores claras distintas — espelha SheetView2D original */
@@ -21,7 +23,7 @@ const getPieceColor = (i: number) => PIECE_COLORS[i % PIECE_COLORS.length];
  * Visualização 2D simples (modo Serra) — replica abordagem do SheetView2D original:
  * SVG com viewBox em coordenadas reais da chapa + flex centralizado + zoom via CSS scale.
  */
-export function SimpleSheetView({ layouts, selectedPieceId, onSelectPiece }: Props) {
+export function SimpleSheetView({ layouts, selectedPieceId, onSelectPiece, selectedSideIndex }: Props) {
   const [sheetIdx, setSheetIdx] = useState(0);
   const [zoom, setZoom] = useState(1);
 
