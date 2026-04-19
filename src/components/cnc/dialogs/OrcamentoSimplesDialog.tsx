@@ -82,6 +82,14 @@ interface AspireBudget {
   valorFitaUnit: number;
   valorTotalUnit: number;
   valorTotalAll: number;
+  /** Modo da peça: contour = lados/banding · frisos = N passes individuais */
+  mode: "contour" | "frisos";
+  /** Quando mode=frisos: número de frisos detectados */
+  frisoCount?: number;
+  /** Quando mode=frisos: comprimento efetivo (mm) de cada friso (vão útil) */
+  frisoLengthMm?: number;
+  /** Quando mode=frisos: tipo de corte aplicado (fresa | serra) */
+  frisoCutType?: "fresa" | "serra";
 }
 
 export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: Props) {
@@ -208,6 +216,10 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
         valorFitaUnit,
         valorTotalUnit,
         valorTotalAll: valorTotalUnit * p.quantidade,
+        mode: isFrisos ? "frisos" : "contour",
+        frisoCount: p.aspireFrisoCount,
+        frisoLengthMm: p.aspireFrisoLengthMm,
+        frisoCutType: p.aspireFrisoCutType,
       };
     });
   }, [aspirePieces, prices]);
@@ -296,9 +308,14 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
     // 7 colunas fixas: Peça/Serviço | Detalhe | Material | W×H | Quant. | Unitário | Subtotal
     let aspireRows = "";
     aspireBudgets.forEach(b => {
-      const sidesList = b.sides
-        .map(s => `Lado ${s.index} (${s.kind} · <i>${s.cutType}</i>): <b>${s.lengthMm.toFixed(1)}mm</b>${s.banded ? " ✓ fita" : ""}`)
-        .join(" · ");
+      // Descrição secundária:
+      //  • frisos → "N frisos de Lt mm cada"
+      //  • contour → lista os lados detectados
+      const sidesList = b.mode === "frisos"
+        ? `<b>${b.frisoCount ?? b.sides.length}</b> frisos de <b>${(b.frisoLengthMm ?? 0).toFixed(1)} mm</b> cada`
+        : b.sides
+            .map(s => `Lado ${s.index} (${s.kind} · <i>${s.cutType}</i>): <b>${s.lengthMm.toFixed(1)}mm</b>${s.banded ? " ✓ fita" : ""}`)
+            .join(" · ");
 
       // Cabeçalho da peça
       aspireRows += `<tr class="piece-header">
@@ -313,6 +330,10 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
 
       const fresaM = b.fresaMmUnit / 1000;
       const serraM = b.serraMmUnit / 1000;
+      // Quando é friso, o "detalhe" do serviço descreve N×Lt em vez de "X m por peça".
+      const frisoDetalhe = b.mode === "frisos"
+        ? `${b.frisoCount ?? 0} frisos × ${(b.frisoLengthMm ?? 0).toFixed(1)} mm`
+        : null;
       // Sub-linha de serviço — mesmas 7 colunas, alinhadas com o cabeçalho.
       const subRow = (servico: string, detalhe: string, unitario: string, totalAll: number) =>
         `<tr class="service-row">
@@ -328,7 +349,7 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
       if (fresaM > 0) {
         aspireRows += subRow(
           "Fresa (router)",
-          `${fresaM.toFixed(2)} m por peça`,
+          frisoDetalhe ?? `${fresaM.toFixed(2)} m por peça`,
           `R$ ${prices.fresaMetro.toFixed(2)}/m`,
           b.valorFresaUnit * b.quantidade,
         );
@@ -336,7 +357,7 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
       if (serraM > 0) {
         aspireRows += subRow(
           "Serra (metro linear)",
-          `${serraM.toFixed(2)} m por peça`,
+          frisoDetalhe ?? `${serraM.toFixed(2)} m por peça`,
           `R$ ${prices.serraMetro.toFixed(2)}/m`,
           b.valorSerraUnit * b.quantidade,
         );

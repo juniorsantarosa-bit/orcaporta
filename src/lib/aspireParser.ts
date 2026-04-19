@@ -405,14 +405,23 @@ export function parseAspireFile(text: string): AspirePiece {
   if (isFrisos) {
     mode = "frisos";
     frisoCount = longPasses.length;
-    const totalLen = longPasses.reduce((a, p) => a + p.length, 0);
-    frisoLengthMm = Math.round((totalLen / longPasses.length) * 10) / 10;
-    perimeterFinal = Math.round(totalLen * 10) / 10;
+    // Para frisos, a fresa percorre o canal IDA e VOLTA dentro do mesmo trilho.
+    // O comprimento EFETIVO do vão (medida que interessa ao cliente) é:
+    //     vão = (percurso / 2) − Ø fresa
+    // O percurso bruto inclui ida+volta+lead-in; ao dividir por 2 isolamos
+    // um sentido, e ao subtrair o diâmetro descontamos a sobra de ferramenta
+    // que ultrapassa as extremidades do canal.
+    const effectiveLen = (raw: number) =>
+      Math.max(0, raw / 2 - toolDiameter);
+    const totalEffective = longPasses.reduce((a, p) => a + effectiveLen(p.length), 0);
+    frisoLengthMm = Math.round((totalEffective / longPasses.length) * 10) / 10;
+    perimeterFinal = Math.round(totalEffective * 10) / 10;
     // Em modo frisos NÃO há "lados" para banding — uma linha por friso
-    // (apenas para informação visual, não selecionável).
+    // (apenas para informação visual, não selecionável). Comprimentos já
+    // ajustados para a medida efetiva do vão.
     sidesFinal = longPasses.map((p, i) => ({
       index: i + 1,
-      lengthMm: Math.round(p.length * 10) / 10,
+      lengthMm: Math.round(effectiveLen(p.length) * 10) / 10,
       kind: "reto" as const,
     }));
   }
