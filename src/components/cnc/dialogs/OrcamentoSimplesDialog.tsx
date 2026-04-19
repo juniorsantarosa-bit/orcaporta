@@ -268,11 +268,14 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
       .pricing-title { font-weight:700; margin-bottom:3px; }
       .grand { display:flex; justify-content:space-between; align-items:center; font-size:18px; font-weight:800; margin-top:12px; padding:12px; border:2px solid #333; border-radius:4px; }
       .footer { margin-top:18px; font-size:9px; color:#888; text-align:center; border-top:1px solid #ddd; padding-top:6px; }
-      .side-list { font-size:9px; color:#555; margin-top:2px; }
+      .side-list { font-size:9px; color:#555; margin-top:2px; line-height:1.4; }
       .side-list b { color:#000; }
-      .piece-header td { background:#f5f5f5; border-top:2px solid #999; padding-top:6px; padding-bottom:6px; }
-      .service-row td { font-size:10px; color:#333; border-bottom:1px dashed #e5e5e5; }
-      .service-row td.service { padding-left:14px; color:#555; font-style:italic; }
+      table.aspire { table-layout:fixed; }
+      .piece-header td { background:#eef2f7; border-top:2px solid #555; border-bottom:1px solid #bbb; padding:7px 5px; vertical-align:top; }
+      .piece-header td.piece-total { background:#dde6f0; }
+      .service-row td { font-size:10px; color:#222; border-bottom:1px dashed #e0e0e0; padding:5px; }
+      .service-row td.service { padding-left:18px; color:#444; font-style:italic; }
+      .service-row td.subtotal { font-weight:600; }
     `;
 
     let sheetRows = "";
