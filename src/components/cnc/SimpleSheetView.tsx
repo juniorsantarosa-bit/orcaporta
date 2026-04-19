@@ -7,8 +7,10 @@ interface Props {
   layouts: NestingSheet[];
   selectedPieceId?: number | null;
   onSelectPiece?: (id: number) => void;
-  /** Índice (1-based) do lado Aspire a destacar com linha tracejada vermelha */
+  /** Índice (1-based) do lado Aspire a destacar com linha tracejada vermelha (clique manual) */
   selectedSideIndex?: number | null;
+  /** Mapa pieceId → conjunto de sideIndex (1-based) marcados com fita — destacados em vermelho enquanto o checkbox estiver ativo */
+  bandedSideIndexes?: Map<number, Set<number>>;
 }
 
 /** 12 cores claras distintas — espelha SheetView2D original */
@@ -23,7 +25,7 @@ const getPieceColor = (i: number) => PIECE_COLORS[i % PIECE_COLORS.length];
  * Visualização 2D simples (modo Serra) — replica abordagem do SheetView2D original:
  * SVG com viewBox em coordenadas reais da chapa + flex centralizado + zoom via CSS scale.
  */
-export function SimpleSheetView({ layouts, selectedPieceId, onSelectPiece, selectedSideIndex }: Props) {
+export function SimpleSheetView({ layouts, selectedPieceId, onSelectPiece, selectedSideIndex, bandedSideIndexes }: Props) {
   const [sheetIdx, setSheetIdx] = useState(0);
   const [zoom, setZoom] = useState(1);
 
@@ -194,13 +196,15 @@ export function SimpleSheetView({ layouts, selectedPieceId, onSelectPiece, selec
                   }
                   prev = { x: ex, y: ey };
 
-                  // Sub-path apenas dos segmentos do lado selecionado (overlay).
-                  if (
-                    isSelected &&
+                  // Sub-path: destaca segmentos do lado clicado manualmente OU
+                  // de QUALQUER lado marcado com fita (banded) na peça atual.
+                  const bandedSet = bandedSideIndexes?.get(p.pieceId);
+                  const isBandedSide = seg.sideIndex !== undefined && bandedSet?.has(seg.sideIndex);
+                  const isClickedSide =
                     selectedSideIndex !== null &&
                     selectedSideIndex !== undefined &&
-                    seg.sideIndex === selectedSideIndex
-                  ) {
+                    seg.sideIndex === selectedSideIndex;
+                  if (isSelected && (isBandedSide || isClickedSide)) {
                     if (!hPrev || Math.hypot(hPrev.x - sx, hPrev.y - sy) > 0.5) {
                       highlightPath += `M ${sx.toFixed(2)} ${sy.toFixed(2)} `;
                     }
