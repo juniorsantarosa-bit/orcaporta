@@ -38,7 +38,7 @@ const blankClient = (): Omit<Client, "id" | "createdAt" | "updatedAt"> => ({
 
 export function ClientesDialog({ open, onOpenChange, selectedClientId, onSelect }: Props) {
   const [clients, setClients] = useState<Client[]>([]);
-  const [editing, setEditing] = useState<(Omit<Client, "createdAt" | "updatedAt"> & { id?: string }) | null>(null);
+  const [editing, setEditing] = useState<(Omit<Client, "id" | "createdAt" | "updatedAt"> & { id?: string }) | null>(null);
   const [filter, setFilter] = useState("");
 
   useEffect(() => {
