@@ -23,6 +23,7 @@ export default function OrcamentoSimples() {
   const [pieces, setPieces] = useState<CuttingPiece[]>([]);
   const [layouts, setLayouts] = useState<NestingSheet[]>([]);
   const [selectedPieceId, setSelectedPieceId] = useState<number | null>(null);
+  const [selectedSideIndex, setSelectedSideIndex] = useState<number | null>(null);
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [showOrcamento, setShowOrcamento] = useState(false);
@@ -226,6 +227,11 @@ export default function OrcamentoSimples() {
               onSelect={setSelectedPieceId}
               onUpdate={handleUpdatePiece}
               layouts={layouts}
+              selectedSideIndex={selectedSideIndex}
+              onSelectSide={(pid, sideIdx) => {
+                setSelectedPieceId(pid);
+                setSelectedSideIndex(sideIdx);
+              }}
             />
           </ResizablePanel>
           <ResizableHandle withHandle />
@@ -233,7 +239,11 @@ export default function OrcamentoSimples() {
             <SimpleSheetView
               layouts={layouts}
               selectedPieceId={selectedPieceId}
-              onSelectPiece={setSelectedPieceId}
+              onSelectPiece={(id) => {
+                setSelectedPieceId(id);
+                setSelectedSideIndex(null);
+              }}
+              selectedSideIndex={selectedSideIndex}
             />
           </ResizablePanel>
         </ResizablePanelGroup>
