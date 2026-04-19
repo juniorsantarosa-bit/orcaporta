@@ -436,29 +436,39 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
                       </tr>
                     </thead>
                     <tbody>
-                      {aspireBudgets.map(b => (
-                        <tr key={b.pieceId} className="border-t border-border align-top">
-                          <td className="px-2 py-1.5">
-                            <div className="font-medium">{b.descricao}</div>
-                            <div className="text-[10px] text-muted-foreground space-y-0.5 mt-1">
-                              {b.sides.map(s => (
-                                <div key={s.index} className="flex items-center gap-1.5">
-                                  <span className="font-mono">Lado {s.index}</span>
-                                  <span className={s.kind === "curvo" ? "text-primary" : ""}>({s.kind})</span>
-                                  <span className="font-mono">{s.lengthMm.toFixed(1)}mm</span>
-                                  {s.banded && <span className="text-[9px] px-1 rounded bg-primary/20 text-primary">fita</span>}
-                                </div>
-                              ))}
-                            </div>
-                          </td>
-                          <td className="px-2 py-1.5 text-center font-mono text-[10px]">{b.width}×{b.height}</td>
-                          <td className="px-2 py-1.5 text-center">{b.quantidade}</td>
-                          <td className="px-2 py-1.5 text-right font-mono">{(b.perimeterMm/1000).toFixed(2)}m</td>
-                          <td className="px-2 py-1.5 text-right">{b.fitaMetrosUnit.toFixed(2)}m</td>
-                          <td className="px-2 py-1.5 text-center">{b.numFurosUnit}</td>
-                          <td className="px-2 py-1.5 text-right font-semibold">R$ {b.valorTotalAll.toFixed(2)}</td>
-                        </tr>
-                      ))}
+                      {aspireBudgets.map(b => {
+                        const piece = aspirePieces.find(p => p.id === b.pieceId);
+                        const isFrisos = piece?.aspireMode === "frisos";
+                        return (
+                          <tr key={b.pieceId} className="border-t border-border align-top">
+                            <td className="px-2 py-1.5">
+                              <div className="font-medium">{b.descricao}</div>
+                              <div className="text-[10px] text-muted-foreground space-y-0.5 mt-1">
+                                {isFrisos ? (
+                                  <div className="font-mono">
+                                    {piece?.aspireFrisoCount} frisos × {piece?.aspireFrisoLengthMm?.toFixed(1)}mm (passe único)
+                                  </div>
+                                ) : (
+                                  b.sides.map(s => (
+                                    <div key={s.index} className="flex items-center gap-1.5">
+                                      <span className="font-mono">Lado {s.index}</span>
+                                      <span className={s.kind === "curvo" ? "text-primary" : ""}>({s.kind})</span>
+                                      <span className="font-mono">{s.lengthMm.toFixed(1)}mm</span>
+                                      {s.banded && <span className="text-[9px] px-1 rounded bg-primary/20 text-primary">fita</span>}
+                                    </div>
+                                  ))
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-2 py-1.5 text-center font-mono text-[10px]">{b.width}×{b.height}</td>
+                            <td className="px-2 py-1.5 text-center">{b.quantidade}</td>
+                            <td className="px-2 py-1.5 text-right font-mono">{(b.perimeterMm/1000).toFixed(2)}m</td>
+                            <td className="px-2 py-1.5 text-right">{isFrisos ? "—" : `${b.fitaMetrosUnit.toFixed(2)}m`}</td>
+                            <td className="px-2 py-1.5 text-center">{b.numFurosUnit}</td>
+                            <td className="px-2 py-1.5 text-right font-semibold">R$ {b.valorTotalAll.toFixed(2)}</td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
