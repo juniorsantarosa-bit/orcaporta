@@ -297,8 +297,8 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
         <td class="c">${b.quantidade}</td>
         <td class="r">${(b.fresaMmUnit/1000).toFixed(2)}m</td>
         <td class="r">${(b.serraMmUnit/1000).toFixed(2)}m</td>
+        <td class="c">${b.numCortesSerraUnit}</td>
         <td class="r">${b.fitaMetrosUnit.toFixed(2)}m</td>
-        <td class="c">${b.numFurosUnit}</td>
         <td class="r"><b>R$ ${b.valorTotalAll.toFixed(2)}</b></td>
       </tr>`;
     });
