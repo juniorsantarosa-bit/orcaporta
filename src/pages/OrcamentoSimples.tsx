@@ -27,6 +27,49 @@ export default function OrcamentoSimples() {
   const [showImport, setShowImport] = useState(false);
   const [showOrcamento, setShowOrcamento] = useState(false);
 
+  /** Build one "sheet" per Aspire piece unit, sized to fit the contour. */
+  const buildAspireSheets = useCallback((aspirePieces: CuttingPiece[], startId = 1, startLabel = 1): NestingSheet[] => {
+    const out: NestingSheet[] = [];
+    let id = startId, label = startLabel;
+    for (const p of aspirePieces) {
+      const qty = Math.max(1, Math.round(p.quantidade || 1));
+      for (let q = 0; q < qty; q++) {
+        const margin = 30;
+        out.push({
+          id: id++,
+          codCorte: 8000 + id,
+          sheetWidth: p.largura + margin * 2,
+          sheetHeight: p.altura + margin * 2,
+          espessura: p.espessura,
+          material: p.material,
+          efficiency: 100,
+          pieces: [{
+            pieceId: p.id,
+            x: margin,
+            y: margin,
+            width: p.largura,
+            height: p.altura,
+            rotated: false,
+            label: String(label++),
+            descricao: p.descricao,
+            furos: p.furos || [],
+            usinagens: p.usinagens || [],
+            bordaSup: p.bordaSup, bordaInf: p.bordaInf,
+            bordaEsq: p.bordaEsq, bordaDir: p.bordaDir,
+            cliente: p.cliente,
+            ambiente: p.observacao || "",
+            moduloDesc: p.projeto,
+            espessura: p.espessura,
+            noContour: p.noContour,
+            isAspire: true,
+            aspireContour: p.aspireContour,
+          }],
+        });
+      }
+    }
+    return out;
+  }, []);
+
   const handleImport = useCallback((newPieces: CuttingPiece[]) => {
     // Append imports so we can mix Promob + multiple Aspire files in the same budget.
     setPieces(prev => {
@@ -34,8 +77,19 @@ export default function OrcamentoSimples() {
       setSelectedPieceId(prev.length === 0 && newPieces.length > 0 ? newPieces[0].id : selectedPieceId);
       return merged;
     });
-    setLayouts([]);
-  }, [selectedPieceId]);
+    // Aspire pieces are visualizable immediately (no nesting needed).
+    // Saw-cut pieces need an explicit "Otimizar" — clear those layouts.
+    const aspireOnly = newPieces.filter(p => p.source === "aspire");
+    if (aspireOnly.length > 0) {
+      setLayouts(prev => {
+        const sawLayouts = prev.filter(s => !s.pieces.some(pp => (pp as any).isAspire));
+        const startId = (sawLayouts[sawLayouts.length - 1]?.id ?? 0) + 1;
+        return [...sawLayouts, ...buildAspireSheets(aspireOnly, startId, 1)];
+      });
+    } else {
+      setLayouts([]);
+    }
+  }, [selectedPieceId, buildAspireSheets]);
 
   const handleUpdatePiece = useCallback((id: number, patch: Partial<CuttingPiece>) => {
     setPieces(prev => prev.map(p => p.id === id ? { ...p, ...patch } : p));
@@ -78,48 +132,9 @@ export default function OrcamentoSimples() {
           })
         : [];
 
-      // One "sheet" per Aspire piece (per quantity unit), sized to the piece itself.
-      let aspireLabel = sawSheets.reduce((m, s) => Math.max(m, s.pieces.length), 0) + 1;
-      let aspireSheetId = sawSheets.length + 1;
-      const aspireSheets: NestingSheet[] = [];
-      for (const p of aspirePieces) {
-        const qty = Math.max(1, Math.round(p.quantidade || 1));
-        for (let q = 0; q < qty; q++) {
-          const margin = 30;
-          aspireSheets.push({
-            id: aspireSheetId++,
-            codCorte: 8000 + aspireSheetId,
-            sheetWidth: p.largura + margin * 2,
-            sheetHeight: p.altura + margin * 2,
-            espessura: p.espessura,
-            material: p.material,
-            efficiency: 100,
-            pieces: [{
-              pieceId: p.id,
-              x: margin,
-              y: margin,
-              width: p.largura,
-              height: p.altura,
-              rotated: false,
-              label: String(aspireLabel++),
-              descricao: p.descricao,
-              furos: p.furos || [],
-              usinagens: p.usinagens || [],
-              bordaSup: p.bordaSup,
-              bordaInf: p.bordaInf,
-              bordaEsq: p.bordaEsq,
-              bordaDir: p.bordaDir,
-              cliente: p.cliente,
-              ambiente: p.observacao || "",
-              moduloDesc: p.projeto,
-              espessura: p.espessura,
-              noContour: p.noContour,
-              isAspire: true,
-              aspireContour: p.aspireContour,
-            }],
-          });
-        }
-      }
+      const aspireStartId = (sawSheets[sawSheets.length - 1]?.id ?? 0) + 1;
+      const aspireStartLabel = sawSheets.reduce((m, s) => m + s.pieces.length, 0) + 1;
+      const aspireSheets = buildAspireSheets(aspirePieces, aspireStartId, aspireStartLabel);
 
       const sheets = [...sawSheets, ...aspireSheets];
       setLayouts(sheets);
@@ -132,7 +147,7 @@ export default function OrcamentoSimples() {
         { id: "opt" }
       );
     }, 100);
-  }, [pieces]);
+  }, [pieces, buildAspireSheets]);
 
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-background">
