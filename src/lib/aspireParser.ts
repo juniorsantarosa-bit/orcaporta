@@ -430,18 +430,22 @@ export function parseAspireFile(text: string): AspirePiece {
   if (isFrisos) {
     mode = "frisos";
     frisoCount = longPasses.length;
-    // Largura do vão = (percurso/2) − Ø fresa.
-    // Como a fresa vai e volta no mesmo trilho, dividir por 2 isola um sentido,
-    // e subtrair o diâmetro desconta a "sobra" da ferramenta nas extremidades.
-    const larguraVao = (raw: number) => Math.max(0, raw / 2 - toolDiameter);
-    // Comprimento que a fresa REALMENTE usina (ida + volta + subida + descida).
-    // Default: altura do canal = Ø (uma passada). Fórmula:
-    //   billed = 2 × (largura + Ø) + 2 × altura
+    // Largura TOTAL do vão (medida real visível pelo cliente):
+    //   largura = (percurso/2) − Ø + Ø = percurso/2
+    // O percurso/2 isola um sentido da ida-e-volta. A fresa percorre desde o
+    // CENTRO numa extremidade até o CENTRO na outra; somando o raio de cada
+    // lado (3mm + 3mm = Ø) obtemos a medida real do canal de borda a borda.
+    const larguraTotal = (raw: number) => Math.max(0, raw / 2);
+    // Altura TOTAL do canal: Ø fresa (uma passada) já representa a medida
+    // real de borda a borda no eixo perpendicular. Para canais mais altos
+    // (múltiplas passadas) o usuário edita manualmente na tabela.
     const alturaDefault = toolDiameter;
+    // Comprimento que a fresa REALMENTE usina (ida + volta + subida + descida).
+    // Como largura/altura agora já incluem Ø, billed = 2×largura + 2×altura.
     const billed = (largura: number, altura: number) =>
-      2 * (largura + toolDiameter) + 2 * altura;
+      2 * largura + 2 * altura;
 
-    const totalLargura = longPasses.reduce((a, p) => a + larguraVao(p.length), 0);
+    const totalLargura = longPasses.reduce((a, p) => a + larguraTotal(p.length), 0);
     const avgLargura = totalLargura / longPasses.length;
     const billedPerFriso = billed(avgLargura, alturaDefault);
 
@@ -455,7 +459,7 @@ export function parseAspireFile(text: string): AspirePiece {
     // COBRADO (que é o que será multiplicado por R$/m no orçamento).
     sidesFinal = longPasses.map((p, i) => ({
       index: i + 1,
-      lengthMm: Math.round(billed(larguraVao(p.length), alturaDefault) * 10) / 10,
+      lengthMm: Math.round(billed(larguraTotal(p.length), alturaDefault) * 10) / 10,
       kind: "reto" as const,
     }));
   }
