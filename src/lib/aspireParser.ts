@@ -320,6 +320,15 @@ export function parseAspireFile(text: string): AspirePiece {
   const descMatch = text.match(/Descricao\s*:\s*[^()\n]*\(( \d+(?:\.\d+)?)/i);
   if (descMatch) toolDiameter = parseFloat(descMatch[1]);
 
+  // Build local-coordinate contour (0..width × 0..height) for visualization.
+  const ox = isFinite(minX) ? minX : 0;
+  const oy = isFinite(minY) ? minY : 0;
+  const contour: AspireContourSeg[] = segs.map(s =>
+    s.kind === "line"
+      ? { kind: "line", x1: s.a.x - ox, y1: s.a.y - oy, x2: s.b.x - ox, y2: s.b.y - oy }
+      : { kind: "arc", x1: s.a.x - ox, y1: s.a.y - oy, x2: s.b.x - ox, y2: s.b.y - oy, cx: s.cx - ox, cy: s.cy - oy, cw: s.cw }
+  );
+
   return {
     width,
     height,
@@ -327,5 +336,6 @@ export function parseAspireFile(text: string): AspirePiece {
     sides,
     toolDiameter,
     zCutDepth: minZ,
+    contour,
   };
 }
