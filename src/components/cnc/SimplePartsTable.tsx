@@ -13,9 +13,13 @@ interface Props {
   onSelect: (id: number) => void;
   onUpdate: (id: number, patch: Partial<CuttingPiece>) => void;
   layouts?: NestingSheet[];
+  /** Índice (1-based) do lado Aspire atualmente destacado na visualização */
+  selectedSideIndex?: number | null;
+  /** Chamado quando o usuário clica em um lado dentro do popover de configuração */
+  onSelectSide?: (pieceId: number, sideIndex: number | null) => void;
 }
 
-export function SimplePartsTable({ pieces, selectedId, onSelect, onUpdate, layouts }: Props) {
+export function SimplePartsTable({ pieces, selectedId, onSelect, onUpdate, layouts, selectedSideIndex, onSelectSide }: Props) {
   const pieceSheetMap = new Map<number, number>();
   if (layouts) {
     layouts.forEach((sheet, sheetIdx) => {
@@ -141,11 +145,24 @@ export function SimplePartsTable({ pieces, selectedId, onSelect, onUpdate, layou
                                   <div className="text-muted-foreground font-semibold uppercase text-right">mm</div>
                                   {(piece.aspireSides ?? []).map((s) => {
                                     const cutType = s.cutType ?? (s.kind === "curvo" ? "fresa" : "serra");
+                                    const isHighlighted = selectedId === piece.id && selectedSideIndex === s.index;
                                     return (
                                       <div key={s.index} className="contents">
-                                        <span className="font-mono">
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            onSelectSide?.(piece.id, isHighlighted ? null : s.index);
+                                          }}
+                                          title="Destacar este lado na visualização"
+                                          className={`font-mono text-left px-1.5 py-0.5 rounded transition-colors ${
+                                            isHighlighted
+                                              ? "bg-red-500/20 text-red-400 ring-1 ring-red-500/60"
+                                              : "hover:bg-muted/60"
+                                          }`}
+                                        >
                                           {s.index} <span className="text-muted-foreground">({s.kind})</span>
-                                        </span>
+                                        </button>
                                         <select
                                           value={cutType}
                                           onChange={(e) => {
@@ -153,6 +170,7 @@ export function SimplePartsTable({ pieces, selectedId, onSelect, onUpdate, layou
                                               ss.index === s.index ? { ...ss, cutType: e.target.value as "fresa" | "serra" } : ss
                                             );
                                             onUpdate(piece.id, { aspireSides: sides });
+                                            onSelectSide?.(piece.id, s.index);
                                           }}
                                           className="h-6 text-[10px] rounded border border-input bg-background px-1"
                                         >
@@ -167,6 +185,7 @@ export function SimplePartsTable({ pieces, selectedId, onSelect, onUpdate, layou
                                                 ss.index === s.index ? { ...ss, banded: !!v } : ss
                                               );
                                               onUpdate(piece.id, { aspireSides: sides });
+                                              onSelectSide?.(piece.id, s.index);
                                             }}
                                           />
                                         </div>
