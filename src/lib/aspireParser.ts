@@ -52,6 +52,16 @@ export interface AspirePiece {
   originMaxX: number;
   /** Original machine Y of the bounding box max */
   originMaxY: number;
+  /**
+   * "contour" = peça com contorno fechado (lados/banding fazem sentido)
+   * "frisos"  = múltiplas passagens únicas (frisos / cortes individuais).
+   *             Não há lados — só conta o comprimento total × N usinagens.
+   */
+  mode: "contour" | "frisos";
+  /** Quando mode = "frisos": número de passagens (usinagens) detectadas */
+  frisoCount?: number;
+  /** Quando mode = "frisos": comprimento médio de cada passagem em mm */
+  frisoLengthMm?: number;
 }
 
 interface Pt { x: number; y: number }
