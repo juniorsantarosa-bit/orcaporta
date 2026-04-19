@@ -223,6 +223,8 @@ export function optimizeSerra(
           moduloDesc: p.ep.piece.projeto,
           espessura,
           noContour: p.ep.piece.noContour,
+          isAspire: p.ep.piece.source === "aspire",
+          aspireContour: p.ep.piece.aspireContour,
         })),
       });
       sheetIdCounter++;
