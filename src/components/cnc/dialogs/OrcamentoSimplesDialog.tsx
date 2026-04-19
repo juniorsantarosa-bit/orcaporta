@@ -467,7 +467,8 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
                         <th className="px-2 py-2 text-left">Peça</th>
                         <th className="px-2 py-2 text-center">W×H</th>
                         <th className="px-2 py-2 text-center">Qt</th>
-                        <th className="px-2 py-2 text-right">Perím./un.</th>
+                        <th className="px-2 py-2 text-right">Fresa/un.</th>
+                        <th className="px-2 py-2 text-right">Serra/un.</th>
                         <th className="px-2 py-2 text-right">Fita/un.</th>
                         <th className="px-2 py-2 text-center">Furos/un.</th>
                         <th className="px-2 py-2 text-right">Total</th>
@@ -491,8 +492,11 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
                                     <div key={s.index} className="flex items-center gap-1.5">
                                       <span className="font-mono">Lado {s.index}</span>
                                       <span className={s.kind === "curvo" ? "text-primary" : ""}>({s.kind})</span>
+                                      <span className={`text-[9px] px-1 rounded uppercase font-semibold ${s.cutType === "fresa" ? "bg-primary/20 text-primary" : "bg-secondary/40 text-foreground"}`}>
+                                        {s.cutType}
+                                      </span>
                                       <span className="font-mono">{s.lengthMm.toFixed(1)}mm</span>
-                                      {s.banded && <span className="text-[9px] px-1 rounded bg-primary/20 text-primary">fita</span>}
+                                      {s.banded && <span className="text-[9px] px-1 rounded bg-yellow-500/20 text-yellow-500">fita</span>}
                                     </div>
                                   ))
                                 )}
@@ -500,7 +504,8 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
                             </td>
                             <td className="px-2 py-1.5 text-center font-mono text-[10px]">{b.width}×{b.height}</td>
                             <td className="px-2 py-1.5 text-center">{b.quantidade}</td>
-                            <td className="px-2 py-1.5 text-right font-mono">{(b.perimeterMm/1000).toFixed(2)}m</td>
+                            <td className="px-2 py-1.5 text-right font-mono">{(b.fresaMmUnit/1000).toFixed(2)}m</td>
+                            <td className="px-2 py-1.5 text-right font-mono">{(b.serraMmUnit/1000).toFixed(2)}m</td>
                             <td className="px-2 py-1.5 text-right">{isFrisos ? "—" : `${b.fitaMetrosUnit.toFixed(2)}m`}</td>
                             <td className="px-2 py-1.5 text-center">{b.numFurosUnit}</td>
                             <td className="px-2 py-1.5 text-right font-semibold">R$ {b.valorTotalAll.toFixed(2)}</td>
