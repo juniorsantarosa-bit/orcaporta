@@ -70,12 +70,14 @@ interface AspireBudget {
   sides: { index: number; lengthMm: number; kind: "reto" | "curvo"; banded: boolean; cutType: "fresa" | "serra" }[];
   fresaMmUnit: number;
   serraMmUnit: number;
+  /** Nº de lados com cutType "serra" (1 corte por lado). Fresa nunca conta como corte. */
+  numCortesSerraUnit: number;
   fitaMetrosUnit: number;
-  numFurosUnit: number;
   valorFresaUnit: number;
   valorSerraUnit: number;
+  /** Valor calculado por corte (R$ corte × numCortesSerraUnit). */
+  valorCortesUnit: number;
   valorFitaUnit: number;
-  valorFurosUnit: number;
   valorTotalUnit: number;
   valorTotalAll: number;
 }
