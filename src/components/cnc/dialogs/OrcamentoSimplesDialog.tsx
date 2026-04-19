@@ -611,7 +611,10 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
                               <div className="text-[10px] text-muted-foreground space-y-0.5 mt-1">
                                 {isFrisos ? (
                                   <div className="font-mono">
-                                    {piece?.aspireFrisoCount} frisos × {piece?.aspireFrisoLengthMm?.toFixed(1)}mm (passe único)
+                                    {piece?.aspireFrisoCount} frisos de {(piece?.aspireFrisoBilledLengthMm ?? piece?.aspireFrisoLengthMm ?? 0).toFixed(1)}mm cada
+                                    {piece?.aspireFrisoLarguraMm && piece?.aspireFrisoAlturaMm && (
+                                      <span className="text-muted-foreground/70"> · vão {piece.aspireFrisoLarguraMm.toFixed(0)}×{piece.aspireFrisoAlturaMm.toFixed(0)}mm</span>
+                                    )}
                                   </div>
                                 ) : (
                                   b.sides.map(s => (
