@@ -185,16 +185,32 @@ export function parseAspireFile(text: string): AspirePiece {
   }
   if (!isFinite(minZ)) minZ = 0;
 
-  // Pass 2: keep only contour segments at the final depth.
+  // Pass 2: keep only contour segments at the final depth, grouped into
+  // PASSES (continuous paths broken by G0 rapids). Each pass = one
+  // uninterrupted machining stroke. A "friso" file is one with many
+  // separate single-stroke passes.
   const segs: Seg[] = [];
+  const passes: Seg[][] = [];
+  let curPass: Seg[] = [];
+  const flushPass = () => {
+    if (curPass.length > 0) {
+      passes.push(curPass);
+      curPass = [];
+    }
+  };
   const tol = 0.05; // mm
   for (const it of motions) {
     const k = it.m.kind!;
-    if (k === "G0") continue;
+    if (k === "G0") {
+      // rapid → break the current continuous pass
+      flushPass();
+      continue;
+    }
     if (Math.abs(it.z - minZ) > tol) continue; // not the final cut layer
     if (it.from.x === it.to.x && it.from.y === it.to.y) continue; // pure Z move
+    let seg: Seg | null = null;
     if (k === "G1") {
-      segs.push({ kind: "line", a: it.from, b: it.to });
+      seg = { kind: "line", a: it.from, b: it.to };
     } else {
       // Arc — need center
       let cx: number, cy: number;
