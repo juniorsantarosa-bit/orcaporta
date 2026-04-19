@@ -141,6 +141,39 @@ export function SimpleSheetView({ layouts, selectedPieceId, onSelectPiece }: Pro
               const fontSize = Math.min(p.width / 6, p.height / 4, 60);
               const fontSize2 = Math.min(p.width / 10, p.height / 6, 28);
 
+              // Build SVG path from Aspire contour (local coords → sheet coords with Y flip)
+              const aspireContour = (p as any).aspireContour as
+                | Array<
+                    | { kind: "line"; x1: number; y1: number; x2: number; y2: number }
+                    | { kind: "arc"; x1: number; y1: number; x2: number; y2: number; cx: number; cy: number; cw: boolean }
+                  >
+                | undefined;
+              const isAspire = (p as any).isAspire === true && aspireContour && aspireContour.length > 0;
+
+              let aspirePath = "";
+              if (isAspire && aspireContour) {
+                const toX = (lx: number) => px + lx;
+                const toY = (ly: number) => py + p.height - ly;
+                let prev: { x: number; y: number } | null = null;
+                for (const seg of aspireContour) {
+                  const sx = toX(seg.x1), sy = toY(seg.y1);
+                  const ex = toX(seg.x2), ey = toY(seg.y2);
+                  if (!prev || Math.hypot(prev.x - sx, prev.y - sy) > 0.5) {
+                    aspirePath += `M ${sx.toFixed(2)} ${sy.toFixed(2)} `;
+                  }
+                  if (seg.kind === "line") {
+                    aspirePath += `L ${ex.toFixed(2)} ${ey.toFixed(2)} `;
+                  } else {
+                    const r = Math.hypot(seg.x1 - seg.cx, seg.y1 - seg.cy);
+                    // Y is flipped → sweep flag inverts vs source cw flag
+                    const sweep = seg.cw ? 0 : 1;
+                    aspirePath += `A ${r.toFixed(2)} ${r.toFixed(2)} 0 0 ${sweep} ${ex.toFixed(2)} ${ey.toFixed(2)} `;
+                  }
+                  prev = { x: ex, y: ey };
+                }
+                aspirePath += "Z";
+              }
+
               return (
                 <g
                   key={`${p.pieceId}-${i}`}
@@ -150,17 +183,28 @@ export function SimpleSheetView({ layouts, selectedPieceId, onSelectPiece }: Pro
                     if (onSelectPiece && p.pieceId !== undefined) onSelectPiece(p.pieceId);
                   }}
                 >
-                  <rect
-                    x={px}
-                    y={py}
-                    width={p.width}
-                    height={p.height}
-                    fill={isSelected ? "#FACC15" : color}
-                    fillOpacity={isSelected ? 0.85 : 0.75}
-                    stroke={isSelected ? "#CA8A04" : "#444"}
-                    strokeWidth={isSelected ? 6 : 2}
-                    rx={2}
-                  />
+                  {isAspire ? (
+                    <path
+                      d={aspirePath}
+                      fill={isSelected ? "#FACC15" : color}
+                      fillOpacity={isSelected ? 0.85 : 0.75}
+                      stroke={isSelected ? "#CA8A04" : "#444"}
+                      strokeWidth={isSelected ? 6 : 2}
+                      strokeLinejoin="round"
+                    />
+                  ) : (
+                    <rect
+                      x={px}
+                      y={py}
+                      width={p.width}
+                      height={p.height}
+                      fill={isSelected ? "#FACC15" : color}
+                      fillOpacity={isSelected ? 0.85 : 0.75}
+                      stroke={isSelected ? "#CA8A04" : "#444"}
+                      strokeWidth={isSelected ? 6 : 2}
+                      rx={2}
+                    />
+                  )}
                   {/* Furos — coordenadas locais da peça (com rotação), espelhando Y para origem inferior */}
                   {(p.furos || []).map((h, hi) => {
                     const localX = rotated ? h.Y : h.X;
