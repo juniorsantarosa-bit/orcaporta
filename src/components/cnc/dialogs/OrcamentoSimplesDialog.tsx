@@ -390,14 +390,14 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
                   <RotateCcw className="h-3 w-3" /> Restaurar padrão
                 </Button>
               </div>
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-5 gap-2">
                 <div>
-                  <Label className="text-[10px] uppercase text-muted-foreground">R$ por corte</Label>
+                  <Label className="text-[10px] uppercase text-muted-foreground">R$ corte (chapa)</Label>
                   <Input type="number" step="0.01" min={0} value={prices.corte}
                     onChange={(e) => updatePrice("corte", e.target.value)} className="h-7 text-xs" />
                 </div>
                 <div>
-                  <Label className="text-[10px] uppercase text-muted-foreground">R$ por metro de fita</Label>
+                  <Label className="text-[10px] uppercase text-muted-foreground">R$/m fita</Label>
                   <Input type="number" step="0.01" min={0} value={prices.fita}
                     onChange={(e) => updatePrice("fita", e.target.value)} className="h-7 text-xs" />
                 </div>
@@ -407,9 +407,14 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
                     onChange={(e) => updatePrice("furo", e.target.value)} className="h-7 text-xs" />
                 </div>
                 <div>
-                  <Label className="text-[10px] uppercase text-muted-foreground">R$ por metro de fresa</Label>
+                  <Label className="text-[10px] uppercase text-muted-foreground">R$/m fresa</Label>
                   <Input type="number" step="0.01" min={0} value={prices.fresaMetro}
                     onChange={(e) => updatePrice("fresaMetro", e.target.value)} className="h-7 text-xs" />
+                </div>
+                <div>
+                  <Label className="text-[10px] uppercase text-muted-foreground">R$/m serra (Aspire)</Label>
+                  <Input type="number" step="0.01" min={0} value={prices.serraMetro}
+                    onChange={(e) => updatePrice("serraMetro", e.target.value)} className="h-7 text-xs" />
                 </div>
               </div>
             </div>
