@@ -143,6 +143,13 @@ function parseLine(line: string): Move | null {
       case "3": kind = "G3"; break;
     }
   }
+  // If line has a non-motion G-code (G53, G90, G54, M-code only, etc.) and
+  // NO motion-G AND no axis word as the leading token, ignore it for motion
+  // tracking. This prevents lines like "G53 Z0" from being treated as "G1 Z0"
+  // (which would erroneously set the cut-depth heuristic to 0).
+  const hasNonMotionG = !kind && /\bG\s*0*(?:[4-9]\d*|[1-9]\d+)\b/i.test(clean);
+  if (hasNonMotionG) return null;
+
   const has = (axis: string) => {
     const re = new RegExp(`(?:^|\\s|G\\d+\\s*)${axis}(-?\\d*\\.?\\d+)`, "i");
     const m = clean.match(re);
