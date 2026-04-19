@@ -271,7 +271,7 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
     let aspireRows = "";
     aspireBudgets.forEach(b => {
       const sidesList = b.sides
-        .map(s => `Lado ${s.index} (${s.kind}): <b>${s.lengthMm.toFixed(1)}mm</b>${s.banded ? " ✓ fita" : ""}`)
+        .map(s => `Lado ${s.index} (${s.kind} · <i>${s.cutType}</i>): <b>${s.lengthMm.toFixed(1)}mm</b>${s.banded ? " ✓ fita" : ""}`)
         .join(" · ");
       aspireRows += `<tr>
         <td><b>${b.descricao}</b><div class="side-list">${sidesList}</div></td>
@@ -279,7 +279,8 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
         <td class="c">${b.espessura}mm</td>
         <td class="c">${b.width}×${b.height}</td>
         <td class="c">${b.quantidade}</td>
-        <td class="r">${(b.perimeterMm/1000).toFixed(2)}m</td>
+        <td class="r">${(b.fresaMmUnit/1000).toFixed(2)}m</td>
+        <td class="r">${(b.serraMmUnit/1000).toFixed(2)}m</td>
         <td class="r">${b.fitaMetrosUnit.toFixed(2)}m</td>
         <td class="c">${b.numFurosUnit}</td>
         <td class="r"><b>R$ ${b.valorTotalAll.toFixed(2)}</b></td>
@@ -323,16 +324,17 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
       <table>
         <thead><tr>
           <th>Peça / Lados</th><th>Material</th><th class="c">Esp.</th><th class="c">W×H</th>
-          <th class="c">Qt</th><th class="r">Fresa/un.</th><th class="r">Fita/un.</th>
+          <th class="c">Qt</th><th class="r">Fresa/un.</th><th class="r">Serra/un.</th><th class="r">Fita/un.</th>
           <th class="c">Furos/un.</th><th class="r">Total</th>
         </tr></thead>
         <tbody>${aspireRows}
           <tr class="total-row">
             <td colspan="5" class="r">TOTAIS</td>
             <td class="r">${totals.aspFresaM.toFixed(2)}m</td>
+            <td class="r">${totals.aspSerraM.toFixed(2)}m</td>
             <td class="r">${totals.aspFita.toFixed(2)}m</td>
             <td class="c">${totals.aspFuros}</td>
-            <td class="r">R$ ${(totals.aspValorFresa + totals.aspValorFita + totals.aspValorFuros).toFixed(2)}</td>
+            <td class="r">R$ ${(totals.aspValorFresa + totals.aspValorSerra + totals.aspValorFita + totals.aspValorFuros).toFixed(2)}</td>
           </tr>
         </tbody>
       </table>` : ""}
@@ -340,10 +342,11 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
       <div class="pricing">
         <div class="pricing-title">VALORES UNITÁRIOS APLICADOS</div>
         <div>
-          Corte de serra: R$ ${prices.corte.toFixed(2)} cada · 
+          Corte de serra (chapa): R$ ${prices.corte.toFixed(2)} cada · 
           Fita de borda: R$ ${prices.fita.toFixed(2)}/m · 
           Furo: R$ ${prices.furo.toFixed(2)} cada · 
-          Fresa router: R$ ${prices.fresaMetro.toFixed(2)}/m
+          Fresa router: R$ ${prices.fresaMetro.toFixed(2)}/m · 
+          Serra (Aspire): R$ ${prices.serraMetro.toFixed(2)}/m
         </div>
       </div>
 
