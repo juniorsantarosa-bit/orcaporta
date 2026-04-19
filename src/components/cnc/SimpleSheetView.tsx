@@ -163,17 +163,19 @@ export function SimpleSheetView({ layouts, selectedPieceId, onSelectPiece, selec
               // Build SVG path from Aspire contour (local coords → sheet coords with Y flip)
               const aspireContour = (p as any).aspireContour as
                 | Array<
-                    | { kind: "line"; x1: number; y1: number; x2: number; y2: number }
-                    | { kind: "arc"; x1: number; y1: number; x2: number; y2: number; cx: number; cy: number; cw: boolean }
+                    | { kind: "line"; x1: number; y1: number; x2: number; y2: number; sideIndex?: number }
+                    | { kind: "arc"; x1: number; y1: number; x2: number; y2: number; cx: number; cy: number; cw: boolean; sideIndex?: number }
                   >
                 | undefined;
               const isAspire = (p as any).isAspire === true && aspireContour && aspireContour.length > 0;
 
               let aspirePath = "";
+              let highlightPath = "";
               if (isAspire && aspireContour) {
                 const toX = (lx: number) => px + lx;
                 const toY = (ly: number) => py + p.height - ly;
                 let prev: { x: number; y: number } | null = null;
+                let hPrev: { x: number; y: number } | null = null;
                 for (const seg of aspireContour) {
                   const sx = toX(seg.x1), sy = toY(seg.y1);
                   const ex = toX(seg.x2), ey = toY(seg.y2);
@@ -191,6 +193,26 @@ export function SimpleSheetView({ layouts, selectedPieceId, onSelectPiece, selec
                     aspirePath += `A ${r.toFixed(2)} ${r.toFixed(2)} 0 0 ${sweep} ${ex.toFixed(2)} ${ey.toFixed(2)} `;
                   }
                   prev = { x: ex, y: ey };
+
+                  // Sub-path apenas dos segmentos do lado selecionado (overlay).
+                  if (
+                    isSelected &&
+                    selectedSideIndex !== null &&
+                    selectedSideIndex !== undefined &&
+                    seg.sideIndex === selectedSideIndex
+                  ) {
+                    if (!hPrev || Math.hypot(hPrev.x - sx, hPrev.y - sy) > 0.5) {
+                      highlightPath += `M ${sx.toFixed(2)} ${sy.toFixed(2)} `;
+                    }
+                    if (seg.kind === "line") {
+                      highlightPath += `L ${ex.toFixed(2)} ${ey.toFixed(2)} `;
+                    } else {
+                      const r = Math.hypot(seg.x1 - seg.cx, seg.y1 - seg.cy);
+                      const sweep = seg.cw ? 1 : 0;
+                      highlightPath += `A ${r.toFixed(2)} ${r.toFixed(2)} 0 0 ${sweep} ${ex.toFixed(2)} ${ey.toFixed(2)} `;
+                    }
+                    hPrev = { x: ex, y: ey };
+                  }
                 }
                 aspirePath += "Z";
               }
@@ -206,13 +228,27 @@ export function SimpleSheetView({ layouts, selectedPieceId, onSelectPiece, selec
                 >
                   {isAspire ? (
                     // Estilo Aspire: contorno fino preto sobre folha branca (com leve realce ao selecionar).
-                    <path
-                      d={aspirePath}
-                      fill={isSelected ? "#FEF3C7" : "#ffffff"}
-                      stroke={isSelected ? "#CA8A04" : "#111"}
-                      strokeWidth={isSelected ? 3 : 1.5}
-                      strokeLinejoin="round"
-                    />
+                    <>
+                      <path
+                        d={aspirePath}
+                        fill={isSelected ? "#FEF3C7" : "#ffffff"}
+                        stroke={isSelected ? "#CA8A04" : "#111"}
+                        strokeWidth={isSelected ? 3 : 1.5}
+                        strokeLinejoin="round"
+                      />
+                      {highlightPath && (
+                        <path
+                          d={highlightPath}
+                          fill="none"
+                          stroke="#EF4444"
+                          strokeWidth={8}
+                          strokeDasharray="22 14"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          pointerEvents="none"
+                        />
+                      )}
+                    </>
                   ) : (
                     <rect
                       x={px}
