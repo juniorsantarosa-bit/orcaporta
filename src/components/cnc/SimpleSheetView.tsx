@@ -116,16 +116,33 @@ export function SimpleSheetView({ layouts, selectedPieceId, onSelectPiece }: Pro
             preserveAspectRatio="xMidYMid meet"
             className="w-full h-full block"
           >
-            {/* Chapa */}
+            {/* Padrão pontilhado estilo Aspire para chapas com peças Aspire */}
+            <defs>
+              <pattern id="aspire-dots" width="20" height="20" patternUnits="userSpaceOnUse">
+                <circle cx="10" cy="10" r="0.8" fill="#999" />
+              </pattern>
+            </defs>
+
+            {/* Chapa — fundo branco + pontilhado quando há peça Aspire (modo "folha Aspire") */}
             <rect
               x={0}
               y={0}
               width={sheet.sheetWidth}
               height={sheet.sheetHeight}
-              fill="hsl(var(--card))"
+              fill={sheet.pieces.some(pp => (pp as any).isAspire) ? "#ffffff" : "hsl(var(--card))"}
               stroke="hsl(var(--border))"
               strokeWidth={3}
             />
+            {sheet.pieces.some(pp => (pp as any).isAspire) && (
+              <rect
+                x={0}
+                y={0}
+                width={sheet.sheetWidth}
+                height={sheet.sheetHeight}
+                fill="url(#aspire-dots)"
+                pointerEvents="none"
+              />
+            )}
 
             {/* Peças (origem inferior — flip Y) */}
             {sheet.pieces.map((p, i) => {
@@ -165,8 +182,10 @@ export function SimpleSheetView({ layouts, selectedPieceId, onSelectPiece }: Pro
                     aspirePath += `L ${ex.toFixed(2)} ${ey.toFixed(2)} `;
                   } else {
                     const r = Math.hypot(seg.x1 - seg.cx, seg.y1 - seg.cy);
-                    // Y is flipped → sweep flag inverts vs source cw flag
-                    const sweep = seg.cw ? 0 : 1;
+                    // SVG Y axis points DOWN; we flipped Y above. So a G2 (cw in
+                    // machine/CAM) draws as a CCW arc in screen space → sweep=1.
+                    // A G3 (ccw) becomes cw on screen → sweep=0.
+                    const sweep = seg.cw ? 1 : 0;
                     aspirePath += `A ${r.toFixed(2)} ${r.toFixed(2)} 0 0 ${sweep} ${ex.toFixed(2)} ${ey.toFixed(2)} `;
                   }
                   prev = { x: ex, y: ey };
@@ -184,12 +203,12 @@ export function SimpleSheetView({ layouts, selectedPieceId, onSelectPiece }: Pro
                   }}
                 >
                   {isAspire ? (
+                    // Estilo Aspire: contorno fino preto sobre folha branca (com leve realce ao selecionar).
                     <path
                       d={aspirePath}
-                      fill={isSelected ? "#FACC15" : color}
-                      fillOpacity={isSelected ? 0.85 : 0.75}
-                      stroke={isSelected ? "#CA8A04" : "#444"}
-                      strokeWidth={isSelected ? 6 : 2}
+                      fill={isSelected ? "#FEF3C7" : "#ffffff"}
+                      stroke={isSelected ? "#CA8A04" : "#111"}
+                      strokeWidth={isSelected ? 3 : 1.5}
                       strokeLinejoin="round"
                     />
                   ) : (
