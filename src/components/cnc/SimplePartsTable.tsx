@@ -70,7 +70,7 @@ export function SimplePartsTable({ pieces, selectedId, onSelect, onUpdate, layou
                 const isAspire = piece.source === "aspire";
                 const isFrisos = piece.aspireMode === "frisos";
                 const aspireCutSummary = isFrisos
-                  ? `${piece.aspireFrisoCount ?? 0} frisos`
+                  ? `${piece.aspireFrisoCount ?? 0} frisos × ${(piece.aspireFrisoBilledLengthMm ?? piece.aspireFrisoLengthMm ?? 0).toFixed(0)}mm`
                   : `${piece.aspireSides?.length ?? 0} lados`;
                 return (
                   <tr
