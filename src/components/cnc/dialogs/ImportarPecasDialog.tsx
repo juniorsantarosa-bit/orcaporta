@@ -36,7 +36,9 @@ export function ImportarPecasDialog({ open, onOpenChange, onImport }: Props) {
     else if (file.name.endsWith(".csv")) setFormato("PromobCSV");
     else if (isAspireExt(file.name)) {
       setFormato("Aspire");
-      if (!aspireDescricao) setAspireDescricao(file.name.replace(/\.(tap|nc)$/i, ""));
+      // Pré-preenche descrição a partir do nome do arquivo (remove ext + troca _ por espaço)
+      const base = file.name.replace(/\.(tap|nc)$/i, "").replace(/[_]+/g, " ").trim();
+      if (!aspireDescricao) setAspireDescricao(base);
     }
   };
 
@@ -51,11 +53,12 @@ export function ImportarPecasDialog({ open, onOpenChange, onImport }: Props) {
     const observacao = isFrisos
       ? `Aspire · ${r.frisoCount} frisos × ${r.frisoLengthMm}mm · total ${(r.perimeter/1000).toFixed(2)}m · fresa Ø${r.toolDiameter}mm`
       : `Aspire · ${r.sides.length} lados · perímetro ${(r.perimeter/1000).toFixed(2)}m · fresa Ø${r.toolDiameter}mm`;
+    const cleanName = file.name.replace(/\.(tap|nc)$/i, "").replace(/[_]+/g, " ").trim();
     const piece: CuttingPiece = {
       id: Date.now(),
       projeto: file.name,
       cliente: "",
-      descricao: aspireDescricao || file.name.replace(/\.(tap|nc)$/i, ""),
+      descricao: aspireDescricao || cleanName,
       largura: r.width,
       altura: r.height,
       espessura: aspireEspessura,
@@ -65,7 +68,12 @@ export function ImportarPecasDialog({ open, onOpenChange, onImport }: Props) {
       veio: false,
       observacao,
       source: "aspire",
-      aspireSides: r.sides.map(s => ({ ...s, banded: false })),
+      // Default: lado curvo é fresa, lado reto é serra (usuário pode trocar)
+      aspireSides: r.sides.map(s => ({
+        ...s,
+        banded: false,
+        cutType: s.kind === "curvo" ? "fresa" : "serra" as "fresa" | "serra",
+      })),
       aspirePerimeter: r.perimeter,
       aspireToolDiameter: r.toolDiameter,
       aspireContour: r.contour,

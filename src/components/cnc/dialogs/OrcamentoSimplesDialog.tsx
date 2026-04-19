@@ -17,14 +17,15 @@ interface Props {
 }
 
 interface Prices {
-  corte: number;     // R$ per saw cut
+  corte: number;     // R$ per saw cut (chapas inteiras na esquadrejadeira)
   fita: number;      // R$ per metre of edge banding
   furo: number;      // R$ per hole
-  fresaMetro: number; // R$ per metre of router travel (Aspire pieces)
+  fresaMetro: number; // R$ per metre of router travel (Aspire — lado curvo)
+  serraMetro: number; // R$ per metre of saw cut (Aspire — lados retos)
 }
 
-const DEFAULT_PRICES: Prices = { corte: 3.0, fita: 4.5, furo: 0.10, fresaMetro: 8.0 };
-const PRICES_KEY = "maxcut.orcamento.prices.v1";
+const DEFAULT_PRICES: Prices = { corte: 3.0, fita: 4.5, furo: 0.10, fresaMetro: 8.0, serraMetro: 5.0 };
+const PRICES_KEY = "maxcut.orcamento.prices.v2";
 
 function loadPrices(): Prices {
   try {
@@ -36,6 +37,7 @@ function loadPrices(): Prices {
       fita: Number(v.fita) || DEFAULT_PRICES.fita,
       furo: Number(v.furo) || DEFAULT_PRICES.furo,
       fresaMetro: Number(v.fresaMetro) || DEFAULT_PRICES.fresaMetro,
+      serraMetro: Number(v.serraMetro) || DEFAULT_PRICES.serraMetro,
     };
   } catch {
     return DEFAULT_PRICES;
@@ -64,15 +66,18 @@ interface AspireBudget {
   quantidade: number;
   width: number;
   height: number;
-  perimeterMm: number;            // total contour length per unit
-  sides: { index: number; lengthMm: number; kind: "reto" | "curvo"; banded: boolean }[];
-  fitaMetrosUnit: number;         // edge banding metres per single piece
+  perimeterMm: number;
+  sides: { index: number; lengthMm: number; kind: "reto" | "curvo"; banded: boolean; cutType: "fresa" | "serra" }[];
+  fresaMmUnit: number;
+  serraMmUnit: number;
+  fitaMetrosUnit: number;
   numFurosUnit: number;
   valorFresaUnit: number;
+  valorSerraUnit: number;
   valorFitaUnit: number;
   valorFurosUnit: number;
   valorTotalUnit: number;
-  valorTotalAll: number;          // × quantidade
+  valorTotalAll: number;
 }
 
 export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: Props) {
@@ -138,15 +143,29 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
   const aspireBudgets = useMemo<AspireBudget[]>(() => {
     return aspirePieces.map(p => {
       const sides = p.aspireSides ?? [];
+      const isFrisos = p.aspireMode === "frisos";
       const fitaMmUnit = sides.reduce((a, s) => a + (s.banded ? s.lengthMm : 0), 0);
       const fitaMetrosUnit = fitaMmUnit / 1000;
       const perimeterMm = p.aspirePerimeter ?? sides.reduce((a, s) => a + s.lengthMm, 0);
       const numFurosUnit = p.numFurosOrcamento ?? p.furos?.length ?? 0;
 
-      const valorFresaUnit = (perimeterMm / 1000) * prices.fresaMetro;
+      // Soma comprimentos por tipo de corte. Frisos = sempre fresa.
+      let fresaMm = 0, serraMm = 0;
+      if (isFrisos) {
+        fresaMm = perimeterMm;
+      } else {
+        sides.forEach(s => {
+          const ct = s.cutType ?? (s.kind === "curvo" ? "fresa" : "serra");
+          if (ct === "fresa") fresaMm += s.lengthMm;
+          else serraMm += s.lengthMm;
+        });
+      }
+
+      const valorFresaUnit = (fresaMm / 1000) * prices.fresaMetro;
+      const valorSerraUnit = (serraMm / 1000) * prices.serraMetro;
       const valorFitaUnit = fitaMetrosUnit * prices.fita;
       const valorFurosUnit = numFurosUnit * prices.furo;
-      const valorTotalUnit = valorFresaUnit + valorFitaUnit + valorFurosUnit;
+      const valorTotalUnit = valorFresaUnit + valorSerraUnit + valorFitaUnit + valorFurosUnit;
 
       return {
         pieceId: p.id,
@@ -157,10 +176,19 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
         width: p.largura,
         height: p.altura,
         perimeterMm,
-        sides: sides.map(s => ({ index: s.index, lengthMm: s.lengthMm, kind: s.kind, banded: s.banded })),
+        sides: sides.map(s => ({
+          index: s.index,
+          lengthMm: s.lengthMm,
+          kind: s.kind,
+          banded: s.banded,
+          cutType: (s.cutType ?? (s.kind === "curvo" ? "fresa" : "serra")) as "fresa" | "serra",
+        })),
+        fresaMmUnit: fresaMm,
+        serraMmUnit: serraMm,
         fitaMetrosUnit,
         numFurosUnit,
         valorFresaUnit,
+        valorSerraUnit,
         valorFitaUnit,
         valorFurosUnit,
         valorTotalUnit,
@@ -177,20 +205,22 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
     const sawValorFita = budgets.reduce((a, b) => a + b.valorFita, 0);
     const sawValorFuros = budgets.reduce((a, b) => a + b.valorFuros, 0);
 
-    const aspFresaM = aspireBudgets.reduce((a, b) => a + (b.perimeterMm / 1000) * b.quantidade, 0);
+    const aspFresaM = aspireBudgets.reduce((a, b) => a + (b.fresaMmUnit / 1000) * b.quantidade, 0);
+    const aspSerraM = aspireBudgets.reduce((a, b) => a + (b.serraMmUnit / 1000) * b.quantidade, 0);
     const aspFita = aspireBudgets.reduce((a, b) => a + b.fitaMetrosUnit * b.quantidade, 0);
     const aspFuros = aspireBudgets.reduce((a, b) => a + b.numFurosUnit * b.quantidade, 0);
     const aspValorFresa = aspireBudgets.reduce((a, b) => a + b.valorFresaUnit * b.quantidade, 0);
+    const aspValorSerra = aspireBudgets.reduce((a, b) => a + b.valorSerraUnit * b.quantidade, 0);
     const aspValorFita = aspireBudgets.reduce((a, b) => a + b.valorFitaUnit * b.quantidade, 0);
     const aspValorFuros = aspireBudgets.reduce((a, b) => a + b.valorFurosUnit * b.quantidade, 0);
 
     const valorFuros = sawValorFuros + aspValorFuros;
-    const valorTotal = sawValorCortes + sawValorFita + sawValorFuros + aspValorFresa + aspValorFita + aspValorFuros;
+    const valorTotal = sawValorCortes + sawValorFita + sawValorFuros + aspValorFresa + aspValorSerra + aspValorFita + aspValorFuros;
     const valorSemFuros = valorTotal - valorFuros;
 
     return {
       sawCortes, sawFita, sawFuros, sawValorCortes, sawValorFita, sawValorFuros,
-      aspFresaM, aspFita, aspFuros, aspValorFresa, aspValorFita, aspValorFuros,
+      aspFresaM, aspSerraM, aspFita, aspFuros, aspValorFresa, aspValorSerra, aspValorFita, aspValorFuros,
       valorTotal, valorSemFuros, valorFuros,
     };
   }, [budgets, aspireBudgets]);
@@ -241,7 +271,7 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
     let aspireRows = "";
     aspireBudgets.forEach(b => {
       const sidesList = b.sides
-        .map(s => `Lado ${s.index} (${s.kind}): <b>${s.lengthMm.toFixed(1)}mm</b>${s.banded ? " ✓ fita" : ""}`)
+        .map(s => `Lado ${s.index} (${s.kind} · <i>${s.cutType}</i>): <b>${s.lengthMm.toFixed(1)}mm</b>${s.banded ? " ✓ fita" : ""}`)
         .join(" · ");
       aspireRows += `<tr>
         <td><b>${b.descricao}</b><div class="side-list">${sidesList}</div></td>
@@ -249,7 +279,8 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
         <td class="c">${b.espessura}mm</td>
         <td class="c">${b.width}×${b.height}</td>
         <td class="c">${b.quantidade}</td>
-        <td class="r">${(b.perimeterMm/1000).toFixed(2)}m</td>
+        <td class="r">${(b.fresaMmUnit/1000).toFixed(2)}m</td>
+        <td class="r">${(b.serraMmUnit/1000).toFixed(2)}m</td>
         <td class="r">${b.fitaMetrosUnit.toFixed(2)}m</td>
         <td class="c">${b.numFurosUnit}</td>
         <td class="r"><b>R$ ${b.valorTotalAll.toFixed(2)}</b></td>
@@ -293,16 +324,17 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
       <table>
         <thead><tr>
           <th>Peça / Lados</th><th>Material</th><th class="c">Esp.</th><th class="c">W×H</th>
-          <th class="c">Qt</th><th class="r">Fresa/un.</th><th class="r">Fita/un.</th>
+          <th class="c">Qt</th><th class="r">Fresa/un.</th><th class="r">Serra/un.</th><th class="r">Fita/un.</th>
           <th class="c">Furos/un.</th><th class="r">Total</th>
         </tr></thead>
         <tbody>${aspireRows}
           <tr class="total-row">
             <td colspan="5" class="r">TOTAIS</td>
             <td class="r">${totals.aspFresaM.toFixed(2)}m</td>
+            <td class="r">${totals.aspSerraM.toFixed(2)}m</td>
             <td class="r">${totals.aspFita.toFixed(2)}m</td>
             <td class="c">${totals.aspFuros}</td>
-            <td class="r">R$ ${(totals.aspValorFresa + totals.aspValorFita + totals.aspValorFuros).toFixed(2)}</td>
+            <td class="r">R$ ${(totals.aspValorFresa + totals.aspValorSerra + totals.aspValorFita + totals.aspValorFuros).toFixed(2)}</td>
           </tr>
         </tbody>
       </table>` : ""}
@@ -310,10 +342,11 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
       <div class="pricing">
         <div class="pricing-title">VALORES UNITÁRIOS APLICADOS</div>
         <div>
-          Corte de serra: R$ ${prices.corte.toFixed(2)} cada · 
+          Corte de serra (chapa): R$ ${prices.corte.toFixed(2)} cada · 
           Fita de borda: R$ ${prices.fita.toFixed(2)}/m · 
           Furo: R$ ${prices.furo.toFixed(2)} cada · 
-          Fresa router: R$ ${prices.fresaMetro.toFixed(2)}/m
+          Fresa router: R$ ${prices.fresaMetro.toFixed(2)}/m · 
+          Serra (Aspire): R$ ${prices.serraMetro.toFixed(2)}/m
         </div>
       </div>
 
@@ -357,14 +390,14 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
                   <RotateCcw className="h-3 w-3" /> Restaurar padrão
                 </Button>
               </div>
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-5 gap-2">
                 <div>
-                  <Label className="text-[10px] uppercase text-muted-foreground">R$ por corte</Label>
+                  <Label className="text-[10px] uppercase text-muted-foreground">R$ corte (chapa)</Label>
                   <Input type="number" step="0.01" min={0} value={prices.corte}
                     onChange={(e) => updatePrice("corte", e.target.value)} className="h-7 text-xs" />
                 </div>
                 <div>
-                  <Label className="text-[10px] uppercase text-muted-foreground">R$ por metro de fita</Label>
+                  <Label className="text-[10px] uppercase text-muted-foreground">R$/m fita</Label>
                   <Input type="number" step="0.01" min={0} value={prices.fita}
                     onChange={(e) => updatePrice("fita", e.target.value)} className="h-7 text-xs" />
                 </div>
@@ -374,9 +407,14 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
                     onChange={(e) => updatePrice("furo", e.target.value)} className="h-7 text-xs" />
                 </div>
                 <div>
-                  <Label className="text-[10px] uppercase text-muted-foreground">R$ por metro de fresa</Label>
+                  <Label className="text-[10px] uppercase text-muted-foreground">R$/m fresa</Label>
                   <Input type="number" step="0.01" min={0} value={prices.fresaMetro}
                     onChange={(e) => updatePrice("fresaMetro", e.target.value)} className="h-7 text-xs" />
+                </div>
+                <div>
+                  <Label className="text-[10px] uppercase text-muted-foreground">R$/m serra (Aspire)</Label>
+                  <Input type="number" step="0.01" min={0} value={prices.serraMetro}
+                    onChange={(e) => updatePrice("serraMetro", e.target.value)} className="h-7 text-xs" />
                 </div>
               </div>
             </div>
@@ -429,7 +467,8 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
                         <th className="px-2 py-2 text-left">Peça</th>
                         <th className="px-2 py-2 text-center">W×H</th>
                         <th className="px-2 py-2 text-center">Qt</th>
-                        <th className="px-2 py-2 text-right">Perím./un.</th>
+                        <th className="px-2 py-2 text-right">Fresa/un.</th>
+                        <th className="px-2 py-2 text-right">Serra/un.</th>
                         <th className="px-2 py-2 text-right">Fita/un.</th>
                         <th className="px-2 py-2 text-center">Furos/un.</th>
                         <th className="px-2 py-2 text-right">Total</th>
@@ -453,8 +492,11 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
                                     <div key={s.index} className="flex items-center gap-1.5">
                                       <span className="font-mono">Lado {s.index}</span>
                                       <span className={s.kind === "curvo" ? "text-primary" : ""}>({s.kind})</span>
+                                      <span className={`text-[9px] px-1 rounded uppercase font-semibold ${s.cutType === "fresa" ? "bg-primary/20 text-primary" : "bg-secondary/40 text-foreground"}`}>
+                                        {s.cutType}
+                                      </span>
                                       <span className="font-mono">{s.lengthMm.toFixed(1)}mm</span>
-                                      {s.banded && <span className="text-[9px] px-1 rounded bg-primary/20 text-primary">fita</span>}
+                                      {s.banded && <span className="text-[9px] px-1 rounded bg-accent text-accent-foreground">fita</span>}
                                     </div>
                                   ))
                                 )}
@@ -462,7 +504,8 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
                             </td>
                             <td className="px-2 py-1.5 text-center font-mono text-[10px]">{b.width}×{b.height}</td>
                             <td className="px-2 py-1.5 text-center">{b.quantidade}</td>
-                            <td className="px-2 py-1.5 text-right font-mono">{(b.perimeterMm/1000).toFixed(2)}m</td>
+                            <td className="px-2 py-1.5 text-right font-mono">{(b.fresaMmUnit/1000).toFixed(2)}m</td>
+                            <td className="px-2 py-1.5 text-right font-mono">{(b.serraMmUnit/1000).toFixed(2)}m</td>
                             <td className="px-2 py-1.5 text-right">{isFrisos ? "—" : `${b.fitaMetrosUnit.toFixed(2)}m`}</td>
                             <td className="px-2 py-1.5 text-center">{b.numFurosUnit}</td>
                             <td className="px-2 py-1.5 text-right font-semibold">R$ {b.valorTotalAll.toFixed(2)}</td>
