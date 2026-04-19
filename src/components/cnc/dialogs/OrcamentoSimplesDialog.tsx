@@ -370,7 +370,7 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
       <div class="info">
         <div><b>Data:</b> ${today}</div>
         <div><b>Chapas:</b> ${budgets.length}</div>
-        <div><b>Peças Aspire:</b> ${aspireBudgets.length}</div>
+        <div><b>Peças usinadas:</b> ${aspireBudgets.length}</div>
       </div>
 
       ${budgets.length > 0 ? `
@@ -392,22 +392,30 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
       </table>` : ""}
 
       ${aspireBudgets.length > 0 ? `
-      <h2>Peças Usinadas (Aspire / Router) — composição por serviço</h2>
-      <table>
+      <h2>Peças Usinadas — composição por serviço</h2>
+      <table class="aspire">
+        <colgroup>
+          <col style="width:26%" />
+          <col style="width:22%" />
+          <col style="width:14%" />
+          <col style="width:11%" />
+          <col style="width:9%" />
+          <col style="width:9%" />
+          <col style="width:9%" />
+        </colgroup>
         <thead><tr>
-          <th colspan="2">Peça / Serviço</th>
+          <th>Peça / Serviço</th>
+          <th>Detalhe</th>
           <th>Material</th>
           <th class="c">W×H</th>
-          <th class="c">Qt</th>
-          <th class="c">Unitário</th>
-          <th class="r">Subtotal/un.</th>
-          <th class="r">×Qt</th>
-          <th class="r">Total</th>
+          <th class="c">Quant.</th>
+          <th class="r">Unitário</th>
+          <th class="r">Subtotal</th>
         </tr></thead>
         <tbody>${aspireRows}
           <tr class="total-row">
             <td colspan="6" class="r">TOTAL PEÇAS USINADAS</td>
-            <td class="r" colspan="3">R$ ${(totals.aspValorFresa + totals.aspValorSerra + totals.aspValorCortes + totals.aspValorFita).toFixed(2)}</td>
+            <td class="r">R$ ${(totals.aspValorFresa + totals.aspValorSerra + totals.aspValorCortes + totals.aspValorFita).toFixed(2)}</td>
           </tr>
         </tbody>
       </table>` : ""}
@@ -416,11 +424,11 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
         <div class="pricing-title">VALORES UNITÁRIOS APLICADOS</div>
         <div>
           Corte de serra (chapa): R$ ${prices.corte.toFixed(2)} cada · 
-          Corte de serra (peça Aspire): R$ ${prices.cortePeca.toFixed(2)} cada · 
+          Corte por peça: R$ ${prices.cortePeca.toFixed(2)} cada · 
           Fita de borda: R$ ${prices.fita.toFixed(2)}/m · 
           Furo: R$ ${prices.furo.toFixed(2)} cada · 
-          Fresa router: R$ ${prices.fresaMetro.toFixed(2)}/m · 
-          Serra (Aspire): R$ ${prices.serraMetro.toFixed(2)}/m
+          Fresa (router): R$ ${prices.fresaMetro.toFixed(2)}/m · 
+          Serra (metro linear): R$ ${prices.serraMetro.toFixed(2)}/m
         </div>
       </div>
 
