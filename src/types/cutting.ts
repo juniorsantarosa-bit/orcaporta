@@ -51,6 +51,8 @@ export interface CuttingPiece {
   aspireFrisoCount?: number;
   /** Quando aspireMode = "frisos": comprimento em mm de cada friso */
   aspireFrisoLengthMm?: number;
+  /** Quando aspireMode = "frisos": tipo de corte aplicado a TODOS os frisos */
+  aspireFrisoCutType?: "fresa" | "serra";
 }
 
 export interface SheetLayout {
