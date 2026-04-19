@@ -13,9 +13,13 @@ interface Props {
   onSelect: (id: number) => void;
   onUpdate: (id: number, patch: Partial<CuttingPiece>) => void;
   layouts?: NestingSheet[];
+  /** Índice (1-based) do lado Aspire atualmente destacado na visualização */
+  selectedSideIndex?: number | null;
+  /** Chamado quando o usuário clica em um lado dentro do popover de configuração */
+  onSelectSide?: (pieceId: number, sideIndex: number | null) => void;
 }
 
-export function SimplePartsTable({ pieces, selectedId, onSelect, onUpdate, layouts }: Props) {
+export function SimplePartsTable({ pieces, selectedId, onSelect, onUpdate, layouts, selectedSideIndex, onSelectSide }: Props) {
   const pieceSheetMap = new Map<number, number>();
   if (layouts) {
     layouts.forEach((sheet, sheetIdx) => {
