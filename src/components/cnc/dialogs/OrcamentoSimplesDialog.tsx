@@ -149,27 +149,36 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
       const fitaMmUnit = sides.reduce((a, s) => a + (s.banded ? s.lengthMm : 0), 0);
       const fitaMetrosUnit = fitaMmUnit / 1000;
       const perimeterMm = p.aspirePerimeter ?? sides.reduce((a, s) => a + s.lengthMm, 0);
-      const numFurosUnit = p.numFurosOrcamento ?? p.furos?.length ?? 0;
 
       // Soma comprimentos por tipo de corte. Frisos = todos seguem aspireFrisoCutType.
-      let fresaMm = 0, serraMm = 0;
+      // numCortesSerraUnit = nº de lados/frisos serra (1 corte cada). Fresa nunca conta.
+      let fresaMm = 0, serraMm = 0, numCortesSerraUnit = 0;
       if (isFrisos) {
         const ft = p.aspireFrisoCutType ?? "fresa";
-        if (ft === "fresa") fresaMm = perimeterMm;
-        else serraMm = perimeterMm;
+        const count = p.aspireFrisoCount ?? 0;
+        if (ft === "fresa") {
+          fresaMm = perimeterMm;
+        } else {
+          serraMm = perimeterMm;
+          numCortesSerraUnit = count;
+        }
       } else {
         sides.forEach(s => {
           const ct = s.cutType ?? (s.kind === "curvo" ? "fresa" : "serra");
-          if (ct === "fresa") fresaMm += s.lengthMm;
-          else serraMm += s.lengthMm;
+          if (ct === "fresa") {
+            fresaMm += s.lengthMm;
+          } else {
+            serraMm += s.lengthMm;
+            numCortesSerraUnit += 1;
+          }
         });
       }
 
       const valorFresaUnit = (fresaMm / 1000) * prices.fresaMetro;
       const valorSerraUnit = (serraMm / 1000) * prices.serraMetro;
+      const valorCortesUnit = numCortesSerraUnit * prices.corte;
       const valorFitaUnit = fitaMetrosUnit * prices.fita;
-      const valorFurosUnit = numFurosUnit * prices.furo;
-      const valorTotalUnit = valorFresaUnit + valorSerraUnit + valorFitaUnit + valorFurosUnit;
+      const valorTotalUnit = valorFresaUnit + valorSerraUnit + valorCortesUnit + valorFitaUnit;
 
       return {
         pieceId: p.id,
@@ -189,12 +198,12 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
         })),
         fresaMmUnit: fresaMm,
         serraMmUnit: serraMm,
+        numCortesSerraUnit,
         fitaMetrosUnit,
-        numFurosUnit,
         valorFresaUnit,
         valorSerraUnit,
+        valorCortesUnit,
         valorFitaUnit,
-        valorFurosUnit,
         valorTotalUnit,
         valorTotalAll: valorTotalUnit * p.quantidade,
       };
