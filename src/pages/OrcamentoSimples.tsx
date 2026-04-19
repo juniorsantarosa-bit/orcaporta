@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { Zap } from "lucide-react";
 import { toast } from "sonner";
 import { SimpleToolbar } from "@/components/cnc/SimpleToolbar";
@@ -191,6 +191,20 @@ export default function OrcamentoSimples() {
     }, 100);
   }, [pieces, buildAspireSheets]);
 
+  // Mapa pieceId → conjunto de sideIndex marcados com fita (banded). Usado pelo
+  // SimpleSheetView para destacar TODOS os lados com fita em vermelho tracejado
+  // enquanto o checkbox correspondente estiver marcado.
+  const bandedSideIndexes = useMemo(() => {
+    const map = new Map<number, Set<number>>();
+    for (const p of pieces) {
+      if (p.source !== "aspire" || !p.aspireSides) continue;
+      const set = new Set<number>();
+      for (const s of p.aspireSides) if (s.banded) set.add(s.index);
+      if (set.size > 0) map.set(p.id, set);
+    }
+    return map;
+  }, [pieces]);
+
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-background">
       {/* Brand bar */}
@@ -244,6 +258,7 @@ export default function OrcamentoSimples() {
                 setSelectedSideIndex(null);
               }}
               selectedSideIndex={selectedSideIndex}
+              bandedSideIndexes={bandedSideIndexes}
             />
           </ResizablePanel>
         </ResizablePanelGroup>
