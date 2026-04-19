@@ -27,26 +27,30 @@ export default function OrcamentoSimples() {
   const [showImport, setShowImport] = useState(false);
   const [showOrcamento, setShowOrcamento] = useState(false);
 
-  /** Build one "sheet" per Aspire piece unit, sized to fit the contour. */
+  /** Build one full 1840×2750 sheet per Aspire piece unit, with the contour
+   *  placed at the bottom-left corner (using the standard refilo of 8mm).
+   *  This way the user sees the piece in scale relative to a real panel. */
   const buildAspireSheets = useCallback((aspirePieces: CuttingPiece[], startId = 1, startLabel = 1): NestingSheet[] => {
     const out: NestingSheet[] = [];
+    const SHEET_W = 1840;
+    const SHEET_H = 2750;
+    const REFILO = 8;
     let id = startId, label = startLabel;
     for (const p of aspirePieces) {
       const qty = Math.max(1, Math.round(p.quantidade || 1));
       for (let q = 0; q < qty; q++) {
-        const margin = 30;
         out.push({
           id: id++,
           codCorte: 8000 + id,
-          sheetWidth: p.largura + margin * 2,
-          sheetHeight: p.altura + margin * 2,
+          sheetWidth: SHEET_W,
+          sheetHeight: SHEET_H,
           espessura: p.espessura,
           material: p.material,
-          efficiency: 100,
+          efficiency: ((p.largura * p.altura) / (SHEET_W * SHEET_H)) * 100,
           pieces: [{
             pieceId: p.id,
-            x: margin,
-            y: margin,
+            x: REFILO,
+            y: REFILO,
             width: p.largura,
             height: p.altura,
             rotated: false,
@@ -69,6 +73,7 @@ export default function OrcamentoSimples() {
     }
     return out;
   }, []);
+
 
   const handleImport = useCallback((newPieces: CuttingPiece[]) => {
     // Append imports so we can mix Promob + multiple Aspire files in the same budget.
