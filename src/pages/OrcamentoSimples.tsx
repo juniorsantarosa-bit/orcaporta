@@ -27,9 +27,17 @@ export default function OrcamentoSimples() {
   const [showImport, setShowImport] = useState(false);
   const [showOrcamento, setShowOrcamento] = useState(false);
 
-  /** Build one full 1840×2750 sheet per Aspire piece unit, with the contour
-   *  placed at the bottom-left corner (using the standard refilo of 8mm).
-   *  This way the user sees the piece in scale relative to a real panel. */
+  /** Build one full 1840×2750 sheet per Aspire piece unit. The piece is
+   *  placed using the file's machine-zero offset (where X=0/Y=0 of the .tap
+   *  file sits relative to the piece bounding box):
+   *
+   *    • If X is negative in the file (origin to the right), the piece sits
+   *      against the RIGHT edge of the sheet, offset by |maxX| from it.
+   *    • If X is positive (origin to the left), it sits against the LEFT edge,
+   *      offset by minX from it.
+   *    • Same logic for Y (bottom vs top).
+   *
+   *  Falls back to the bottom-left corner when no origin info is present. */
   const buildAspireSheets = useCallback((aspirePieces: CuttingPiece[], startId = 1, startLabel = 1): NestingSheet[] => {
     const out: NestingSheet[] = [];
     const SHEET_W = 1840;
@@ -38,6 +46,34 @@ export default function OrcamentoSimples() {
     let id = startId, label = startLabel;
     for (const p of aspirePieces) {
       const qty = Math.max(1, Math.round(p.quantidade || 1));
+      // Resolve placement from the .tap origin info.
+      let placedX = REFILO;
+      let placedY = REFILO;
+      const o = p.aspireOrigin;
+      if (o) {
+        // X axis
+        if (o.maxX <= 0) {
+          // origin to the right of the piece
+          placedX = SHEET_W - Math.abs(o.maxX) - p.largura;
+        } else if (o.minX >= 0) {
+          placedX = o.minX;
+        } else {
+          // bbox straddles 0 → origin inside piece, anchor by minX from left edge
+          placedX = -o.minX;
+        }
+        // Y axis (sheet origin is bottom-left, Y up)
+        if (o.maxY <= 0) {
+          placedY = SHEET_H - Math.abs(o.maxY) - p.altura;
+        } else if (o.minY >= 0) {
+          placedY = o.minY;
+        } else {
+          placedY = -o.minY;
+        }
+        // Clamp inside the sheet (with refilo)
+        placedX = Math.max(REFILO, Math.min(placedX, SHEET_W - p.largura - REFILO));
+        placedY = Math.max(REFILO, Math.min(placedY, SHEET_H - p.altura - REFILO));
+      }
+
       for (let q = 0; q < qty; q++) {
         out.push({
           id: id++,
@@ -49,8 +85,8 @@ export default function OrcamentoSimples() {
           efficiency: ((p.largura * p.altura) / (SHEET_W * SHEET_H)) * 100,
           pieces: [{
             pieceId: p.id,
-            x: REFILO,
-            y: REFILO,
+            x: placedX,
+            y: placedY,
             width: p.largura,
             height: p.altura,
             rotated: false,

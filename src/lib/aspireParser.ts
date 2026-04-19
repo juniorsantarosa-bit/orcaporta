@@ -44,6 +44,14 @@ export interface AspirePiece {
   zCutDepth: number;
   /** Outer contour segments in local piece coordinates (0..width × 0..height) */
   contour: AspireContourSeg[];
+  /** Original machine X of the piece bounding box min (where the file's X=0 sits relative to the piece) */
+  originMinX: number;
+  /** Original machine Y of the piece bounding box min */
+  originMinY: number;
+  /** Original machine X of the bounding box max */
+  originMaxX: number;
+  /** Original machine Y of the bounding box max */
+  originMaxY: number;
 }
 
 interface Pt { x: number; y: number }
@@ -337,5 +345,9 @@ export function parseAspireFile(text: string): AspirePiece {
     toolDiameter,
     zCutDepth: minZ,
     contour,
+    originMinX: isFinite(minX) ? minX : 0,
+    originMinY: isFinite(minY) ? minY : 0,
+    originMaxX: isFinite(maxX) ? maxX : 0,
+    originMaxY: isFinite(maxY) ? maxY : 0,
   };
 }
