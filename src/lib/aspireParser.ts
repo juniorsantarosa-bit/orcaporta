@@ -228,35 +228,76 @@ export function parseAspireFile(text: string): AspirePiece {
   const height = isFinite(maxY) ? Math.round(maxY - minY) : 0;
   const perimeter = segs.reduce((a, s) => a + segLength(s), 0);
 
-  // Group consecutive segments into "sides".
-  // Rule: collinear consecutive lines = same side; contiguous arcs (not interrupted
-  // by a line whose direction is significantly different) = same side.
-  // A new side starts when the angle between the END tangent of previous segment
-  // and the START tangent of the next segment exceeds ~30°.
-  const ANGLE_THRESHOLD = (30 * Math.PI) / 180;
+  // ---- Group segments into "sides" -----------------------------------------
+  // Aspire / CNC contours are typically composed of:
+  //   • long straight lines (real sides)
+  //   • short fillet arcs (R≤ ~15mm) at corners — these are CORNERS, not sides
+  //   • optional large-radius arcs (R > ~100mm) that ARE genuine curved sides
+  //   • a small lead-in line + a final lead-out line at the start/end of the cut
+  //
+  // Strategy:
+  //   1. Drop short lead-in / lead-out segments (length < ~25mm) at the very
+  //      start and end of the contour — they are not sides.
+  //   2. Walk the segments and accumulate them into the current side.
+  //      A short corner arc is treated as a separator: it closes the current
+  //      side AND starts a new one (and is itself NOT counted as a side).
+  //      A long arc (large radius) IS a side ("curvo").
+  //      A line that turns >25° relative to the previous direction also starts
+  //      a new side.
+
+  const SHORT_LEAD = 25;       // mm — lead-in / lead-out heuristic
+  const FILLET_R_MAX = 15;     // mm — arcs ≤ this radius are corner fillets
+  const TURN_THRESHOLD = (25 * Math.PI) / 180;
+
+  // Trim lead-in/out at the boundaries (only short straight lines, not arcs).
+  let i0 = 0, i1 = segs.length - 1;
+  while (i0 <= i1 && segs[i0].kind === "line" && segLength(segs[i0]) < SHORT_LEAD) i0++;
+  while (i1 >= i0 && segs[i1].kind === "line" && segLength(segs[i1]) < SHORT_LEAD) i1--;
+  const work = segs.slice(i0, i1 + 1);
+
   const sides: AspireSide[] = [];
   let curLen = 0;
   let curHasArc = false;
   let prevEnd: Pt | null = null;
 
-  for (let i = 0; i < segs.length; i++) {
-    const s = segs[i];
-    if (i === 0) {
+  const closeSide = () => {
+    if (curLen <= 0.5) return; // ignore degenerate
+    sides.push({
+      index: sides.length + 1,
+      lengthMm: Math.round(curLen * 10) / 10,
+      kind: curHasArc ? "curvo" : "reto",
+    });
+    curLen = 0;
+    curHasArc = false;
+  };
+
+  for (let i = 0; i < work.length; i++) {
+    const s = work[i];
+    const isFillet =
+      s.kind === "arc" &&
+      Math.hypot(s.a.x - s.cx, s.a.y - s.cy) <= FILLET_R_MAX;
+
+    if (isFillet) {
+      // Corner fillet: close any open side and skip this segment as a side.
+      closeSide();
+      prevEnd = tangentEnd(s);
+      continue;
+    }
+
+    if (curLen === 0) {
+      // first segment of a fresh side
       curLen = segLength(s);
       curHasArc = s.kind === "arc";
       prevEnd = tangentEnd(s);
       continue;
     }
+
     const startT = tangentStart(s);
-    const dot = Math.max(-1, Math.min(1, (prevEnd!.x * startT.x + prevEnd!.y * startT.y)));
+    const dot = Math.max(-1, Math.min(1, prevEnd!.x * startT.x + prevEnd!.y * startT.y));
     const ang = Math.acos(dot);
-    if (ang > ANGLE_THRESHOLD) {
-      // close current side
-      sides.push({
-        index: sides.length + 1,
-        lengthMm: Math.round(curLen * 10) / 10,
-        kind: curHasArc ? "curvo" : "reto",
-      });
+
+    if (ang > TURN_THRESHOLD) {
+      closeSide();
       curLen = segLength(s);
       curHasArc = s.kind === "arc";
     } else {
@@ -265,13 +306,7 @@ export function parseAspireFile(text: string): AspirePiece {
     }
     prevEnd = tangentEnd(s);
   }
-  if (segs.length > 0) {
-    sides.push({
-      index: sides.length + 1,
-      lengthMm: Math.round(curLen * 10) / 10,
-      kind: curHasArc ? "curvo" : "reto",
-    });
-  }
+  closeSide();
 
   // Heuristic: detect tool diameter from "Descricao" comment like "Topo Raso (6 milimetros)"
   let toolDiameter = 6;
