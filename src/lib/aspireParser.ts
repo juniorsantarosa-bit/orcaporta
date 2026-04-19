@@ -356,6 +356,50 @@ export function parseAspireFile(text: string): AspirePiece {
   const descMatch = text.match(/Descricao\s*:\s*[^()\n]*\(( \d+(?:\.\d+)?)/i);
   if (descMatch) toolDiameter = parseFloat(descMatch[1]);
 
+  // ---- Detect "frisos" mode -----------------------------------------------
+  // Frisos = many separate single-stroke passes (não há contorno fechado).
+  // Heurística: para cada pass, removemos lead-in/lead-out (segmentos curtos
+  // <50mm) e ficamos com o "corte útil". Se ≥3 passes resultam em uma única
+  // linha reta de comprimento ≥ 100mm cada, é um arquivo de frisos.
+  const usefulPasses: { length: number; isStraight: boolean }[] = passes.map(p => {
+    // remover G1 muito curtos no início/fim (rampa de descida e lead-out)
+    const minLen = 50;
+    let i0 = 0, i1 = p.length - 1;
+    while (i0 <= i1 && p[i0].kind === "line" && segLength(p[i0]) < minLen) i0++;
+    while (i1 >= i0 && p[i1].kind === "line" && segLength(p[i1]) < minLen) i1--;
+    const core = p.slice(i0, i1 + 1);
+    const length = core.reduce((a, s) => a + segLength(s), 0);
+    const isStraight = core.length >= 1 && core.every(s => s.kind === "line");
+    return { length, isStraight };
+  });
+  const longPasses = usefulPasses.filter(p => p.length >= 100);
+  const allStraight = longPasses.length > 0 && longPasses.every(p => p.isStraight);
+  // Quando há ≥3 passes longos retos, e a soma dos comprimentos é
+  // significativamente maior que o "perímetro" do bbox (passes paralelos),
+  // tratamos como frisos.
+  const isFrisos = allStraight && longPasses.length >= 3;
+
+  let mode: "contour" | "frisos" = "contour";
+  let frisoCount: number | undefined;
+  let frisoLengthMm: number | undefined;
+  let perimeterFinal = perimeter;
+  let sidesFinal = sides;
+
+  if (isFrisos) {
+    mode = "frisos";
+    frisoCount = longPasses.length;
+    const totalLen = longPasses.reduce((a, p) => a + p.length, 0);
+    frisoLengthMm = Math.round((totalLen / longPasses.length) * 10) / 10;
+    perimeterFinal = Math.round(totalLen * 10) / 10;
+    // Em modo frisos NÃO há "lados" para banding — uma linha por friso
+    // (apenas para informação visual, não selecionável).
+    sidesFinal = longPasses.map((p, i) => ({
+      index: i + 1,
+      lengthMm: Math.round(p.length * 10) / 10,
+      kind: "reto" as const,
+    }));
+  }
+
   // Build local-coordinate contour (0..width × 0..height) for visualization.
   const ox = isFinite(minX) ? minX : 0;
   const oy = isFinite(minY) ? minY : 0;
@@ -368,8 +412,8 @@ export function parseAspireFile(text: string): AspirePiece {
   return {
     width,
     height,
-    perimeter: Math.round(perimeter * 10) / 10,
-    sides,
+    perimeter: Math.round(perimeterFinal * 10) / 10,
+    sides: sidesFinal,
     toolDiameter,
     zCutDepth: minZ,
     contour,
@@ -377,5 +421,8 @@ export function parseAspireFile(text: string): AspirePiece {
     originMinY: isFinite(minY) ? minY : 0,
     originMaxX: isFinite(maxX) ? maxX : 0,
     originMaxY: isFinite(maxY) ? maxY : 0,
+    mode,
+    frisoCount,
+    frisoLengthMm,
   };
 }
