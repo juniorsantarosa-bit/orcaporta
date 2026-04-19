@@ -55,25 +55,34 @@ export default function OrcamentoSimples() {
       toast.error("Importe peças antes de otimizar.");
       return;
     }
+    // Aspire pieces are NOT nested into a saw sheet — they are billed by the
+    // real machined perimeter (each one is its own "panel" on the router).
+    const sawPieces = pieces.filter(p => p.source !== "aspire");
+    const aspireCount = pieces.length - sawPieces.length;
+
     setIsOptimizing(true);
     toast.loading("Otimizando (modo Serra)...", { id: "opt" });
 
     setTimeout(() => {
-      const sheets = optimizeSerra(pieces, {
-        sheetWidth: 1840,
-        sheetHeight: 2750,
-        gap: 4,
-        refiloX: 8,
-        refiloY: 8,
-        allowRotation: true,
-      });
+      const sheets = sawPieces.length > 0
+        ? optimizeSerra(sawPieces, {
+            sheetWidth: 1840,
+            sheetHeight: 2750,
+            espessura: sawPieces[0]?.espessura ?? 15,
+            material: sawPieces[0]?.material ?? "MDF",
+            gap: 4,
+            refiloX: 8,
+            refiloY: 8,
+            allowRotation: true,
+          })
+        : [];
       setLayouts(sheets);
       setIsOptimizing(false);
       const avgEff = sheets.length > 0
         ? sheets.reduce((a, s) => a + s.efficiency, 0) / sheets.length
         : 0;
       toast.success(
-        `Otimizado! ${sheets.length} chapas · ${avgEff.toFixed(1)}% aproveitamento`,
+        `Otimizado! ${sheets.length} chapas · ${avgEff.toFixed(1)}% aprov.${aspireCount ? ` · ${aspireCount} peça(s) Aspire` : ""}`,
         { id: "opt" }
       );
     }, 100);
