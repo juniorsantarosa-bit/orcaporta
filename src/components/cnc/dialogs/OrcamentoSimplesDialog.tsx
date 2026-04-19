@@ -17,14 +17,15 @@ interface Props {
 }
 
 interface Prices {
-  corte: number;     // R$ per saw cut
+  corte: number;     // R$ per saw cut (chapas inteiras na esquadrejadeira)
   fita: number;      // R$ per metre of edge banding
   furo: number;      // R$ per hole
-  fresaMetro: number; // R$ per metre of router travel (Aspire pieces)
+  fresaMetro: number; // R$ per metre of router travel (Aspire — lado curvo)
+  serraMetro: number; // R$ per metre of saw cut (Aspire — lados retos)
 }
 
-const DEFAULT_PRICES: Prices = { corte: 3.0, fita: 4.5, furo: 0.10, fresaMetro: 8.0 };
-const PRICES_KEY = "maxcut.orcamento.prices.v1";
+const DEFAULT_PRICES: Prices = { corte: 3.0, fita: 4.5, furo: 0.10, fresaMetro: 8.0, serraMetro: 5.0 };
+const PRICES_KEY = "maxcut.orcamento.prices.v2";
 
 function loadPrices(): Prices {
   try {
@@ -36,6 +37,7 @@ function loadPrices(): Prices {
       fita: Number(v.fita) || DEFAULT_PRICES.fita,
       furo: Number(v.furo) || DEFAULT_PRICES.furo,
       fresaMetro: Number(v.fresaMetro) || DEFAULT_PRICES.fresaMetro,
+      serraMetro: Number(v.serraMetro) || DEFAULT_PRICES.serraMetro,
     };
   } catch {
     return DEFAULT_PRICES;
@@ -138,15 +140,29 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
   const aspireBudgets = useMemo<AspireBudget[]>(() => {
     return aspirePieces.map(p => {
       const sides = p.aspireSides ?? [];
+      const isFrisos = p.aspireMode === "frisos";
       const fitaMmUnit = sides.reduce((a, s) => a + (s.banded ? s.lengthMm : 0), 0);
       const fitaMetrosUnit = fitaMmUnit / 1000;
       const perimeterMm = p.aspirePerimeter ?? sides.reduce((a, s) => a + s.lengthMm, 0);
       const numFurosUnit = p.numFurosOrcamento ?? p.furos?.length ?? 0;
 
-      const valorFresaUnit = (perimeterMm / 1000) * prices.fresaMetro;
+      // Soma comprimentos por tipo de corte. Frisos = sempre fresa.
+      let fresaMm = 0, serraMm = 0;
+      if (isFrisos) {
+        fresaMm = perimeterMm;
+      } else {
+        sides.forEach(s => {
+          const ct = s.cutType ?? (s.kind === "curvo" ? "fresa" : "serra");
+          if (ct === "fresa") fresaMm += s.lengthMm;
+          else serraMm += s.lengthMm;
+        });
+      }
+
+      const valorFresaUnit = (fresaMm / 1000) * prices.fresaMetro;
+      const valorSerraUnit = (serraMm / 1000) * prices.serraMetro;
       const valorFitaUnit = fitaMetrosUnit * prices.fita;
       const valorFurosUnit = numFurosUnit * prices.furo;
-      const valorTotalUnit = valorFresaUnit + valorFitaUnit + valorFurosUnit;
+      const valorTotalUnit = valorFresaUnit + valorSerraUnit + valorFitaUnit + valorFurosUnit;
 
       return {
         pieceId: p.id,
@@ -157,10 +173,19 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
         width: p.largura,
         height: p.altura,
         perimeterMm,
-        sides: sides.map(s => ({ index: s.index, lengthMm: s.lengthMm, kind: s.kind, banded: s.banded })),
+        sides: sides.map(s => ({
+          index: s.index,
+          lengthMm: s.lengthMm,
+          kind: s.kind,
+          banded: s.banded,
+          cutType: (s.cutType ?? (s.kind === "curvo" ? "fresa" : "serra")) as "fresa" | "serra",
+        })),
+        fresaMmUnit: fresaMm,
+        serraMmUnit: serraMm,
         fitaMetrosUnit,
         numFurosUnit,
         valorFresaUnit,
+        valorSerraUnit,
         valorFitaUnit,
         valorFurosUnit,
         valorTotalUnit,
