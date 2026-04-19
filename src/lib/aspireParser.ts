@@ -24,6 +24,11 @@ export interface AspireSide {
   kind: "reto" | "curvo";
 }
 
+/** Contour segment in LOCAL piece coords (0..width × 0..height) */
+export type AspireContourSeg =
+  | { kind: "line"; x1: number; y1: number; x2: number; y2: number }
+  | { kind: "arc"; x1: number; y1: number; x2: number; y2: number; cx: number; cy: number; cw: boolean };
+
 export interface AspirePiece {
   /** Outer width in mm (X span of the contour) */
   width: number;
@@ -37,6 +42,8 @@ export interface AspirePiece {
   toolDiameter: number;
   /** Z final cut depth (most negative Z reached on G1), for info only */
   zCutDepth: number;
+  /** Outer contour segments in local piece coordinates (0..width × 0..height) */
+  contour: AspireContourSeg[];
 }
 
 interface Pt { x: number; y: number }
