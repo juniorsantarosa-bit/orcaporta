@@ -87,13 +87,31 @@ export function SimplePartsTable({ pieces, selectedId, onSelect, onUpdate, layou
                       {isAspire && <span className="text-[9px] mr-1 px-1 py-px rounded bg-primary/20 text-primary uppercase">Aspire</span>}
                       {piece.descricao}
                     </td>
-                    <td className="px-2 py-1 text-right font-mono text-[10px]">{piece.largura}</td>
-                    <td className="px-2 py-1 text-right font-mono text-[10px]">{piece.altura}</td>
+                    <td className="px-1 py-1 text-right" onClick={(e) => e.stopPropagation()}>
+                      <Input
+                        type="number" min={0} value={piece.largura}
+                        onChange={(e) => onUpdate(piece.id, { largura: Math.max(0, parseFloat(e.target.value) || 0) })}
+                        className="h-6 text-[10px] text-right px-1 w-14 ml-auto font-mono"
+                      />
+                    </td>
+                    <td className="px-1 py-1 text-right" onClick={(e) => e.stopPropagation()}>
+                      <Input
+                        type="number" min={0} value={piece.altura}
+                        onChange={(e) => onUpdate(piece.id, { altura: Math.max(0, parseFloat(e.target.value) || 0) })}
+                        className="h-6 text-[10px] text-right px-1 w-14 ml-auto font-mono"
+                      />
+                    </td>
                     <td className="px-2 py-1 text-right font-mono text-[10px]">{piece.espessura}</td>
                     <td className="px-2 py-1 truncate max-w-[80px] text-muted-foreground text-[10px]">
                       {piece.material.split(" ")[0]}
                     </td>
-                    <td className="px-2 py-1 text-right font-medium">{piece.quantidade}</td>
+                    <td className="px-1 py-1 text-right" onClick={(e) => e.stopPropagation()}>
+                      <Input
+                        type="number" min={1} value={piece.quantidade}
+                        onChange={(e) => onUpdate(piece.id, { quantidade: Math.max(1, parseInt(e.target.value) || 1) })}
+                        className="h-6 text-[10px] text-right px-1 w-12 ml-auto font-medium"
+                      />
+                    </td>
 
                     {isAspire ? (
                       // Aspire: per-side popover (contour) ou global (frisos) — sempre presente
