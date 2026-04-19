@@ -60,8 +60,30 @@ export interface AspirePiece {
   mode: "contour" | "frisos";
   /** Quando mode = "frisos": número de passagens (usinagens) detectadas */
   frisoCount?: number;
-  /** Quando mode = "frisos": comprimento médio de cada passagem em mm */
+  /**
+   * Quando mode = "frisos": comprimento útil do VÃO (largura visível do canal),
+   * calculado como (percursoBruto/2) − Ø fresa. É a medida que o cliente "vê".
+   */
   frisoLengthMm?: number;
+  /**
+   * Quando mode = "frisos": LARGURA do vão (eixo principal do friso) em mm.
+   * Mesma medida que `frisoLengthMm`, exposta separadamente para clareza
+   * na tabela editável (W do friso).
+   */
+  frisoLarguraMm?: number;
+  /**
+   * Quando mode = "frisos": ALTURA do vão (eixo perpendicular) em mm.
+   * Default = diâmetro da fresa (uma única passada). O usuário pode editar
+   * para canais mais altos que exigem múltiplas passadas em Y.
+   */
+  frisoAlturaMm?: number;
+  /**
+   * Quando mode = "frisos": comprimento total que a fresa REALMENTE usina
+   * (e que será cobrado), considerando ida-e-volta + subidas/descidas nas
+   * pontas. Fórmula: 2 × (largura + Ø) + 2 × altura.
+   * Para canais com altura > Ø, conta passadas adicionais.
+   */
+  frisoBilledLengthMm?: number;
 }
 
 interface Pt { x: number; y: number }
