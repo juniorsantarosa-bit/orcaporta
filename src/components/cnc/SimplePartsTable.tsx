@@ -88,76 +88,99 @@ export function SimplePartsTable({ pieces, selectedId, onSelect, onUpdate, layou
                     <td className="px-2 py-1 text-right font-medium">{piece.quantidade}</td>
 
                     {isAspire ? (
-                      // Aspire: per-side popover (modo contour) ou label de frisos
+                      // Aspire: per-side popover (contour) ou global (frisos) — sempre presente
                       <td colSpan={4} className="px-1 py-1 text-center">
-                        {piece.aspireMode === "frisos" ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] px-2 py-1 rounded bg-muted text-muted-foreground font-mono">
-                            {piece.aspireFrisoCount} frisos × {piece.aspireFrisoLengthMm?.toFixed(0)}mm
-                          </span>
-                        ) : (
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={(e) => e.stopPropagation()}
-                                className="h-6 text-[10px] px-2 gap-1"
-                              >
-                                <Settings2 className="h-3 w-3" />
-                                {(piece.aspireSides ?? []).filter(s => s.banded).length}/{piece.aspireSides?.length ?? 0} fitas
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-[340px] p-3" onClick={(e) => e.stopPropagation()}>
-                              <div className="text-xs font-semibold mb-2">Configuração por lado</div>
-                              <div className="grid grid-cols-[auto_1fr_auto_auto] gap-x-2 gap-y-1.5 items-center text-[10px]">
-                                <div className="text-muted-foreground font-semibold uppercase">Lado</div>
-                                <div className="text-muted-foreground font-semibold uppercase">Tipo de corte</div>
-                                <div className="text-muted-foreground font-semibold uppercase text-center">Fita</div>
-                                <div className="text-muted-foreground font-semibold uppercase text-right">mm</div>
-                                {(piece.aspireSides ?? []).map((s) => {
-                                  const cutType = s.cutType ?? (s.kind === "curvo" ? "fresa" : "serra");
-                                  return (
-                                    <div key={s.index} className="contents">
-                                      <span className="font-mono">
-                                        {s.index} <span className="text-muted-foreground">({s.kind})</span>
-                                      </span>
-                                      <select
-                                        value={cutType}
-                                        onChange={(e) => {
-                                          const sides = (piece.aspireSides ?? []).map(ss =>
-                                            ss.index === s.index ? { ...ss, cutType: e.target.value as "fresa" | "serra" } : ss
-                                          );
-                                          onUpdate(piece.id, { aspireSides: sides });
-                                        }}
-                                        className="h-6 text-[10px] rounded border border-input bg-background px-1"
-                                      >
-                                        <option value="fresa">Fresa</option>
-                                        <option value="serra">Serra</option>
-                                      </select>
-                                      <div className="flex justify-center">
-                                        <Checkbox
-                                          checked={s.banded}
-                                          onCheckedChange={(v) => {
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={(e) => e.stopPropagation()}
+                              className="h-6 text-[10px] px-2 gap-1"
+                            >
+                              <Settings2 className="h-3 w-3" />
+                              {piece.aspireMode === "frisos"
+                                ? `${piece.aspireFrisoCount} × ${(piece.aspireFrisoCutType ?? "fresa").toUpperCase()}`
+                                : `${(piece.aspireSides ?? []).filter(s => s.banded).length}/${piece.aspireSides?.length ?? 0} fitas`}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[340px] p-3" onClick={(e) => e.stopPropagation()}>
+                            {piece.aspireMode === "frisos" ? (
+                              <>
+                                <div className="text-xs font-semibold mb-2">Tipo de corte dos frisos</div>
+                                <div className="text-[10px] text-muted-foreground mb-2">
+                                  {piece.aspireFrisoCount} frisos × {piece.aspireFrisoLengthMm?.toFixed(0)}mm — todos serão usinados pelo mesmo método.
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <label className="text-[11px] font-medium">Aplicar a todos:</label>
+                                  <select
+                                    value={piece.aspireFrisoCutType ?? "fresa"}
+                                    onChange={(e) =>
+                                      onUpdate(piece.id, { aspireFrisoCutType: e.target.value as "fresa" | "serra" })
+                                    }
+                                    className="h-7 text-[11px] rounded border border-input bg-background px-2 flex-1"
+                                  >
+                                    <option value="fresa">Fresa (router)</option>
+                                    <option value="serra">Serra (esquadrejadeira)</option>
+                                  </select>
+                                </div>
+                                <div className="mt-2 pt-2 border-t border-border text-[9px] text-muted-foreground">
+                                  💡 Frisos retos contínuos podem sair mais barato na <b>serra</b>; frisos curvos ou interrompidos exigem <b>fresa</b>.
+                                </div>
+                              </>
+                            ) : (
+                              <>
+                                <div className="text-xs font-semibold mb-2">Configuração por lado</div>
+                                <div className="grid grid-cols-[auto_1fr_auto_auto] gap-x-2 gap-y-1.5 items-center text-[10px]">
+                                  <div className="text-muted-foreground font-semibold uppercase">Lado</div>
+                                  <div className="text-muted-foreground font-semibold uppercase">Tipo de corte</div>
+                                  <div className="text-muted-foreground font-semibold uppercase text-center">Fita</div>
+                                  <div className="text-muted-foreground font-semibold uppercase text-right">mm</div>
+                                  {(piece.aspireSides ?? []).map((s) => {
+                                    const cutType = s.cutType ?? (s.kind === "curvo" ? "fresa" : "serra");
+                                    return (
+                                      <div key={s.index} className="contents">
+                                        <span className="font-mono">
+                                          {s.index} <span className="text-muted-foreground">({s.kind})</span>
+                                        </span>
+                                        <select
+                                          value={cutType}
+                                          onChange={(e) => {
                                             const sides = (piece.aspireSides ?? []).map(ss =>
-                                              ss.index === s.index ? { ...ss, banded: !!v } : ss
+                                              ss.index === s.index ? { ...ss, cutType: e.target.value as "fresa" | "serra" } : ss
                                             );
                                             onUpdate(piece.id, { aspireSides: sides });
                                           }}
-                                        />
+                                          className="h-6 text-[10px] rounded border border-input bg-background px-1"
+                                        >
+                                          <option value="fresa">Fresa</option>
+                                          <option value="serra">Serra</option>
+                                        </select>
+                                        <div className="flex justify-center">
+                                          <Checkbox
+                                            checked={s.banded}
+                                            onCheckedChange={(v) => {
+                                              const sides = (piece.aspireSides ?? []).map(ss =>
+                                                ss.index === s.index ? { ...ss, banded: !!v } : ss
+                                              );
+                                              onUpdate(piece.id, { aspireSides: sides });
+                                            }}
+                                          />
+                                        </div>
+                                        <span className="font-mono text-muted-foreground text-right">
+                                          {s.lengthMm.toFixed(1)}
+                                        </span>
                                       </div>
-                                      <span className="font-mono text-muted-foreground text-right">
-                                        {s.lengthMm.toFixed(1)}
-                                      </span>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                              <div className="mt-2 pt-2 border-t border-border text-[9px] text-muted-foreground">
-                                💡 Lado curvo geralmente é <b>fresa</b>, lados retos podem ser <b>serra</b> (mais barato).
-                              </div>
-                            </PopoverContent>
-                          </Popover>
-                        )}
+                                    );
+                                  })}
+                                </div>
+                                <div className="mt-2 pt-2 border-t border-border text-[9px] text-muted-foreground">
+                                  💡 Lado curvo geralmente é <b>fresa</b>, lados retos podem ser <b>serra</b> (mais barato).
+                                </div>
+                              </>
+                            )}
+                          </PopoverContent>
+                        </Popover>
                       </td>
                     ) : (
                       <>
