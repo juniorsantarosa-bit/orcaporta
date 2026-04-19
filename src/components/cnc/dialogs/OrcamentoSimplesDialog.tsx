@@ -379,64 +379,6 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
         );
       }
     });
-      // Cabeçalho da peça
-      aspireRows += `<tr class="piece-header">
-        <td><b>${b.descricao}</b><div class="side-list">${sidesList}</div></td>
-        <td class="c">—</td>
-        <td>${b.material}<br/><span style="font-size:9px;color:#666">${b.espessura}mm</span></td>
-        <td class="c">${b.width}×${b.height}</td>
-        <td class="c">${b.quantidade} un.</td>
-        <td class="r">—</td>
-        <td class="r piece-total"><b>R$ ${b.valorTotalAll.toFixed(2)}</b></td>
-      </tr>`;
-
-      const fresaM = b.fresaMmUnit / 1000;
-      const serraM = b.serraMmUnit / 1000;
-      // Sub-linha de serviço — mesmas 7 colunas, alinhadas com o cabeçalho.
-      const subRow = (servico: string, detalhe: string, unitario: string, totalAll: number) =>
-        `<tr class="service-row">
-          <td class="service">↳ ${servico}</td>
-          <td>${detalhe}</td>
-          <td></td>
-          <td></td>
-          <td class="c">×${b.quantidade}</td>
-          <td class="r">${unitario}</td>
-          <td class="r subtotal">R$ ${totalAll.toFixed(2)}</td>
-        </tr>`;
-
-      if (fresaM > 0) {
-        aspireRows += subRow(
-          "Fresa (router)",
-          `${fresaM.toFixed(2)} m por peça`,
-          `R$ ${prices.fresaMetro.toFixed(2)}/m`,
-          b.valorFresaUnit * b.quantidade,
-        );
-      }
-      if (serraM > 0) {
-        aspireRows += subRow(
-          "Serra (metro linear)",
-          `${serraM.toFixed(2)} m por peça`,
-          `R$ ${prices.serraMetro.toFixed(2)}/m`,
-          b.valorSerraUnit * b.quantidade,
-        );
-      }
-      if (b.numCortesSerraUnit > 0 && b.valorCortesUnit > 0) {
-        aspireRows += subRow(
-          "Cortes (peça)",
-          `${b.numCortesSerraUnit} corte(s) por peça`,
-          `R$ ${prices.cortePeca.toFixed(2)}/corte`,
-          b.valorCortesUnit * b.quantidade,
-        );
-      }
-      if (b.fitaMetrosUnit > 0) {
-        aspireRows += subRow(
-          "Fita de borda",
-          `${b.fitaMetrosUnit.toFixed(2)} m por peça`,
-          `R$ ${prices.fita.toFixed(2)}/m`,
-          b.valorFitaUnit * b.quantidade,
-        );
-      }
-    });
 
     w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Orçamento</title>
       <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
