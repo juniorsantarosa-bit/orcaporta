@@ -112,7 +112,7 @@ export default function OrcamentoSimples() {
         onOrcamento={() => setShowOrcamento(true)}
         isOptimizing={isOptimizing}
         hasPieces={pieces.length > 0}
-        hasLayouts={layouts.length > 0}
+        hasLayouts={layouts.length > 0 || pieces.some(p => p.source === "aspire")}
       />
 
       <div className="flex-1 min-h-0">
@@ -147,6 +147,7 @@ export default function OrcamentoSimples() {
         open={showOrcamento}
         onOpenChange={setShowOrcamento}
         layouts={layouts}
+        pieces={pieces}
       />
     </div>
   );
