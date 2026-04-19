@@ -340,17 +340,17 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
       <table>
         <thead><tr>
           <th>Peça / Lados</th><th>Material</th><th class="c">Esp.</th><th class="c">W×H</th>
-          <th class="c">Qt</th><th class="r">Fresa/un.</th><th class="r">Serra/un.</th><th class="r">Fita/un.</th>
-          <th class="c">Furos/un.</th><th class="r">Total</th>
+          <th class="c">Qt</th><th class="r">Fresa/un.</th><th class="r">Serra/un.</th>
+          <th class="c">Cortes/un.</th><th class="r">Fita/un.</th><th class="r">Total</th>
         </tr></thead>
         <tbody>${aspireRows}
           <tr class="total-row">
             <td colspan="5" class="r">TOTAIS</td>
             <td class="r">${totals.aspFresaM.toFixed(2)}m</td>
             <td class="r">${totals.aspSerraM.toFixed(2)}m</td>
+            <td class="c">${totals.aspCortes}</td>
             <td class="r">${totals.aspFita.toFixed(2)}m</td>
-            <td class="c">${totals.aspFuros}</td>
-            <td class="r">R$ ${(totals.aspValorFresa + totals.aspValorSerra + totals.aspValorFita + totals.aspValorFuros).toFixed(2)}</td>
+            <td class="r">R$ ${(totals.aspValorFresa + totals.aspValorSerra + totals.aspValorCortes + totals.aspValorFita).toFixed(2)}</td>
           </tr>
         </tbody>
       </table>` : ""}
