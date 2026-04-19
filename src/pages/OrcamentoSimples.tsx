@@ -244,6 +244,7 @@ export default function OrcamentoSimples() {
                 setSelectedSideIndex(null);
               }}
               selectedSideIndex={selectedSideIndex}
+              bandedSideIndexes={bandedSideIndexes}
             />
           </ResizablePanel>
         </ResizablePanelGroup>
