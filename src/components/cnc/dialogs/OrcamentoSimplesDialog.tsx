@@ -18,14 +18,15 @@ interface Props {
 
 interface Prices {
   corte: number;     // R$ per saw cut (chapas inteiras na esquadrejadeira)
+  cortePeca: number; // R$ per saw cut on Aspire piece sides
   fita: number;      // R$ per metre of edge banding
   furo: number;      // R$ per hole
   fresaMetro: number; // R$ per metre of router travel (Aspire — lado curvo)
   serraMetro: number; // R$ per metre of saw cut (Aspire — lados retos)
 }
 
-const DEFAULT_PRICES: Prices = { corte: 3.0, fita: 4.5, furo: 0.10, fresaMetro: 8.0, serraMetro: 5.0 };
-const PRICES_KEY = "maxcut.orcamento.prices.v2";
+const DEFAULT_PRICES: Prices = { corte: 3.0, cortePeca: 2.0, fita: 4.5, furo: 0.10, fresaMetro: 8.0, serraMetro: 5.0 };
+const PRICES_KEY = "maxcut.orcamento.prices.v3";
 
 function loadPrices(): Prices {
   try {
@@ -34,6 +35,7 @@ function loadPrices(): Prices {
     const v = JSON.parse(raw);
     return {
       corte: Number(v.corte) || DEFAULT_PRICES.corte,
+      cortePeca: Number(v.cortePeca) || DEFAULT_PRICES.cortePeca,
       fita: Number(v.fita) || DEFAULT_PRICES.fita,
       furo: Number(v.furo) || DEFAULT_PRICES.furo,
       fresaMetro: Number(v.fresaMetro) || DEFAULT_PRICES.fresaMetro,
@@ -176,7 +178,7 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
 
       const valorFresaUnit = (fresaMm / 1000) * prices.fresaMetro;
       const valorSerraUnit = (serraMm / 1000) * prices.serraMetro;
-      const valorCortesUnit = numCortesSerraUnit * prices.corte;
+      const valorCortesUnit = numCortesSerraUnit * prices.cortePeca;
       const valorFitaUnit = fitaMetrosUnit * prices.fita;
       const valorTotalUnit = valorFresaUnit + valorSerraUnit + valorCortesUnit + valorFitaUnit;
 
@@ -359,6 +361,7 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
         <div class="pricing-title">VALORES UNITÁRIOS APLICADOS</div>
         <div>
           Corte de serra (chapa): R$ ${prices.corte.toFixed(2)} cada · 
+          Corte de serra (peça Aspire): R$ ${prices.cortePeca.toFixed(2)} cada · 
           Fita de borda: R$ ${prices.fita.toFixed(2)}/m · 
           Furo: R$ ${prices.furo.toFixed(2)} cada · 
           Fresa router: R$ ${prices.fresaMetro.toFixed(2)}/m · 
@@ -406,11 +409,16 @@ export function OrcamentoSimplesDialog({ open, onOpenChange, layouts, pieces }: 
                   <RotateCcw className="h-3 w-3" /> Restaurar padrão
                 </Button>
               </div>
-              <div className="grid grid-cols-5 gap-2">
+              <div className="grid grid-cols-6 gap-2">
                 <div>
                   <Label className="text-[10px] uppercase text-muted-foreground">R$ corte (chapa)</Label>
                   <Input type="number" step="0.01" min={0} value={prices.corte}
                     onChange={(e) => updatePrice("corte", e.target.value)} className="h-7 text-xs" />
+                </div>
+                <div>
+                  <Label className="text-[10px] uppercase text-muted-foreground" title="Cobrado por cada lado/friso de uma peça Aspire configurado como Serra">R$ corte (peça)</Label>
+                  <Input type="number" step="0.01" min={0} value={prices.cortePeca}
+                    onChange={(e) => updatePrice("cortePeca", e.target.value)} className="h-7 text-xs" />
                 </div>
                 <div>
                   <Label className="text-[10px] uppercase text-muted-foreground">R$/m fita</Label>
