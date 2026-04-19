@@ -59,7 +59,7 @@ export function ImportarPecasDialog({ open, onOpenChange, onImport }: Props) {
       quantidade: aspireQtd,
       bordaInf: false, bordaSup: false, bordaEsq: false, bordaDir: false,
       veio: false,
-      observacao: `Aspire · ${r.sides.length} lados · perímetro ${(r.perimeter/1000).toFixed(2)}m · fresa Ø${r.aspireToolDiameter ?? r.toolDiameter}mm`,
+      observacao: `Aspire · ${r.sides.length} lados · perímetro ${(r.perimeter/1000).toFixed(2)}m · fresa Ø${r.toolDiameter}mm`,
       source: "aspire",
       aspireSides: r.sides.map(s => ({ ...s, banded: false })),
       aspirePerimeter: r.perimeter,

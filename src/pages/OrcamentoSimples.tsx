@@ -28,10 +28,17 @@ export default function OrcamentoSimples() {
   const [showOrcamento, setShowOrcamento] = useState(false);
 
   const handleImport = useCallback((newPieces: CuttingPiece[]) => {
-    setPieces(newPieces);
+    // Append imports so we can mix Promob + multiple Aspire files in the same budget.
+    setPieces(prev => {
+      const merged = [...prev, ...newPieces];
+      setSelectedPieceId(prev.length === 0 && newPieces.length > 0 ? newPieces[0].id : selectedPieceId);
+      return merged;
+    });
     setLayouts([]);
-    setSelectedPieceId(newPieces.length > 0 ? newPieces[0].id : null);
-    toast.success(`${newPieces.length} peças importadas.`);
+  }, [selectedPieceId]);
+
+  const handleUpdatePiece = useCallback((id: number, patch: Partial<CuttingPiece>) => {
+    setPieces(prev => prev.map(p => p.id === id ? { ...p, ...patch } : p));
   }, []);
 
   const handleNew = useCallback(() => {
@@ -106,6 +113,7 @@ export default function OrcamentoSimples() {
               pieces={pieces}
               selectedId={selectedPieceId}
               onSelect={setSelectedPieceId}
+              onUpdate={handleUpdatePiece}
               layouts={layouts}
             />
           </ResizablePanel>
