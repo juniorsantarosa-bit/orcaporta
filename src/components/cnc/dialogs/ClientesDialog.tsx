@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Trash2, Save, Users, Check, X } from "lucide-react";
+import { Plus, Trash2, Save, Users, Check, X, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import {
   DEFAULT_PRICE_TABLE,
@@ -145,7 +145,16 @@ export function ClientesDialog({ open, onOpenChange, selectedClientId, onSelect 
                         </Button>
                         <Button
                           size="sm" variant="ghost"
+                          className="h-6 w-6 p-0 text-primary"
+                          title="Editar cliente"
+                          onClick={(e) => { e.stopPropagation(); startEdit(c); }}
+                        >
+                          <Pencil className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          size="sm" variant="ghost"
                           className="h-6 w-6 p-0 text-destructive"
+                          title="Excluir cliente"
                           onClick={(e) => { e.stopPropagation(); handleDelete(c.id); }}
                         >
                           <Trash2 className="h-3 w-3" />
