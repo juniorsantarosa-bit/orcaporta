@@ -5,13 +5,15 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { Settings2 } from "lucide-react";
+import { Settings2, Trash2 } from "lucide-react";
 
 interface Props {
   pieces: CuttingPiece[];
   selectedId: number | null;
   onSelect: (id: number) => void;
   onUpdate: (id: number, patch: Partial<CuttingPiece>) => void;
+  /** Remove uma peça da lista (opcional) */
+  onDelete?: (id: number) => void;
   layouts?: NestingSheet[];
   /** Índice (1-based) do lado Aspire atualmente destacado na visualização */
   selectedSideIndex?: number | null;
@@ -19,7 +21,7 @@ interface Props {
   onSelectSide?: (pieceId: number, sideIndex: number | null) => void;
 }
 
-export function SimplePartsTable({ pieces, selectedId, onSelect, onUpdate, layouts, selectedSideIndex, onSelectSide }: Props) {
+export function SimplePartsTable({ pieces, selectedId, onSelect, onUpdate, onDelete, layouts, selectedSideIndex, onSelectSide }: Props) {
   const pieceSheetMap = new Map<number, number>();
   if (layouts) {
     layouts.forEach((sheet, sheetIdx) => {
