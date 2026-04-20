@@ -531,7 +531,7 @@ export function OrcamentoSimplesDialog({
             Importe peças e otimize para gerar o orçamento.
           </div>
         ) : (
-          <ScrollArea className="flex-1">
+          <ScrollArea className="flex-1 min-h-0 max-h-[calc(92vh-160px)]">
             <div className="space-y-3 pr-3">
               {/* Cliente + endereço de entrega padrão */}
               <div className="rounded border border-border p-3 bg-muted/30">

@@ -130,6 +130,16 @@ export default function OrcamentoSimples() {
     setPieces(prev => prev.map(p => p.id === id ? { ...p, ...patch } : p));
   }, []);
 
+  const handleDeletePiece = useCallback((id: number) => {
+    setPieces(prev => prev.filter(p => p.id !== id));
+    setLayouts(prev => prev
+      .map(s => ({ ...s, pieces: s.pieces.filter(pp => pp.pieceId !== id) }))
+      .filter(s => s.pieces.length > 0)
+    );
+    setSelectedPieceId(prev => prev === id ? null : prev);
+    toast.info("Peça removida.");
+  }, []);
+
   const handleNew = useCallback(() => {
     if (pieces.length === 0 && layouts.length === 0 && !editingQuoteId) return;
     if (!confirm("Iniciar um novo projeto? As peças e o plano atual serão descartados.")) return;
@@ -253,6 +263,7 @@ export default function OrcamentoSimples() {
               selectedId={selectedPieceId}
               onSelect={setSelectedPieceId}
               onUpdate={handleUpdatePiece}
+              onDelete={handleDeletePiece}
               layouts={layouts}
               selectedSideIndex={selectedSideIndex}
               onSelectSide={(pid, sideIdx) => {

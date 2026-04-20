@@ -5,13 +5,15 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { Settings2 } from "lucide-react";
+import { Settings2, Trash2 } from "lucide-react";
 
 interface Props {
   pieces: CuttingPiece[];
   selectedId: number | null;
   onSelect: (id: number) => void;
   onUpdate: (id: number, patch: Partial<CuttingPiece>) => void;
+  /** Remove uma peça da lista (opcional) */
+  onDelete?: (id: number) => void;
   layouts?: NestingSheet[];
   /** Índice (1-based) do lado Aspire atualmente destacado na visualização */
   selectedSideIndex?: number | null;
@@ -19,7 +21,7 @@ interface Props {
   onSelectSide?: (pieceId: number, sideIndex: number | null) => void;
 }
 
-export function SimplePartsTable({ pieces, selectedId, onSelect, onUpdate, layouts, selectedSideIndex, onSelectSide }: Props) {
+export function SimplePartsTable({ pieces, selectedId, onSelect, onUpdate, onDelete, layouts, selectedSideIndex, onSelectSide }: Props) {
   const pieceSheetMap = new Map<number, number>();
   if (layouts) {
     layouts.forEach((sheet, sheetIdx) => {
@@ -53,7 +55,7 @@ export function SimplePartsTable({ pieces, selectedId, onSelect, onUpdate, layou
                 <th className="text-right px-2 py-1.5 w-14">Larg.</th>
                 <th className="text-right px-2 py-1.5 w-14">Alt.</th>
                 <th className="text-right px-2 py-1.5 w-10">Esp.</th>
-                <th className="text-left px-2 py-1.5 w-20">Material</th>
+                <th className="text-left px-2 py-1.5 w-32">Material</th>
                 <th className="text-right px-2 py-1.5 w-8">Qt</th>
                 <th className="text-center px-1 py-1.5 w-8" title="Borda Sup">S</th>
                 <th className="text-center px-1 py-1.5 w-8" title="Borda Inf">I</th>
@@ -61,6 +63,7 @@ export function SimplePartsTable({ pieces, selectedId, onSelect, onUpdate, layou
                 <th className="text-center px-1 py-1.5 w-8" title="Borda Dir">D</th>
                 <th className="text-center px-1 py-1.5 w-12" title="Furos">Furos</th>
                 <th className="text-center px-1 py-1.5 w-8" title="Chapa">Ch</th>
+                <th className="text-center px-1 py-1.5 w-8" title="Excluir"></th>
               </tr>
             </thead>
             <tbody>
@@ -102,8 +105,13 @@ export function SimplePartsTable({ pieces, selectedId, onSelect, onUpdate, layou
                       />
                     </td>
                     <td className="px-2 py-1 text-right font-mono text-[10px]">{piece.espessura}</td>
-                    <td className="px-2 py-1 truncate max-w-[80px] text-muted-foreground text-[10px]">
-                      {piece.material.split(" ")[0]}
+                    <td className="px-1 py-1" onClick={(e) => e.stopPropagation()}>
+                      <Input
+                        value={piece.material}
+                        onChange={(e) => onUpdate(piece.id, { material: e.target.value })}
+                        title={piece.material}
+                        className="h-6 text-[10px] px-1 w-full"
+                      />
                     </td>
                     <td className="px-1 py-1 text-right" onClick={(e) => e.stopPropagation()}>
                       <Input
@@ -307,6 +315,21 @@ export function SimplePartsTable({ pieces, selectedId, onSelect, onUpdate, layou
                     </td>
                     <td className="px-1 py-1 text-center font-mono text-[10px] text-muted-foreground">
                       {sheetNum ? `#${sheetNum}` : "—"}
+                    </td>
+                    <td className="px-1 py-1 text-center" onClick={(e) => e.stopPropagation()}>
+                      {onDelete && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                          title="Excluir peça"
+                          onClick={() => {
+                            if (confirm(`Excluir a peça "${piece.descricao}"?`)) onDelete(piece.id);
+                          }}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      )}
                     </td>
                   </tr>
                 );
