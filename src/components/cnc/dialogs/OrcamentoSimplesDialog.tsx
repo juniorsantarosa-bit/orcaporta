@@ -836,7 +836,7 @@ export function OrcamentoSimplesDialog({
                 </div>
               </div>
             </div>
-          </ScrollArea>
+          </div>
         )}
 
         <DialogFooter>
