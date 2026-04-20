@@ -105,8 +105,13 @@ export function SimplePartsTable({ pieces, selectedId, onSelect, onUpdate, onDel
                       />
                     </td>
                     <td className="px-2 py-1 text-right font-mono text-[10px]">{piece.espessura}</td>
-                    <td className="px-2 py-1 truncate max-w-[80px] text-muted-foreground text-[10px]">
-                      {piece.material.split(" ")[0]}
+                    <td className="px-1 py-1" onClick={(e) => e.stopPropagation()}>
+                      <Input
+                        value={piece.material}
+                        onChange={(e) => onUpdate(piece.id, { material: e.target.value })}
+                        title={piece.material}
+                        className="h-6 text-[10px] px-1 w-full"
+                      />
                     </td>
                     <td className="px-1 py-1 text-right" onClick={(e) => e.stopPropagation()}>
                       <Input
@@ -310,6 +315,21 @@ export function SimplePartsTable({ pieces, selectedId, onSelect, onUpdate, onDel
                     </td>
                     <td className="px-1 py-1 text-center font-mono text-[10px] text-muted-foreground">
                       {sheetNum ? `#${sheetNum}` : "—"}
+                    </td>
+                    <td className="px-1 py-1 text-center" onClick={(e) => e.stopPropagation()}>
+                      {onDelete && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                          title="Excluir peça"
+                          onClick={() => {
+                            if (confirm(`Excluir a peça "${piece.descricao}"?`)) onDelete(piece.id);
+                          }}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      )}
                     </td>
                   </tr>
                 );
