@@ -55,7 +55,7 @@ export function SimplePartsTable({ pieces, selectedId, onSelect, onUpdate, onDel
                 <th className="text-right px-2 py-1.5 w-14">Larg.</th>
                 <th className="text-right px-2 py-1.5 w-14">Alt.</th>
                 <th className="text-right px-2 py-1.5 w-10">Esp.</th>
-                <th className="text-left px-2 py-1.5 w-20">Material</th>
+                <th className="text-left px-2 py-1.5 w-32">Material</th>
                 <th className="text-right px-2 py-1.5 w-8">Qt</th>
                 <th className="text-center px-1 py-1.5 w-8" title="Borda Sup">S</th>
                 <th className="text-center px-1 py-1.5 w-8" title="Borda Inf">I</th>
@@ -63,6 +63,7 @@ export function SimplePartsTable({ pieces, selectedId, onSelect, onUpdate, onDel
                 <th className="text-center px-1 py-1.5 w-8" title="Borda Dir">D</th>
                 <th className="text-center px-1 py-1.5 w-12" title="Furos">Furos</th>
                 <th className="text-center px-1 py-1.5 w-8" title="Chapa">Ch</th>
+                <th className="text-center px-1 py-1.5 w-8" title="Excluir"></th>
               </tr>
             </thead>
             <tbody>
