@@ -356,6 +356,46 @@ export function SimplePartsTable({ pieces, selectedId, onSelect, onUpdate, onDel
                         <td className="px-1 py-1 text-center" onClick={(e) => e.stopPropagation()}>
                           <Checkbox checked={piece.bordaDir} onCheckedChange={(v) => onUpdate(piece.id, { bordaDir: !!v })} />
                         </td>
+                        <td className="px-1 py-1 text-center" onClick={(e) => e.stopPropagation()}>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                title="Fita manual por borda (recortes internos / curvos)"
+                                className={`h-6 px-2 text-[10px] ${
+                                  (piece.bordaManualSup || piece.bordaManualInf || piece.bordaManualEsq || piece.bordaManualDir)
+                                    ? "text-amber-500 font-semibold"
+                                    : "text-muted-foreground"
+                                }`}
+                              >
+                                {(piece.bordaManualSup ? 1 : 0) + (piece.bordaManualInf ? 1 : 0) + (piece.bordaManualEsq ? 1 : 0) + (piece.bordaManualDir ? 1 : 0) || "—"}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-[200px] p-3" onClick={(e) => e.stopPropagation()}>
+                              <div className="text-[11px] font-semibold mb-2 text-amber-500">Fita manual por borda</div>
+                              <div className="space-y-1.5 text-[11px]">
+                                {([
+                                  ["bordaManualSup", "Superior"],
+                                  ["bordaManualInf", "Inferior"],
+                                  ["bordaManualEsq", "Esquerda"],
+                                  ["bordaManualDir", "Direita"],
+                                ] as const).map(([k, label]) => (
+                                  <label key={k} className="flex items-center gap-2 cursor-pointer">
+                                    <Checkbox
+                                      checked={!!(piece as any)[k]}
+                                      onCheckedChange={(v) => onUpdate(piece.id, { [k]: !!v } as any)}
+                                    />
+                                    {label}
+                                  </label>
+                                ))}
+                              </div>
+                              <div className="mt-2 pt-2 border-t border-border text-[9px] text-muted-foreground">
+                                Cobrada à parte na tabela de preços.
+                              </div>
+                            </PopoverContent>
+                          </Popover>
+                        </td>
                       </>
                     )}
 
