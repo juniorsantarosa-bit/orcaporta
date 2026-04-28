@@ -929,13 +929,13 @@ export function OrcamentoSimplesDialog({
         )}
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Fechar</Button>
+          <Button variant="outline" onClick={handleClose}>Fechar</Button>
           {!isEmpty && (
             <>
               <Button variant="secondary" onClick={handleSaveQuote}>
                 <Save className="h-4 w-4 mr-1" /> {editingQuoteId ? "Atualizar orçamento" : "Salvar orçamento"}
               </Button>
-              <Button onClick={handlePrint}>
+              <Button onClick={handlePrintWithCheck}>
                 <Printer className="h-4 w-4 mr-1" /> Imprimir / PDF
               </Button>
             </>
