@@ -61,6 +61,7 @@ export function SimplePartsTable({ pieces, selectedId, onSelect, onUpdate, onDel
                 <th className="text-center px-1 py-1.5 w-8" title="Borda Inf">I</th>
                 <th className="text-center px-1 py-1.5 w-8" title="Borda Esq">E</th>
                 <th className="text-center px-1 py-1.5 w-8" title="Borda Dir">D</th>
+                <th className="text-center px-1 py-1.5 w-10" title="Fita manual (recortes internos / curvos)">F.man</th>
                 <th className="text-center px-1 py-1.5 w-12" title="Furos">Furos</th>
                 <th className="text-center px-1 py-1.5 w-8" title="Chapa">Ch</th>
                 <th className="text-center px-1 py-1.5 w-8" title="Excluir"></th>
