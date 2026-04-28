@@ -7,6 +7,8 @@ export interface AspireSideInfo {
   kind: "reto" | "curvo";
   /** When true, this side gets edge-banding tape */
   banded: boolean;
+  /** When true, this side gets MANUAL edge-banding (applied by hand) */
+  bandedManual?: boolean;
   /** Tipo de corte deste lado: "fresa" (router) ou "serra" (esquadrejadeira) */
   cutType?: "fresa" | "serra";
 }
@@ -25,6 +27,11 @@ export interface CuttingPiece {
   bordaSup: boolean;
   bordaEsq: boolean;
   bordaDir: boolean;
+  /** Edge-banding manual aplicada às bordas (independente da fita normal) */
+  bordaManualSup?: boolean;
+  bordaManualInf?: boolean;
+  bordaManualEsq?: boolean;
+  bordaManualDir?: boolean;
   veio: boolean;
   observacao: string;
   furos?: PromobHole[];
