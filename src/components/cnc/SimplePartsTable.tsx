@@ -214,6 +214,46 @@ export function SimplePartsTable({ pieces, selectedId, onSelect, onUpdate, onDel
                                     <option value="serra">Serra (esquadrejadeira)</option>
                                   </select>
                                 </div>
+                                {/*
+                                  Habilita fita por friso quando NÃO é apenas uma única
+                                  passada da fresa (canal mínimo). Critério: a altura do
+                                  vão é maior que o diâmetro da fresa, ou a largura excede
+                                  o Ø + 1mm de tolerância. Frisos quadrados/retangulares
+                                  (nichos) sempre liberam fita manual.
+                                */}
+                                {(() => {
+                                  const tool = piece.aspireToolDiameter ?? 6;
+                                  const altura = piece.aspireFrisoAlturaMm ?? tool;
+                                  const largura = piece.aspireFrisoLarguraMm ?? 0;
+                                  const isCanalLargo = altura > tool + 0.1 || largura > tool + 0.1;
+                                  if (!isCanalLargo) {
+                                    return (
+                                      <div className="mt-2 pt-2 border-t border-border text-[9px] text-muted-foreground">
+                                        ⓘ Friso de passada única (≤ Ø fresa) — sem opção de fita.
+                                      </div>
+                                    );
+                                  }
+                                  // marca/desmarca fita em TODOS os "lados" (frisos)
+                                  const allBanded = (piece.aspireSides ?? []).every(s => s.banded);
+                                  const allManual = (piece.aspireSides ?? []).every(s => s.bandedManual);
+                                  const setAll = (key: "banded" | "bandedManual", v: boolean) => {
+                                    const sides = (piece.aspireSides ?? []).map(s => ({ ...s, [key]: v }));
+                                    onUpdate(piece.id, { aspireSides: sides });
+                                  };
+                                  return (
+                                    <div className="mt-2 pt-2 border-t border-border space-y-1.5">
+                                      <div className="text-[10px] uppercase text-muted-foreground font-semibold">Fita (vão largo detectado)</div>
+                                      <label className="flex items-center gap-2 text-[11px] cursor-pointer">
+                                        <Checkbox checked={allBanded} onCheckedChange={(v) => setAll("banded", !!v)} />
+                                        Aplicar fita normal em todos os {piece.aspireFrisoCount ?? 0} {(piece.aspireFrisoCount ?? 0) === 1 ? "vão" : "vãos"}
+                                      </label>
+                                      <label className="flex items-center gap-2 text-[11px] cursor-pointer">
+                                        <Checkbox checked={allManual} onCheckedChange={(v) => setAll("bandedManual", !!v)} />
+                                        <span>Aplicar <b className="text-amber-500">fita manual</b> (recortes internos)</span>
+                                      </label>
+                                    </div>
+                                  );
+                                })()}
                                 <div className="mt-2 pt-2 border-t border-border text-[9px] text-muted-foreground">
                                   💡 Comprimento cobrado = 2 × (largura + Ø) + 2 × altura — ida + volta + subida/descida nas pontas.
                                 </div>
@@ -221,10 +261,11 @@ export function SimplePartsTable({ pieces, selectedId, onSelect, onUpdate, onDel
                             ) : (
                               <>
                                 <div className="text-xs font-semibold mb-2">Configuração por lado</div>
-                                <div className="grid grid-cols-[auto_1fr_auto_auto] gap-x-2 gap-y-1.5 items-center text-[10px]">
+                                <div className="grid grid-cols-[auto_1fr_auto_auto_auto] gap-x-2 gap-y-1.5 items-center text-[10px]">
                                   <div className="text-muted-foreground font-semibold uppercase">Lado</div>
                                   <div className="text-muted-foreground font-semibold uppercase">Tipo de corte</div>
                                   <div className="text-muted-foreground font-semibold uppercase text-center">Fita</div>
+                                  <div className="text-muted-foreground font-semibold uppercase text-center" title="Fita manual">F.man</div>
                                   <div className="text-muted-foreground font-semibold uppercase text-right">mm</div>
                                   {(piece.aspireSides ?? []).map((s) => {
                                     const cutType = s.cutType ?? (s.kind === "curvo" ? "fresa" : "serra");
@@ -272,6 +313,18 @@ export function SimplePartsTable({ pieces, selectedId, onSelect, onUpdate, onDel
                                             }}
                                           />
                                         </div>
+                                        <div className="flex justify-center" title="Fita manual (curvas / recortes internos)">
+                                          <Checkbox
+                                            checked={!!s.bandedManual}
+                                            onCheckedChange={(v) => {
+                                              const sides = (piece.aspireSides ?? []).map(ss =>
+                                                ss.index === s.index ? { ...ss, bandedManual: !!v } : ss
+                                              );
+                                              onUpdate(piece.id, { aspireSides: sides });
+                                              onSelectSide?.(piece.id, s.index);
+                                            }}
+                                          />
+                                        </div>
                                         <span className="font-mono text-muted-foreground text-right">
                                           {s.lengthMm.toFixed(1)}
                                         </span>
@@ -281,6 +334,7 @@ export function SimplePartsTable({ pieces, selectedId, onSelect, onUpdate, onDel
                                 </div>
                                 <div className="mt-2 pt-2 border-t border-border text-[9px] text-muted-foreground">
                                   💡 Lado curvo geralmente é <b>fresa</b>, lados retos podem ser <b>serra</b> (mais barato).
+                                  <br />Use <b className="text-amber-500">fita manual</b> em lados curvos ou recortes internos onde a coladeira não chega.
                                 </div>
                               </>
                             )}
