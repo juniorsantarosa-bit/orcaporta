@@ -871,10 +871,25 @@ export function OrcamentoSimplesDialog({
                                 <div className="font-medium">{b.descricao}</div>
                                 <div className="text-[10px] text-muted-foreground space-y-0.5 mt-1">
                                   {isFrisos ? (
-                                    <div className="font-mono">
-                                      {piece?.aspireFrisoCount} frisos de {(piece?.aspireFrisoBilledLengthMm ?? piece?.aspireFrisoLengthMm ?? 0).toFixed(1)}mm cada
-                                      {piece?.aspireFrisoLarguraMm && piece?.aspireFrisoAlturaMm && (
-                                        <span className="text-muted-foreground/70"> · vão {piece.aspireFrisoLarguraMm.toFixed(0)}×{piece.aspireFrisoAlturaMm.toFixed(0)}mm</span>
+                                    <div className="font-mono space-y-0.5">
+                                      {b.isNicho ? (
+                                        <>
+                                          <div>
+                                            <b className="text-foreground">{b.frisoCount}</b> {b.frisoCount === 1 ? "nicho" : "nichos"}
+                                            {" "}de <b className="text-foreground">{b.vaoLargura?.toFixed(0)}×{b.vaoAltura?.toFixed(0)} mm</b>
+                                          </div>
+                                          <div className="text-muted-foreground/80">
+                                            Perímetro de cada vão: <b className="text-foreground">{b.frisoLengthMm?.toFixed(0)} mm</b>
+                                            {" · "}total usinado: <b className="text-foreground">{((b.frisoLengthMm ?? 0) * (b.frisoCount ?? 0) / 1000).toFixed(2)} m</b>
+                                          </div>
+                                        </>
+                                      ) : (
+                                        <>
+                                          {piece?.aspireFrisoCount} frisos de {(piece?.aspireFrisoBilledLengthMm ?? piece?.aspireFrisoLengthMm ?? 0).toFixed(1)}mm cada
+                                          {piece?.aspireFrisoLarguraMm && piece?.aspireFrisoAlturaMm && (
+                                            <span className="text-muted-foreground/70"> · vão {piece.aspireFrisoLarguraMm.toFixed(0)}×{piece.aspireFrisoAlturaMm.toFixed(0)}mm</span>
+                                          )}
+                                        </>
                                       )}
                                     </div>
                                   ) : (
@@ -887,6 +902,7 @@ export function OrcamentoSimplesDialog({
                                         </span>
                                         <span className="font-mono">{s.lengthMm.toFixed(1)}mm</span>
                                         {s.banded && <span className="text-[9px] px-1 rounded bg-accent text-accent-foreground">fita</span>}
+                                        {s.bandedManual && <span className="text-[9px] px-1 rounded bg-amber-500/30 text-amber-200">fita manual</span>}
                                       </div>
                                     ))
                                   )}
@@ -897,7 +913,14 @@ export function OrcamentoSimplesDialog({
                               <td className="px-2 py-1.5 text-right font-mono">{(b.fresaMmUnit/1000).toFixed(2)}m</td>
                               <td className="px-2 py-1.5 text-right font-mono">{(b.serraMmUnit/1000).toFixed(2)}m</td>
                               <td className="px-2 py-1.5 text-center">{b.numCortesSerraUnit}</td>
-                              <td className="px-2 py-1.5 text-right">{isFrisos ? "—" : `${b.fitaMetrosUnit.toFixed(2)}m`}</td>
+                              <td className="px-2 py-1.5 text-right">
+                                {(b.fitaMetrosUnit + b.fitaManualMetrosUnit) > 0
+                                  ? <>
+                                      {b.fitaMetrosUnit > 0 && <div>{b.fitaMetrosUnit.toFixed(2)}m</div>}
+                                      {b.fitaManualMetrosUnit > 0 && <div className="text-amber-500">{b.fitaManualMetrosUnit.toFixed(2)}m m.</div>}
+                                    </>
+                                  : "—"}
+                              </td>
                               <td className="px-2 py-1.5 text-right font-semibold">R$ {b.valorTotalAll.toFixed(2)}</td>
                             </tr>
                           );
