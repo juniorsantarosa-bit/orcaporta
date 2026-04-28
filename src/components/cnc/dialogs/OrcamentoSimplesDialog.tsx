@@ -584,6 +584,24 @@ export function OrcamentoSimplesDialog({
 
   const isEmpty = layouts.length === 0 && aspirePieces.length === 0;
 
+  /** Pergunta antes de fechar / imprimir se há mudanças não salvas */
+  const confirmSaveBeforeAction = (action: () => void, actionLabel: string) => {
+    if (isEmpty || !dirty) { action(); return; }
+    const r = window.confirm(
+      `Há alterações não salvas neste orçamento.\n\n` +
+      `OK = Salvar e ${actionLabel}\n` +
+      `Cancelar = ${actionLabel} sem salvar`,
+    );
+    if (r) {
+      const saved = handleSaveQuote();
+      if (!saved) return;
+    }
+    action();
+  };
+
+  const handleClose = () => confirmSaveBeforeAction(() => onOpenChange(false), "fechar");
+  const handlePrintWithCheck = () => confirmSaveBeforeAction(handlePrint, "imprimir");
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[1100px] max-h-[92vh] overflow-hidden flex flex-col">
