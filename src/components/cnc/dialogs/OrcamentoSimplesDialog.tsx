@@ -40,6 +40,7 @@ function loadPrices(): ClientPriceTable {
       corte: Number(v.corte) || DEFAULT_PRICE_TABLE.corte,
       cortePeca: Number(v.cortePeca) || DEFAULT_PRICE_TABLE.cortePeca,
       fita: Number(v.fita) || DEFAULT_PRICE_TABLE.fita,
+      fitaManual: Number(v.fitaManual) || DEFAULT_PRICE_TABLE.fitaManual,
       furo: Number(v.furo) || DEFAULT_PRICE_TABLE.furo,
       fresaMetro: Number(v.fresaMetro) || DEFAULT_PRICE_TABLE.fresaMetro,
       serraMetro: Number(v.serraMetro) || DEFAULT_PRICE_TABLE.serraMetro,
