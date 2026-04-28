@@ -960,6 +960,7 @@ function priceLabel(k: keyof ClientPriceTable): string {
     case "corte": return "R$ corte (chapa)";
     case "cortePeca": return "R$ corte (peça)";
     case "fita": return "R$/m fita";
+    case "fitaManual": return "R$/m fita manual";
     case "furo": return "R$ por furo";
     case "fresaMetro": return "R$/m fresa";
     case "serraMetro": return "R$/m serra";
