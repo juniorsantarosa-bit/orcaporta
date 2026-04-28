@@ -58,9 +58,11 @@ interface SheetBudget {
   numPecas: number;
   numCortes: number;
   fitaMetros: number;
+  fitaManualMetros: number;
   numFuros: number;
   valorCortes: number;
   valorFita: number;
+  valorFitaManual: number;
   valorFuros: number;
   valorTotal: number;
 }
@@ -74,21 +76,28 @@ interface AspireBudget {
   width: number;
   height: number;
   perimeterMm: number;
-  sides: { index: number; lengthMm: number; kind: "reto" | "curvo"; banded: boolean; cutType: "fresa" | "serra" }[];
+  sides: { index: number; lengthMm: number; kind: "reto" | "curvo"; banded: boolean; bandedManual: boolean; cutType: "fresa" | "serra" }[];
   fresaMmUnit: number;
   serraMmUnit: number;
   numCortesSerraUnit: number;
   fitaMetrosUnit: number;
+  fitaManualMetrosUnit: number;
   valorFresaUnit: number;
   valorSerraUnit: number;
   valorCortesUnit: number;
   valorFitaUnit: number;
+  valorFitaManualUnit: number;
   valorTotalUnit: number;
   valorTotalAll: number;
   mode: "contour" | "frisos";
   frisoCount?: number;
   frisoLengthMm?: number;
   frisoCutType?: "fresa" | "serra";
+  /** Para o modo frisos: dimensões legíveis do vão (largura × altura em mm) */
+  vaoLargura?: number;
+  vaoAltura?: number;
+  /** true se cada "friso" é na verdade um nicho fechado (4 lados) */
+  isNicho?: boolean;
 }
 
 export function OrcamentoSimplesDialog({
