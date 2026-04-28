@@ -124,7 +124,7 @@ export function SimplePartsTable({ pieces, selectedId, onSelect, onUpdate, onDel
 
                     {isAspire ? (
                       // Aspire: per-side popover (contour) ou global (frisos) — sempre presente
-                      <td colSpan={4} className="px-1 py-1 text-center">
+                      <td colSpan={5} className="px-1 py-1 text-center">
                         <Popover>
                           <PopoverTrigger asChild>
                             <Button
