@@ -514,6 +514,12 @@ export function OrcamentoSimplesDialog({
           `R$ ${prices.fita.toFixed(2)}/m`,
           b.valorFitaUnit * b.quantidade);
       }
+      if (b.fitaManualMetrosUnit > 0) {
+        aspireRows += subRow("Fita manual (recortes internos / curvos)",
+          `${b.fitaManualMetrosUnit.toFixed(2)} m por peça`,
+          `R$ ${prices.fitaManual.toFixed(2)}/m`,
+          b.valorFitaManualUnit * b.quantidade);
+      }
     });
 
     w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Orçamento</title>
