@@ -110,6 +110,11 @@ export function OrcamentoSimplesDialog({
   const [status, setStatus] = useState<QuoteStatus>({ enviado: false, pago: false });
   const [pieceMeta, setPieceMeta] = useState<PieceMetaMap>({});
 
+  /** Marca quando há mudanças não salvas no orçamento atual. */
+  const [dirty, setDirty] = useState(false);
+  /** Marca o snapshot pós-salvamento, para que mudanças de cálculo não disparem alerta */
+  const dirtyRef = { current: dirty };
+
   // Carrega preços corretos: do cliente se houver, senão dos defaults locais
   useEffect(() => {
     if (!open) return;
@@ -139,6 +144,22 @@ export function OrcamentoSimplesDialog({
     setStatus({ enviado: false, pago: false });
     setPieceMeta({});
   }, [open, editingQuoteId, client]);
+
+  // Reseta o flag dirty ao abrir/fechar
+  useEffect(() => {
+    if (open) setDirty(false);
+  }, [open, editingQuoteId]);
+
+  // Bloqueia fechar a aba do navegador quando há orçamento não salvo
+  useEffect(() => {
+    if (!open || !dirty) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [open, dirty]);
 
   const persistPrices = (p: ClientPriceTable) => {
     setPrices(p);
