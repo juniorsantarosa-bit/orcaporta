@@ -272,25 +272,28 @@ export function OrcamentoSimplesDialog({
   const totals = useMemo(() => {
     const sawValorCortes = budgets.reduce((a, b) => a + b.valorCortes, 0);
     const sawValorFita = budgets.reduce((a, b) => a + b.valorFita, 0);
+    const sawValorFitaManual = budgets.reduce((a, b) => a + b.valorFitaManual, 0);
     const sawValorFuros = budgets.reduce((a, b) => a + b.valorFuros, 0);
     const sawCortes = budgets.reduce((a, b) => a + b.numCortes, 0);
     const sawFita = budgets.reduce((a, b) => a + b.fitaMetros, 0);
+    const sawFitaManual = budgets.reduce((a, b) => a + b.fitaManualMetros, 0);
     const sawFuros = budgets.reduce((a, b) => a + b.numFuros, 0);
 
     const aspValorFresa = aspireBudgets.reduce((a, b) => a + b.valorFresaUnit * b.quantidade, 0);
     const aspValorSerra = aspireBudgets.reduce((a, b) => a + b.valorSerraUnit * b.quantidade, 0);
     const aspValorCortes = aspireBudgets.reduce((a, b) => a + b.valorCortesUnit * b.quantidade, 0);
     const aspValorFita = aspireBudgets.reduce((a, b) => a + b.valorFitaUnit * b.quantidade, 0);
+    const aspValorFitaManual = aspireBudgets.reduce((a, b) => a + b.valorFitaManualUnit * b.quantidade, 0);
 
     const valorFuros = sawValorFuros;
-    const valorTotal = sawValorCortes + sawValorFita + sawValorFuros
-      + aspValorFresa + aspValorSerra + aspValorCortes + aspValorFita;
+    const valorTotal = sawValorCortes + sawValorFita + sawValorFitaManual + sawValorFuros
+      + aspValorFresa + aspValorSerra + aspValorCortes + aspValorFita + aspValorFitaManual;
     const valorSemFuros = valorTotal - valorFuros;
 
     return {
-      sawCortes, sawFita, sawFuros,
-      sawValorCortes, sawValorFita, sawValorFuros,
-      aspValorFresa, aspValorSerra, aspValorCortes, aspValorFita,
+      sawCortes, sawFita, sawFitaManual, sawFuros,
+      sawValorCortes, sawValorFita, sawValorFitaManual, sawValorFuros,
+      aspValorFresa, aspValorSerra, aspValorCortes, aspValorFita, aspValorFitaManual,
       valorTotal, valorSemFuros, valorFuros,
     };
   }, [budgets, aspireBudgets]);
