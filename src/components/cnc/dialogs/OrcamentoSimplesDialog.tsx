@@ -603,7 +603,9 @@ export function OrcamentoSimplesDialog({
   const handlePrintWithCheck = () => confirmSaveBeforeAction(handlePrint, "imprimir");
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(v) => {
+      if (!v) { handleClose(); } else { onOpenChange(true); }
+    }}>
       <DialogContent className="max-w-[1100px] max-h-[92vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
