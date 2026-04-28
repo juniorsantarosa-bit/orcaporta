@@ -14,6 +14,7 @@ export const DEFAULT_PRICE_TABLE: ClientPriceTable = {
   corte: 3.0,
   cortePeca: 2.0,
   fita: 4.5,
+  fitaManual: 8.0,
   furo: 0.10,
   fresaMetro: 8.0,
   serraMetro: 5.0,

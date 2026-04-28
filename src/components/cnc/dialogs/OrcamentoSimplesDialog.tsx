@@ -40,6 +40,7 @@ function loadPrices(): ClientPriceTable {
       corte: Number(v.corte) || DEFAULT_PRICE_TABLE.corte,
       cortePeca: Number(v.cortePeca) || DEFAULT_PRICE_TABLE.cortePeca,
       fita: Number(v.fita) || DEFAULT_PRICE_TABLE.fita,
+      fitaManual: Number(v.fitaManual) || DEFAULT_PRICE_TABLE.fitaManual,
       furo: Number(v.furo) || DEFAULT_PRICE_TABLE.furo,
       fresaMetro: Number(v.fresaMetro) || DEFAULT_PRICE_TABLE.fresaMetro,
       serraMetro: Number(v.serraMetro) || DEFAULT_PRICE_TABLE.serraMetro,
@@ -57,9 +58,11 @@ interface SheetBudget {
   numPecas: number;
   numCortes: number;
   fitaMetros: number;
+  fitaManualMetros: number;
   numFuros: number;
   valorCortes: number;
   valorFita: number;
+  valorFitaManual: number;
   valorFuros: number;
   valorTotal: number;
 }
@@ -73,21 +76,28 @@ interface AspireBudget {
   width: number;
   height: number;
   perimeterMm: number;
-  sides: { index: number; lengthMm: number; kind: "reto" | "curvo"; banded: boolean; cutType: "fresa" | "serra" }[];
+  sides: { index: number; lengthMm: number; kind: "reto" | "curvo"; banded: boolean; bandedManual: boolean; cutType: "fresa" | "serra" }[];
   fresaMmUnit: number;
   serraMmUnit: number;
   numCortesSerraUnit: number;
   fitaMetrosUnit: number;
+  fitaManualMetrosUnit: number;
   valorFresaUnit: number;
   valorSerraUnit: number;
   valorCortesUnit: number;
   valorFitaUnit: number;
+  valorFitaManualUnit: number;
   valorTotalUnit: number;
   valorTotalAll: number;
   mode: "contour" | "frisos";
   frisoCount?: number;
   frisoLengthMm?: number;
   frisoCutType?: "fresa" | "serra";
+  /** Para o modo frisos: dimensões legíveis do vão (largura × altura em mm) */
+  vaoLargura?: number;
+  vaoAltura?: number;
+  /** true se cada "friso" é na verdade um nicho fechado (4 lados) */
+  isNicho?: boolean;
 }
 
 export function OrcamentoSimplesDialog({
@@ -99,6 +109,11 @@ export function OrcamentoSimplesDialog({
   const [enderecoEntregaPadrao, setEnderecoEntregaPadrao] = useState("");
   const [status, setStatus] = useState<QuoteStatus>({ enviado: false, pago: false });
   const [pieceMeta, setPieceMeta] = useState<PieceMetaMap>({});
+
+  /** Marca quando há mudanças não salvas no orçamento atual. */
+  const [dirty, setDirty] = useState(false);
+  /** Marca o snapshot pós-salvamento, para que mudanças de cálculo não disparem alerta */
+  const dirtyRef = { current: dirty };
 
   // Carrega preços corretos: do cliente se houver, senão dos defaults locais
   useEffect(() => {
@@ -130,8 +145,34 @@ export function OrcamentoSimplesDialog({
     setPieceMeta({});
   }, [open, editingQuoteId, client]);
 
+  // Reseta o flag dirty ao abrir/fechar
+  useEffect(() => {
+    if (open) setDirty(false);
+  }, [open, editingQuoteId]);
+
+  // Considera "modificado" qualquer alteração nas peças, layouts ou observações
+  // depois que o diálogo já abriu (ignora a montagem inicial).
+  const mountedRef = useState({ v: false })[0];
+  useEffect(() => {
+    if (!open) { mountedRef.v = false; return; }
+    if (!mountedRef.v) { mountedRef.v = true; return; }
+    setDirty(true);
+  }, [pieces, layouts, observacoes, enderecoEntregaPadrao, status, mountedRef, open]);
+
+  // Bloqueia fechar a aba do navegador quando há orçamento não salvo
+  useEffect(() => {
+    if (!open || !dirty) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [open, dirty]);
+
   const persistPrices = (p: ClientPriceTable) => {
     setPrices(p);
+    setDirty(true);
     if (!client) {
       try { localStorage.setItem(PRICES_KEY, JSON.stringify(p)); } catch {}
     }
@@ -150,6 +191,7 @@ export function OrcamentoSimplesDialog({
     return layouts.map(sheet => {
       const numCortes = countSerraCuts(sheet);
       let fitaMm = 0;
+      let fitaManualMm = 0;
       let numFuros = 0;
       sheet.pieces.forEach(p => {
         if (p.bordaSup) fitaMm += p.width;
@@ -157,18 +199,25 @@ export function OrcamentoSimplesDialog({
         if (p.bordaEsq) fitaMm += p.height;
         if (p.bordaDir) fitaMm += p.height;
         const src = p.pieceId !== undefined ? sawPieceById.get(p.pieceId) : undefined;
+        if (src?.bordaManualSup) fitaManualMm += p.width;
+        if (src?.bordaManualInf) fitaManualMm += p.width;
+        if (src?.bordaManualEsq) fitaManualMm += p.height;
+        if (src?.bordaManualDir) fitaManualMm += p.height;
         const furosThis = src?.numFurosOrcamento ?? (p.furos?.length ?? 0);
         numFuros += furosThis;
       });
       const fitaMetros = fitaMm / 1000;
+      const fitaManualMetros = fitaManualMm / 1000;
       const valorCortes = numCortes * prices.corte;
       const valorFita = fitaMetros * prices.fita;
+      const valorFitaManual = fitaManualMetros * prices.fitaManual;
       const valorFuros = numFuros * prices.furo;
       return {
         sheetId: sheet.id, material: sheet.material, espessura: sheet.espessura,
-        numPecas: sheet.pieces.length, numCortes, fitaMetros, numFuros,
-        valorCortes, valorFita, valorFuros,
-        valorTotal: valorCortes + valorFita + valorFuros,
+        numPecas: sheet.pieces.length, numCortes,
+        fitaMetros, fitaManualMetros, numFuros,
+        valorCortes, valorFita, valorFitaManual, valorFuros,
+        valorTotal: valorCortes + valorFita + valorFitaManual + valorFuros,
       };
     });
   }, [layouts, prices, sawPieceById]);
@@ -179,10 +228,25 @@ export function OrcamentoSimplesDialog({
       const isFrisos = p.aspireMode === "frisos";
       const fitaMmUnit = sides.reduce((a, s) => a + (s.banded ? s.lengthMm : 0), 0);
       const fitaMetrosUnit = fitaMmUnit / 1000;
+      const fitaManualMmUnit = sides.reduce((a, s) => a + (s.bandedManual ? s.lengthMm : 0), 0);
+      const fitaManualMetrosUnit = fitaManualMmUnit / 1000;
+
+      // Heurística "nicho": friso fechado em 4 lados (largura ≈ altura ≥ ~50mm)
+      // e a peça importada tem MAIS de uma usinagem dessas. Visualmente é um vão
+      // retangular interno cercado.
+      const larguraVao = p.aspireFrisoLarguraMm ?? 0;
+      const alturaVao = p.aspireFrisoAlturaMm ?? 0;
+      const isNicho = isFrisos && larguraVao >= 50 && alturaVao >= 50;
 
       let perimeterMm: number;
       if (isFrisos) {
-        const billedPerFriso = p.aspireFrisoBilledLengthMm ?? (p.aspireFrisoLengthMm ?? 0);
+        // Para nichos (vão retangular fechado) o cobrado por unidade
+        // é o PERÍMETRO REAL do vão: 2×(L+A). Para frisos lineares
+        // mantém a fórmula 2L+2A já calculada (ida + volta).
+        const tool = p.aspireToolDiameter ?? 6;
+        const billedPerFriso = isNicho
+          ? 2 * (larguraVao + alturaVao)
+          : (p.aspireFrisoBilledLengthMm ?? p.aspireFrisoLengthMm ?? 0);
         const count = p.aspireFrisoCount ?? sides.length;
         perimeterMm = billedPerFriso * count;
       } else {
@@ -207,7 +271,8 @@ export function OrcamentoSimplesDialog({
       const valorSerraUnit = (serraMm / 1000) * prices.serraMetro;
       const valorCortesUnit = numCortesSerraUnit * prices.cortePeca;
       const valorFitaUnit = fitaMetrosUnit * prices.fita;
-      const valorTotalUnit = valorFresaUnit + valorSerraUnit + valorCortesUnit + valorFitaUnit;
+      const valorFitaManualUnit = fitaManualMetrosUnit * prices.fitaManual;
+      const valorTotalUnit = valorFresaUnit + valorSerraUnit + valorCortesUnit + valorFitaUnit + valorFitaManualUnit;
 
       return {
         pieceId: p.id, descricao: p.descricao, material: p.material,
@@ -215,15 +280,22 @@ export function OrcamentoSimplesDialog({
         width: p.largura, height: p.altura, perimeterMm,
         sides: sides.map(s => ({
           index: s.index, lengthMm: s.lengthMm, kind: s.kind, banded: s.banded,
+          bandedManual: !!s.bandedManual,
           cutType: (s.cutType ?? (s.kind === "curvo" ? "fresa" : "serra")) as "fresa" | "serra",
         })),
         fresaMmUnit: fresaMm, serraMmUnit: serraMm, numCortesSerraUnit,
-        fitaMetrosUnit, valorFresaUnit, valorSerraUnit, valorCortesUnit, valorFitaUnit,
+        fitaMetrosUnit, fitaManualMetrosUnit,
+        valorFresaUnit, valorSerraUnit, valorCortesUnit, valorFitaUnit, valorFitaManualUnit,
         valorTotalUnit, valorTotalAll: valorTotalUnit * p.quantidade,
         mode: isFrisos ? "frisos" : "contour",
         frisoCount: p.aspireFrisoCount,
-        frisoLengthMm: p.aspireFrisoBilledLengthMm ?? p.aspireFrisoLengthMm,
+        frisoLengthMm: isNicho
+          ? 2 * (larguraVao + alturaVao)
+          : (p.aspireFrisoBilledLengthMm ?? p.aspireFrisoLengthMm),
         frisoCutType: p.aspireFrisoCutType,
+        vaoLargura: larguraVao || undefined,
+        vaoAltura: alturaVao || undefined,
+        isNicho,
       };
     });
   }, [aspirePieces, prices]);
@@ -231,25 +303,28 @@ export function OrcamentoSimplesDialog({
   const totals = useMemo(() => {
     const sawValorCortes = budgets.reduce((a, b) => a + b.valorCortes, 0);
     const sawValorFita = budgets.reduce((a, b) => a + b.valorFita, 0);
+    const sawValorFitaManual = budgets.reduce((a, b) => a + b.valorFitaManual, 0);
     const sawValorFuros = budgets.reduce((a, b) => a + b.valorFuros, 0);
     const sawCortes = budgets.reduce((a, b) => a + b.numCortes, 0);
     const sawFita = budgets.reduce((a, b) => a + b.fitaMetros, 0);
+    const sawFitaManual = budgets.reduce((a, b) => a + b.fitaManualMetros, 0);
     const sawFuros = budgets.reduce((a, b) => a + b.numFuros, 0);
 
     const aspValorFresa = aspireBudgets.reduce((a, b) => a + b.valorFresaUnit * b.quantidade, 0);
     const aspValorSerra = aspireBudgets.reduce((a, b) => a + b.valorSerraUnit * b.quantidade, 0);
     const aspValorCortes = aspireBudgets.reduce((a, b) => a + b.valorCortesUnit * b.quantidade, 0);
     const aspValorFita = aspireBudgets.reduce((a, b) => a + b.valorFitaUnit * b.quantidade, 0);
+    const aspValorFitaManual = aspireBudgets.reduce((a, b) => a + b.valorFitaManualUnit * b.quantidade, 0);
 
     const valorFuros = sawValorFuros;
-    const valorTotal = sawValorCortes + sawValorFita + sawValorFuros
-      + aspValorFresa + aspValorSerra + aspValorCortes + aspValorFita;
+    const valorTotal = sawValorCortes + sawValorFita + sawValorFitaManual + sawValorFuros
+      + aspValorFresa + aspValorSerra + aspValorCortes + aspValorFita + aspValorFitaManual;
     const valorSemFuros = valorTotal - valorFuros;
 
     return {
-      sawCortes, sawFita, sawFuros,
-      sawValorCortes, sawValorFita, sawValorFuros,
-      aspValorFresa, aspValorSerra, aspValorCortes, aspValorFita,
+      sawCortes, sawFita, sawFitaManual, sawFuros,
+      sawValorCortes, sawValorFita, sawValorFitaManual, sawValorFuros,
+      aspValorFresa, aspValorSerra, aspValorCortes, aspValorFita, aspValorFitaManual,
       valorTotal, valorSemFuros, valorFuros,
     };
   }, [budgets, aspireBudgets]);
@@ -261,6 +336,7 @@ export function OrcamentoSimplesDialog({
       ...prev,
       [pieceId]: { ...(prev[pieceId] ?? { recebido: false }), ...patch },
     }));
+    setDirty(true);
     // Mantém em sincronia o estado "comercial" da própria peça (simplifica relatórios)
     if (onUpdatePiece && (patch.recebido !== undefined || patch.os !== undefined
       || patch.dataRecebimento !== undefined || patch.enderecoEntrega !== undefined)) {
@@ -288,7 +364,9 @@ export function OrcamentoSimplesDialog({
       observacoes,
     });
     onSavedQuote?.(saved.id);
+    setDirty(false);
     toast.success(`Orçamento #${saved.numero} salvo`);
+    return saved;
   };
 
   const handlePrint = () => {
@@ -358,7 +436,7 @@ export function OrcamentoSimplesDialog({
         <td class="c">${b.espessura}mm</td>
         <td class="c">${b.numPecas}</td>
         <td class="c">${b.numCortes}</td>
-        <td class="r">${b.fitaMetros.toFixed(2)}m</td>
+        <td class="r">${b.fitaMetros.toFixed(2)}m${b.fitaManualMetros > 0 ? `<br/><span style="font-size:9px;color:#b45309">+${b.fitaManualMetros.toFixed(2)}m manual</span>` : ""}</td>
         <td class="c">${b.numFuros}</td>
         <td class="r"><b>R$ ${b.valorTotal.toFixed(2)}</b></td>
       </tr>`;
@@ -377,10 +455,14 @@ export function OrcamentoSimplesDialog({
         : (piece?.os ? ` <span style="font-size:9px;color:#0a64a6">[OS: ${escapeHtml(piece.os)}]</span>` : "");
 
       const sidesList = b.mode === "frisos"
-        ? `<b>${b.frisoCount ?? b.sides.length}</b> frisos de <b>${billedPerFriso.toFixed(1)} mm</b> cada` +
-          (larguraVao && alturaVao ? ` <span style="color:#666">(vão ${larguraVao.toFixed(0)}×${alturaVao.toFixed(0)} mm)</span>` : "")
+        ? (b.isNicho
+            ? `<b>${b.frisoCount}</b> ${b.frisoCount === 1 ? "nicho" : "nichos"} de <b>${b.vaoLargura?.toFixed(0)}×${b.vaoAltura?.toFixed(0)} mm</b>` +
+              ` <span style="color:#666">— perímetro <b>${(b.frisoLengthMm ?? 0).toFixed(0)} mm</b> cada · total <b>${(((b.frisoLengthMm ?? 0) * (b.frisoCount ?? 0))/1000).toFixed(2)} m</b></span>`
+            : `<b>${b.frisoCount ?? b.sides.length}</b> frisos de <b>${(b.frisoLengthMm ?? 0).toFixed(1)} mm</b> cada` +
+              (larguraVao && alturaVao ? ` <span style="color:#666">(vão ${larguraVao.toFixed(0)}×${alturaVao.toFixed(0)} mm)</span>` : "")
+          )
         : b.sides
-            .map(s => `Lado ${s.index} (${s.kind} · <i>${s.cutType}</i>): <b>${s.lengthMm.toFixed(1)}mm</b>${s.banded ? " ✓ fita" : ""}`)
+            .map(s => `Lado ${s.index} (${s.kind} · <i>${s.cutType}</i>): <b>${s.lengthMm.toFixed(1)}mm</b>${s.banded ? " ✓ fita" : ""}${s.bandedManual ? " ✓ fita manual" : ""}`)
             .join(" · ");
 
       aspireRows += `<tr class="piece-header">
@@ -431,6 +513,12 @@ export function OrcamentoSimplesDialog({
           `${b.fitaMetrosUnit.toFixed(2)} m por peça`,
           `R$ ${prices.fita.toFixed(2)}/m`,
           b.valorFitaUnit * b.quantidade);
+      }
+      if (b.fitaManualMetrosUnit > 0) {
+        aspireRows += subRow("Fita manual (recortes internos / curvos)",
+          `${b.fitaManualMetrosUnit.toFixed(2)} m por peça`,
+          `R$ ${prices.fitaManual.toFixed(2)}/m`,
+          b.valorFitaManualUnit * b.quantidade);
       }
     });
 
@@ -515,8 +603,28 @@ export function OrcamentoSimplesDialog({
 
   const isEmpty = layouts.length === 0 && aspirePieces.length === 0;
 
+  /** Pergunta antes de fechar / imprimir se há mudanças não salvas */
+  const confirmSaveBeforeAction = (action: () => void, actionLabel: string) => {
+    if (isEmpty || !dirty) { action(); return; }
+    const r = window.confirm(
+      `Há alterações não salvas neste orçamento.\n\n` +
+      `OK = Salvar e ${actionLabel}\n` +
+      `Cancelar = ${actionLabel} sem salvar`,
+    );
+    if (r) {
+      const saved = handleSaveQuote();
+      if (!saved) return;
+    }
+    action();
+  };
+
+  const handleClose = () => confirmSaveBeforeAction(() => onOpenChange(false), "fechar");
+  const handlePrintWithCheck = () => confirmSaveBeforeAction(handlePrint, "imprimir");
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(v) => {
+      if (!v) { handleClose(); } else { onOpenChange(true); }
+    }}>
       <DialogContent className="max-w-[1100px] max-h-[92vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -612,8 +720,8 @@ export function OrcamentoSimplesDialog({
                     </Button>
                   )}
                 </div>
-                <div className="grid grid-cols-6 gap-2">
-                  {(["corte","cortePeca","fita","furo","fresaMetro","serraMetro"] as const).map(k => (
+                <div className="grid grid-cols-7 gap-2">
+                  {(["corte","cortePeca","fita","fitaManual","furo","fresaMetro","serraMetro"] as const).map(k => (
                     <div key={k}>
                       <Label className="text-[10px] uppercase text-muted-foreground">
                         {priceLabel(k)}
@@ -773,10 +881,25 @@ export function OrcamentoSimplesDialog({
                                 <div className="font-medium">{b.descricao}</div>
                                 <div className="text-[10px] text-muted-foreground space-y-0.5 mt-1">
                                   {isFrisos ? (
-                                    <div className="font-mono">
-                                      {piece?.aspireFrisoCount} frisos de {(piece?.aspireFrisoBilledLengthMm ?? piece?.aspireFrisoLengthMm ?? 0).toFixed(1)}mm cada
-                                      {piece?.aspireFrisoLarguraMm && piece?.aspireFrisoAlturaMm && (
-                                        <span className="text-muted-foreground/70"> · vão {piece.aspireFrisoLarguraMm.toFixed(0)}×{piece.aspireFrisoAlturaMm.toFixed(0)}mm</span>
+                                    <div className="font-mono space-y-0.5">
+                                      {b.isNicho ? (
+                                        <>
+                                          <div>
+                                            <b className="text-foreground">{b.frisoCount}</b> {b.frisoCount === 1 ? "nicho" : "nichos"}
+                                            {" "}de <b className="text-foreground">{b.vaoLargura?.toFixed(0)}×{b.vaoAltura?.toFixed(0)} mm</b>
+                                          </div>
+                                          <div className="text-muted-foreground/80">
+                                            Perímetro de cada vão: <b className="text-foreground">{b.frisoLengthMm?.toFixed(0)} mm</b>
+                                            {" · "}total usinado: <b className="text-foreground">{((b.frisoLengthMm ?? 0) * (b.frisoCount ?? 0) / 1000).toFixed(2)} m</b>
+                                          </div>
+                                        </>
+                                      ) : (
+                                        <>
+                                          {piece?.aspireFrisoCount} frisos de {(piece?.aspireFrisoBilledLengthMm ?? piece?.aspireFrisoLengthMm ?? 0).toFixed(1)}mm cada
+                                          {piece?.aspireFrisoLarguraMm && piece?.aspireFrisoAlturaMm && (
+                                            <span className="text-muted-foreground/70"> · vão {piece.aspireFrisoLarguraMm.toFixed(0)}×{piece.aspireFrisoAlturaMm.toFixed(0)}mm</span>
+                                          )}
+                                        </>
                                       )}
                                     </div>
                                   ) : (
@@ -789,6 +912,7 @@ export function OrcamentoSimplesDialog({
                                         </span>
                                         <span className="font-mono">{s.lengthMm.toFixed(1)}mm</span>
                                         {s.banded && <span className="text-[9px] px-1 rounded bg-accent text-accent-foreground">fita</span>}
+                                        {s.bandedManual && <span className="text-[9px] px-1 rounded bg-amber-500/30 text-amber-200">fita manual</span>}
                                       </div>
                                     ))
                                   )}
@@ -799,7 +923,14 @@ export function OrcamentoSimplesDialog({
                               <td className="px-2 py-1.5 text-right font-mono">{(b.fresaMmUnit/1000).toFixed(2)}m</td>
                               <td className="px-2 py-1.5 text-right font-mono">{(b.serraMmUnit/1000).toFixed(2)}m</td>
                               <td className="px-2 py-1.5 text-center">{b.numCortesSerraUnit}</td>
-                              <td className="px-2 py-1.5 text-right">{isFrisos ? "—" : `${b.fitaMetrosUnit.toFixed(2)}m`}</td>
+                              <td className="px-2 py-1.5 text-right">
+                                {(b.fitaMetrosUnit + b.fitaManualMetrosUnit) > 0
+                                  ? <>
+                                      {b.fitaMetrosUnit > 0 && <div>{b.fitaMetrosUnit.toFixed(2)}m</div>}
+                                      {b.fitaManualMetrosUnit > 0 && <div className="text-amber-500">{b.fitaManualMetrosUnit.toFixed(2)}m m.</div>}
+                                    </>
+                                  : "—"}
+                              </td>
                               <td className="px-2 py-1.5 text-right font-semibold">R$ {b.valorTotalAll.toFixed(2)}</td>
                             </tr>
                           );
@@ -840,13 +971,13 @@ export function OrcamentoSimplesDialog({
         )}
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Fechar</Button>
+          <Button variant="outline" onClick={handleClose}>Fechar</Button>
           {!isEmpty && (
             <>
               <Button variant="secondary" onClick={handleSaveQuote}>
                 <Save className="h-4 w-4 mr-1" /> {editingQuoteId ? "Atualizar orçamento" : "Salvar orçamento"}
               </Button>
-              <Button onClick={handlePrint}>
+              <Button onClick={handlePrintWithCheck}>
                 <Printer className="h-4 w-4 mr-1" /> Imprimir / PDF
               </Button>
             </>
@@ -862,6 +993,7 @@ function priceLabel(k: keyof ClientPriceTable): string {
     case "corte": return "R$ corte (chapa)";
     case "cortePeca": return "R$ corte (peça)";
     case "fita": return "R$/m fita";
+    case "fitaManual": return "R$/m fita manual";
     case "furo": return "R$ por furo";
     case "fresaMetro": return "R$/m fresa";
     case "serraMetro": return "R$/m serra";

@@ -246,6 +246,12 @@ export function ClientesDialog({ open, onOpenChange, selectedClientId, onSelect 
                           onChange={(e) => updatePreco("fita", e.target.value)} />
                       </div>
                       <div>
+                        <Label className="text-[10px] uppercase" title="Fita aplicada à mão em recortes internos / curvos">R$/m fita manual</Label>
+                        <Input type="number" step="0.01" min={0}
+                          value={editing.precos.fitaManual}
+                          onChange={(e) => updatePreco("fitaManual", e.target.value)} />
+                      </div>
+                      <div>
                         <Label className="text-[10px] uppercase">R$/m fresa</Label>
                         <Input type="number" step="0.01" min={0}
                           value={editing.precos.fresaMetro}
