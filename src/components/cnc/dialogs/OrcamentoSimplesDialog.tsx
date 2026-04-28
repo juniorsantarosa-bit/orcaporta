@@ -710,8 +710,8 @@ export function OrcamentoSimplesDialog({
                     </Button>
                   )}
                 </div>
-                <div className="grid grid-cols-6 gap-2">
-                  {(["corte","cortePeca","fita","furo","fresaMetro","serraMetro"] as const).map(k => (
+                <div className="grid grid-cols-7 gap-2">
+                  {(["corte","cortePeca","fita","fitaManual","furo","fresaMetro","serraMetro"] as const).map(k => (
                     <div key={k}>
                       <Label className="text-[10px] uppercase text-muted-foreground">
                         {priceLabel(k)}
