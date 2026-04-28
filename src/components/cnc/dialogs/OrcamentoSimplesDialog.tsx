@@ -150,6 +150,15 @@ export function OrcamentoSimplesDialog({
     if (open) setDirty(false);
   }, [open, editingQuoteId]);
 
+  // Considera "modificado" qualquer alteração nas peças, layouts ou observações
+  // depois que o diálogo já abriu (ignora a montagem inicial).
+  const mountedRef = useState({ v: false })[0];
+  useEffect(() => {
+    if (!open) { mountedRef.v = false; return; }
+    if (!mountedRef.v) { mountedRef.v = true; return; }
+    setDirty(true);
+  }, [pieces, layouts, observacoes, enderecoEntregaPadrao, status, mountedRef, open]);
+
   // Bloqueia fechar a aba do navegador quando há orçamento não salvo
   useEffect(() => {
     if (!open || !dirty) return;
