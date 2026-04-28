@@ -13,6 +13,11 @@ export interface ClientPriceTable {
   cortePeca: number;
   /** R$ por metro de fita de borda */
   fita: number;
+  /**
+   * R$ por metro de fita MANUAL (aplicada à mão em recortes internos —
+   * nichos, faces curvas — onde a coladeira automática não chega).
+   */
+  fitaManual: number;
   /** R$ por furo */
   furo: number;
   /** R$ por metro de fresa (router) */
