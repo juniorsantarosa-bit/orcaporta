@@ -163,6 +163,7 @@ export function OrcamentoSimplesDialog({
 
   const persistPrices = (p: ClientPriceTable) => {
     setPrices(p);
+    setDirty(true);
     if (!client) {
       try { localStorage.setItem(PRICES_KEY, JSON.stringify(p)); } catch {}
     }
@@ -326,6 +327,7 @@ export function OrcamentoSimplesDialog({
       ...prev,
       [pieceId]: { ...(prev[pieceId] ?? { recebido: false }), ...patch },
     }));
+    setDirty(true);
     // Mantém em sincronia o estado "comercial" da própria peça (simplifica relatórios)
     if (onUpdatePiece && (patch.recebido !== undefined || patch.os !== undefined
       || patch.dataRecebimento !== undefined || patch.enderecoEntrega !== undefined)) {
@@ -353,7 +355,9 @@ export function OrcamentoSimplesDialog({
       observacoes,
     });
     onSavedQuote?.(saved.id);
+    setDirty(false);
     toast.success(`Orçamento #${saved.numero} salvo`);
+    return saved;
   };
 
   const handlePrint = () => {
