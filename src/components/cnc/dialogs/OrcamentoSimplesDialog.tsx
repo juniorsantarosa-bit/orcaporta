@@ -455,10 +455,14 @@ export function OrcamentoSimplesDialog({
         : (piece?.os ? ` <span style="font-size:9px;color:#0a64a6">[OS: ${escapeHtml(piece.os)}]</span>` : "");
 
       const sidesList = b.mode === "frisos"
-        ? `<b>${b.frisoCount ?? b.sides.length}</b> frisos de <b>${billedPerFriso.toFixed(1)} mm</b> cada` +
-          (larguraVao && alturaVao ? ` <span style="color:#666">(vão ${larguraVao.toFixed(0)}×${alturaVao.toFixed(0)} mm)</span>` : "")
+        ? (b.isNicho
+            ? `<b>${b.frisoCount}</b> ${b.frisoCount === 1 ? "nicho" : "nichos"} de <b>${b.vaoLargura?.toFixed(0)}×${b.vaoAltura?.toFixed(0)} mm</b>` +
+              ` <span style="color:#666">— perímetro <b>${(b.frisoLengthMm ?? 0).toFixed(0)} mm</b> cada · total <b>${(((b.frisoLengthMm ?? 0) * (b.frisoCount ?? 0))/1000).toFixed(2)} m</b></span>`
+            : `<b>${b.frisoCount ?? b.sides.length}</b> frisos de <b>${(b.frisoLengthMm ?? 0).toFixed(1)} mm</b> cada` +
+              (larguraVao && alturaVao ? ` <span style="color:#666">(vão ${larguraVao.toFixed(0)}×${alturaVao.toFixed(0)} mm)</span>` : "")
+          )
         : b.sides
-            .map(s => `Lado ${s.index} (${s.kind} · <i>${s.cutType}</i>): <b>${s.lengthMm.toFixed(1)}mm</b>${s.banded ? " ✓ fita" : ""}`)
+            .map(s => `Lado ${s.index} (${s.kind} · <i>${s.cutType}</i>): <b>${s.lengthMm.toFixed(1)}mm</b>${s.banded ? " ✓ fita" : ""}${s.bandedManual ? " ✓ fita manual" : ""}`)
             .join(" · ");
 
       aspireRows += `<tr class="piece-header">
