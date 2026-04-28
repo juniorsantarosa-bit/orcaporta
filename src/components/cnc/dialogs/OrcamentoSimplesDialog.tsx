@@ -436,7 +436,7 @@ export function OrcamentoSimplesDialog({
         <td class="c">${b.espessura}mm</td>
         <td class="c">${b.numPecas}</td>
         <td class="c">${b.numCortes}</td>
-        <td class="r">${b.fitaMetros.toFixed(2)}m</td>
+        <td class="r">${b.fitaMetros.toFixed(2)}m${b.fitaManualMetros > 0 ? `<br/><span style="font-size:9px;color:#b45309">+${b.fitaManualMetros.toFixed(2)}m manual</span>` : ""}</td>
         <td class="c">${b.numFuros}</td>
         <td class="r"><b>R$ ${b.valorTotal.toFixed(2)}</b></td>
       </tr>`;
