@@ -160,6 +160,7 @@ export function OrcamentoSimplesDialog({
     return layouts.map(sheet => {
       const numCortes = countSerraCuts(sheet);
       let fitaMm = 0;
+      let fitaManualMm = 0;
       let numFuros = 0;
       sheet.pieces.forEach(p => {
         if (p.bordaSup) fitaMm += p.width;
@@ -167,18 +168,25 @@ export function OrcamentoSimplesDialog({
         if (p.bordaEsq) fitaMm += p.height;
         if (p.bordaDir) fitaMm += p.height;
         const src = p.pieceId !== undefined ? sawPieceById.get(p.pieceId) : undefined;
+        if (src?.bordaManualSup) fitaManualMm += p.width;
+        if (src?.bordaManualInf) fitaManualMm += p.width;
+        if (src?.bordaManualEsq) fitaManualMm += p.height;
+        if (src?.bordaManualDir) fitaManualMm += p.height;
         const furosThis = src?.numFurosOrcamento ?? (p.furos?.length ?? 0);
         numFuros += furosThis;
       });
       const fitaMetros = fitaMm / 1000;
+      const fitaManualMetros = fitaManualMm / 1000;
       const valorCortes = numCortes * prices.corte;
       const valorFita = fitaMetros * prices.fita;
+      const valorFitaManual = fitaManualMetros * prices.fitaManual;
       const valorFuros = numFuros * prices.furo;
       return {
         sheetId: sheet.id, material: sheet.material, espessura: sheet.espessura,
-        numPecas: sheet.pieces.length, numCortes, fitaMetros, numFuros,
-        valorCortes, valorFita, valorFuros,
-        valorTotal: valorCortes + valorFita + valorFuros,
+        numPecas: sheet.pieces.length, numCortes,
+        fitaMetros, fitaManualMetros, numFuros,
+        valorCortes, valorFita, valorFitaManual, valorFuros,
+        valorTotal: valorCortes + valorFita + valorFitaManual + valorFuros,
       };
     });
   }, [layouts, prices, sawPieceById]);
@@ -189,10 +197,25 @@ export function OrcamentoSimplesDialog({
       const isFrisos = p.aspireMode === "frisos";
       const fitaMmUnit = sides.reduce((a, s) => a + (s.banded ? s.lengthMm : 0), 0);
       const fitaMetrosUnit = fitaMmUnit / 1000;
+      const fitaManualMmUnit = sides.reduce((a, s) => a + (s.bandedManual ? s.lengthMm : 0), 0);
+      const fitaManualMetrosUnit = fitaManualMmUnit / 1000;
+
+      // Heurística "nicho": friso fechado em 4 lados (largura ≈ altura ≥ ~50mm)
+      // e a peça importada tem MAIS de uma usinagem dessas. Visualmente é um vão
+      // retangular interno cercado.
+      const larguraVao = p.aspireFrisoLarguraMm ?? 0;
+      const alturaVao = p.aspireFrisoAlturaMm ?? 0;
+      const isNicho = isFrisos && larguraVao >= 50 && alturaVao >= 50;
 
       let perimeterMm: number;
       if (isFrisos) {
-        const billedPerFriso = p.aspireFrisoBilledLengthMm ?? (p.aspireFrisoLengthMm ?? 0);
+        // Para nichos (vão retangular fechado) o cobrado por unidade
+        // é o PERÍMETRO REAL do vão: 2×(L+A). Para frisos lineares
+        // mantém a fórmula 2L+2A já calculada (ida + volta).
+        const tool = p.aspireToolDiameter ?? 6;
+        const billedPerFriso = isNicho
+          ? 2 * (larguraVao + alturaVao)
+          : (p.aspireFrisoBilledLengthMm ?? p.aspireFrisoLengthMm ?? 0);
         const count = p.aspireFrisoCount ?? sides.length;
         perimeterMm = billedPerFriso * count;
       } else {
@@ -217,7 +240,8 @@ export function OrcamentoSimplesDialog({
       const valorSerraUnit = (serraMm / 1000) * prices.serraMetro;
       const valorCortesUnit = numCortesSerraUnit * prices.cortePeca;
       const valorFitaUnit = fitaMetrosUnit * prices.fita;
-      const valorTotalUnit = valorFresaUnit + valorSerraUnit + valorCortesUnit + valorFitaUnit;
+      const valorFitaManualUnit = fitaManualMetrosUnit * prices.fitaManual;
+      const valorTotalUnit = valorFresaUnit + valorSerraUnit + valorCortesUnit + valorFitaUnit + valorFitaManualUnit;
 
       return {
         pieceId: p.id, descricao: p.descricao, material: p.material,
@@ -225,15 +249,22 @@ export function OrcamentoSimplesDialog({
         width: p.largura, height: p.altura, perimeterMm,
         sides: sides.map(s => ({
           index: s.index, lengthMm: s.lengthMm, kind: s.kind, banded: s.banded,
+          bandedManual: !!s.bandedManual,
           cutType: (s.cutType ?? (s.kind === "curvo" ? "fresa" : "serra")) as "fresa" | "serra",
         })),
         fresaMmUnit: fresaMm, serraMmUnit: serraMm, numCortesSerraUnit,
-        fitaMetrosUnit, valorFresaUnit, valorSerraUnit, valorCortesUnit, valorFitaUnit,
+        fitaMetrosUnit, fitaManualMetrosUnit,
+        valorFresaUnit, valorSerraUnit, valorCortesUnit, valorFitaUnit, valorFitaManualUnit,
         valorTotalUnit, valorTotalAll: valorTotalUnit * p.quantidade,
         mode: isFrisos ? "frisos" : "contour",
         frisoCount: p.aspireFrisoCount,
-        frisoLengthMm: p.aspireFrisoBilledLengthMm ?? p.aspireFrisoLengthMm,
+        frisoLengthMm: isNicho
+          ? 2 * (larguraVao + alturaVao)
+          : (p.aspireFrisoBilledLengthMm ?? p.aspireFrisoLengthMm),
         frisoCutType: p.aspireFrisoCutType,
+        vaoLargura: larguraVao || undefined,
+        vaoAltura: alturaVao || undefined,
+        isNicho,
       };
     });
   }, [aspirePieces, prices]);
