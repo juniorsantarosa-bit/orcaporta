@@ -397,13 +397,24 @@ export function parseAspireFile(text: string): AspirePiece {
   const descMatch = text.match(/Descricao\s*:\s*[^()\n]*\(( \d+(?:\.\d+)?)/i);
   if (descMatch) toolDiameter = parseFloat(descMatch[1]);
 
-  // ---- Detect "frisos" mode -----------------------------------------------
-  // Frisos = many separate single-stroke passes (não há contorno fechado).
-  // Heurística: para cada pass, removemos lead-in/lead-out (segmentos curtos
-  // <50mm) e ficamos com o "corte útil". Se ≥3 passes resultam em uma única
-  // linha reta de comprimento ≥ 100mm cada, é um arquivo de frisos.
-  const usefulPasses: { length: number; isStraight: boolean }[] = passes.map(p => {
-    // remover G1 muito curtos no início/fim (rampa de descida e lead-out)
+  // ---- Detect "frisos" / "desbaste" mode ----------------------------------
+  // Frisos = many separate single-stroke passes.
+  // Desbaste (pocket clearing) = many SHORT PARALLEL passes covering a
+  // rectangular pocket. The fresa zig-zags inside a channel; each zig is
+  // detected as a separate pass. We need to group them into ONE canal:
+  //   billed = nPasses × comprimento longo do bbox do conjunto.
+  //
+  // For each pass we compute its bounding box and dominant axis.
+
+  interface PassInfo {
+    length: number;
+    isStraight: boolean;
+    xMin: number; xMax: number; yMin: number; yMax: number;
+    longSpan: number; shortSpan: number;
+    dir: "x" | "y"; // long axis
+    longMin: number; longMax: number; shortCenter: number;
+  }
+  const passInfos: PassInfo[] = passes.map(p => {
     const minLen = 50;
     let i0 = 0, i1 = p.length - 1;
     while (i0 <= i1 && p[i0].kind === "line" && segLength(p[i0]) < minLen) i0++;
@@ -411,14 +422,98 @@ export function parseAspireFile(text: string): AspirePiece {
     const core = p.slice(i0, i1 + 1);
     const length = core.reduce((a, s) => a + segLength(s), 0);
     const isStraight = core.length >= 1 && core.every(s => s.kind === "line");
-    return { length, isStraight };
+    let xMin = Infinity, xMax = -Infinity, yMin = Infinity, yMax = -Infinity;
+    for (const s of core) {
+      for (const pt of [s.a, s.b]) {
+        if (pt.x < xMin) xMin = pt.x;
+        if (pt.x > xMax) xMax = pt.x;
+        if (pt.y < yMin) yMin = pt.y;
+        if (pt.y > yMax) yMax = pt.y;
+      }
+    }
+    if (!isFinite(xMin)) { xMin = xMax = yMin = yMax = 0; }
+    const w = xMax - xMin, h = yMax - yMin;
+    const dir: "x" | "y" = w >= h ? "x" : "y";
+    const longSpan = Math.max(w, h);
+    const shortSpan = Math.min(w, h);
+    const longMin = dir === "x" ? xMin : yMin;
+    const longMax = dir === "x" ? xMax : yMax;
+    const shortCenter = dir === "x" ? (yMin + yMax) / 2 : (xMin + xMax) / 2;
+    return { length, isStraight, xMin, xMax, yMin, yMax, longSpan, shortSpan, dir, longMin, longMax, shortCenter };
   });
-  const longPasses = usefulPasses.filter(p => p.length >= 100);
-  const allStraight = longPasses.length > 0 && longPasses.every(p => p.isStraight);
-  // Quando há ≥3 passes longos retos, e a soma dos comprimentos é
-  // significativamente maior que o "perímetro" do bbox (passes paralelos),
-  // tratamos como frisos.
-  const isFrisos = allStraight && longPasses.length >= 3;
+
+  // Auto-detect desbaste clusters: short-span ≤ ~tool diameter, long-span ≥ 50,
+  // grouped by direction + overlapping long-range + stacked along short axis.
+  interface Cluster {
+    dir: "x" | "y";
+    longMin: number; longMax: number;
+    shortMin: number; shortMax: number;
+    nPasses: number;
+    members: number[]; // indices into passInfos
+  }
+  const clusters: Cluster[] = [];
+  const usedInCluster = new Set<number>();
+  const STEP_MAX = toolDiameter * 1.4; // máximo step entre passadas adjacentes
+  const SHORT_MAX = toolDiameter * 1.5; // largura máxima de uma passada única
+
+  for (const dir of ["x", "y"] as const) {
+    const candidates = passInfos
+      .map((pi, idx) => ({ pi, idx }))
+      .filter(({ pi }) => pi.isStraight && pi.dir === dir && pi.longSpan >= 50 && pi.shortSpan <= SHORT_MAX);
+    candidates.sort((a, b) => a.pi.shortCenter - b.pi.shortCenter);
+    let curMembers: number[] = [];
+    let curLongMin = Infinity, curLongMax = -Infinity;
+    let curShortMin = Infinity, curShortMax = -Infinity;
+    let prevShort = -Infinity;
+    const flush = () => {
+      if (curMembers.length >= 3) {
+        clusters.push({
+          dir,
+          longMin: curLongMin, longMax: curLongMax,
+          shortMin: curShortMin, shortMax: curShortMax,
+          nPasses: curMembers.length,
+          members: [...curMembers],
+        });
+        curMembers.forEach(i => usedInCluster.add(i));
+      }
+      curMembers = [];
+      curLongMin = Infinity; curLongMax = -Infinity;
+      curShortMin = Infinity; curShortMax = -Infinity;
+      prevShort = -Infinity;
+    };
+    for (const { pi, idx } of candidates) {
+      const overlapsLong =
+        curMembers.length === 0 ||
+        (pi.longMin <= curLongMax + 5 && pi.longMax >= curLongMin - 5);
+      const stepOk = curMembers.length === 0 || (pi.shortCenter - prevShort) <= STEP_MAX;
+      if (overlapsLong && stepOk) {
+        curMembers.push(idx);
+        curLongMin = Math.min(curLongMin, pi.longMin);
+        curLongMax = Math.max(curLongMax, pi.longMax);
+        curShortMin = Math.min(curShortMin, pi.shortCenter);
+        curShortMax = Math.max(curShortMax, pi.shortCenter);
+        prevShort = pi.shortCenter;
+      } else {
+        flush();
+        curMembers.push(idx);
+        curLongMin = pi.longMin; curLongMax = pi.longMax;
+        curShortMin = pi.shortCenter; curShortMax = pi.shortCenter;
+        prevShort = pi.shortCenter;
+      }
+    }
+    flush();
+  }
+
+  // Passes não capturadas por nenhum cluster: continuam como frisos individuais
+  // (mesmo comportamento anterior).
+  const usefulPasses = passInfos.map(p => ({ length: p.length, isStraight: p.isStraight }));
+  const looseLongPasses = passInfos
+    .map((p, i) => ({ p, i }))
+    .filter(({ p, i }) => !usedInCluster.has(i) && p.length >= 100 && p.isStraight);
+
+  // Condição para entrar em modo "frisos": existe pelo menos 1 cluster de
+  // desbaste OU ≥3 frisos individuais longos retos.
+  const isFrisos = clusters.length > 0 || looseLongPasses.length >= 3;
 
   let mode: "contour" | "frisos" = "contour";
   let frisoCount: number | undefined;
@@ -431,40 +526,59 @@ export function parseAspireFile(text: string): AspirePiece {
 
   if (isFrisos) {
     mode = "frisos";
-    frisoCount = longPasses.length;
-    // Largura TOTAL do vão (medida real visível pelo cliente):
-    //   largura = (percurso/2) − Ø + Ø = percurso/2
-    // O percurso/2 isola um sentido da ida-e-volta. A fresa percorre desde o
-    // CENTRO numa extremidade até o CENTRO na outra; somando o raio de cada
-    // lado (3mm + 3mm = Ø) obtemos a medida real do canal de borda a borda.
-    const larguraTotal = (raw: number) => Math.max(0, raw / 2);
-    // Altura TOTAL do canal: Ø fresa (uma passada) já representa a medida
-    // real de borda a borda no eixo perpendicular. Para canais mais altos
-    // (múltiplas passadas) o usuário edita manualmente na tabela.
-    const alturaDefault = toolDiameter;
-    // Comprimento que a fresa REALMENTE usina (ida + volta + subida + descida).
-    // Como largura/altura agora já incluem Ø, billed = 2×largura + 2×altura.
-    const billed = (largura: number, altura: number) =>
-      2 * largura + 2 * altura;
 
-    const totalLargura = longPasses.reduce((a, p) => a + larguraTotal(p.length), 0);
-    const avgLargura = totalLargura / longPasses.length;
-    const billedPerFriso = billed(avgLargura, alturaDefault);
+    // Cada cluster vira 1 entrada de "desbaste":
+    //   largura  = comprimento longo do bbox (eixo principal do canal)
+    //   altura   = largura do canal (eixo curto)
+    //   billed   = nPasses × largura  (apenas avanço longitudinal)
+    const items: { larguraMm: number; alturaMm: number; billedMm: number }[] = [];
 
+    for (const c of clusters) {
+      const longLen = c.longMax - c.longMin;
+      const shortLen = (c.shortMax - c.shortMin) + toolDiameter; // canal real (centro→borda)
+      const billed = c.nPasses * longLen;
+      items.push({
+        larguraMm: Math.round(longLen * 10) / 10,
+        alturaMm: Math.round(shortLen * 10) / 10,
+        billedMm: Math.round(billed * 10) / 10,
+      });
+    }
+
+    // Frisos individuais (passes únicos não agrupados)
+    const larguraUtil = (raw: number) => Math.max(0, raw / 2);
+    for (const { p } of looseLongPasses) {
+      const largura = larguraUtil(p.length);
+      const altura = toolDiameter;
+      const billed = 2 * largura + 2 * altura;
+      items.push({
+        larguraMm: Math.round(largura * 10) / 10,
+        alturaMm: Math.round(altura * 10) / 10,
+        billedMm: Math.round(billed * 10) / 10,
+      });
+    }
+
+    frisoCount = items.length;
+    // Para os campos resumo a nível de peça (média ponderada simples).
+    const totalBilled = items.reduce((a, it) => a + it.billedMm, 0);
+    const avgLargura = items.reduce((a, it) => a + it.larguraMm, 0) / Math.max(1, items.length);
+    const avgAltura = items.reduce((a, it) => a + it.alturaMm, 0) / Math.max(1, items.length);
+    const avgBilled = totalBilled / Math.max(1, items.length);
     frisoLarguraMm = Math.round(avgLargura * 10) / 10;
-    frisoAlturaMm = Math.round(alturaDefault * 10) / 10;
+    frisoAlturaMm = Math.round(avgAltura * 10) / 10;
     frisoLengthMm = frisoLarguraMm;
-    frisoBilledLengthMm = Math.round(billedPerFriso * 10) / 10;
-    // Perímetro = soma dos comprimentos cobrados de todos os frisos
-    perimeterFinal = Math.round(billedPerFriso * longPasses.length * 10) / 10;
-    // Em modo frisos cada friso vira um "lado" informativo com o COMPRIMENTO
-    // COBRADO (que é o que será multiplicado por R$/m no orçamento).
-    sidesFinal = longPasses.map((p, i) => ({
+    frisoBilledLengthMm = Math.round(avgBilled * 10) / 10;
+    perimeterFinal = Math.round(totalBilled * 10) / 10;
+    sidesFinal = items.map((it, i) => ({
       index: i + 1,
-      lengthMm: Math.round(billed(larguraTotal(p.length), alturaDefault) * 10) / 10,
+      lengthMm: it.billedMm,
       kind: "reto" as const,
     }));
   }
+
+  // (variável `usefulPasses` mantida acima para preservar a referência usada
+  // em logs/depuração — não é consumida diretamente abaixo.)
+  void usefulPasses;
+
 
   // Build local-coordinate contour (0..width × 0..height) for visualization.
   const ox = isFinite(minX) ? minX : 0;
