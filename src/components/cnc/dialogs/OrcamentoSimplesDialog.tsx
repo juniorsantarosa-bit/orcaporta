@@ -648,7 +648,8 @@ export function OrcamentoSimplesDialog({
         </tr></thead>
         <tbody>${imageRows}
           <tr class="total-row">
-            <td colspan="2" class="r">TOTAIS</td>
+            <td class="r">TOTAIS</td>
+            <td class="c">${imageTotals.qtd}</td>
             <td class="r">${imageTotals.area.toFixed(3)} m²</td>
             <td class="r">${imageTotals.fita.toFixed(2)} m</td>
             <td class="c">${imageTotals.furos}</td>
