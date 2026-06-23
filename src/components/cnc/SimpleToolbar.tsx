@@ -68,7 +68,8 @@ export function SimpleToolbar({
         icon={isOptimizing ? Loader2 : Scissors}
         label={isOptimizing ? "Otimizando..." : "Otimizar"}
         onClick={onOptimize}
-        disabled={!hasPieces || isOptimizing}
+        accent
+        disabled={isOptimizing}
       />
       <TBtn icon={Calculator} label="Gerar Orçamento" onClick={onOrcamento} accent disabled={!hasPieces} />
       <Separator orientation="vertical" className="h-10 mx-1" />
