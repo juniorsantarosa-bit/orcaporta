@@ -15,7 +15,7 @@ import { NestingSheet } from "@/types/promob";
 import { Client, SavedQuote } from "@/types/commercial";
 import { getClient } from "@/lib/commercialStore";
 import { optimizeSerra } from "@/lib/serraOptimizer";
-import { expandProvencalPiecesForSheets } from "@/lib/materialUtils";
+import { expandProvencalPiecesForSheets, normalizeMaterialName } from "@/lib/materialUtils";
 import {
   ResizableHandle,
   ResizablePanel,
@@ -112,12 +112,16 @@ export default function OrcamentoSimples() {
 
 
   const handleImport = useCallback((newPieces: CuttingPiece[]) => {
+    const normalizedPieces = newPieces.map(p => ({
+      ...p,
+      material: normalizeMaterialName(p.material, p.descricao),
+    }));
     setPieces(prev => {
-      const merged = [...prev, ...newPieces];
-      setSelectedPieceId(prev.length === 0 && newPieces.length > 0 ? newPieces[0].id : selectedPieceId);
+      const merged = [...prev, ...normalizedPieces];
+      setSelectedPieceId(prev.length === 0 && normalizedPieces.length > 0 ? normalizedPieces[0].id : selectedPieceId);
       return merged;
     });
-    const aspireOnly = newPieces.filter(p => p.source === "aspire");
+    const aspireOnly = normalizedPieces.filter(p => p.source === "aspire");
     if (aspireOnly.length > 0) {
       setLayouts(prev => {
         const sawLayouts = prev.filter(s => !s.pieces.some(pp => (pp as any).isAspire));
@@ -158,8 +162,10 @@ export default function OrcamentoSimples() {
       toast.error("Importe peças antes de otimizar.");
       return;
     }
-    const sawPieces = pieces.filter(p => p.source !== "aspire");
-    const aspirePieces = pieces.filter(p => p.source === "aspire");
+    const normalizedPieces = pieces.map(p => ({ ...p, material: normalizeMaterialName(p.material, p.descricao) }));
+    setPieces(normalizedPieces);
+    const sawPieces = normalizedPieces.filter(p => p.source !== "aspire");
+    const aspirePieces = normalizedPieces.filter(p => p.source === "aspire");
 
     setIsOptimizing(true);
     toast.loading("Otimizando (modo Serra)...", { id: "opt" });
