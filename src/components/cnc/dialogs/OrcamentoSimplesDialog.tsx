@@ -1234,6 +1234,66 @@ export function OrcamentoSimplesDialog({
                 </div>
               )}
 
+              {/* Material — chapas 6mm + 15mm (portas provençais) */}
+              <div className="rounded border border-border bg-muted/30 p-3 space-y-2">
+                <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer">
+                  <Checkbox
+                    checked={incluirMaterial}
+                    onCheckedChange={(v) => setIncluirMaterial(!!v)}
+                  />
+                  <span>Incluir material no orçamento (chapas 6mm + 15mm — provençal)</span>
+                </label>
+                {incluirMaterial && (
+                  <>
+                    <div className="text-[10px] text-muted-foreground">
+                      {materialInfo.totalPortas} porta(s) provençal · área total{" "}
+                      <b className="text-foreground">{materialInfo.totalAreaM2.toFixed(2)} m²</b>
+                      {" · "}estimativa <b className="text-foreground">{materialInfo.estimadoChapas}</b> chapa(s) por espessura.
+                      Os campos abaixo são editáveis.
+                    </div>
+                    <div className="grid grid-cols-[1fr_120px_120px_140px] gap-2 items-end">
+                      <div className="text-[11px] font-medium text-muted-foreground">Tipo</div>
+                      <div className="text-[10px] uppercase text-muted-foreground">Qtd chapas</div>
+                      <div className="text-[10px] uppercase text-muted-foreground">R$ por chapa</div>
+                      <div className="text-[10px] uppercase text-muted-foreground text-right">Subtotal</div>
+
+                      <div className="text-xs">Chapa <b>6 mm</b> (quadro)</div>
+                      <Input type="number" min={0}
+                        value={matQtd6Override ?? materialInfo.qtd6}
+                        onChange={(e) => setMatQtd6Override(Math.max(0, parseInt(e.target.value) || 0))}
+                        className="h-8 text-xs" />
+                      <Input type="number" step="0.01" min={0}
+                        value={matPreco6}
+                        onChange={(e) => setMatPreco6(Math.max(0, parseFloat(e.target.value) || 0))}
+                        className="h-8 text-xs" />
+                      <div className="text-xs text-right font-semibold">R$ {materialInfo.valor6.toFixed(2)}</div>
+
+                      <div className="text-xs">Chapa <b>15 mm</b> (fundo)</div>
+                      <Input type="number" min={0}
+                        value={matQtd15Override ?? materialInfo.qtd15}
+                        onChange={(e) => setMatQtd15Override(Math.max(0, parseInt(e.target.value) || 0))}
+                        className="h-8 text-xs" />
+                      <Input type="number" step="0.01" min={0}
+                        value={matPreco15}
+                        onChange={(e) => setMatPreco15(Math.max(0, parseFloat(e.target.value) || 0))}
+                        className="h-8 text-xs" />
+                      <div className="text-xs text-right font-semibold">R$ {materialInfo.valor15.toFixed(2)}</div>
+                    </div>
+                    <div className="flex items-center justify-between pt-2 border-t border-border/40">
+                      <button type="button"
+                        onClick={() => { setMatQtd6Override(null); setMatQtd15Override(null); }}
+                        className="text-[10px] text-muted-foreground hover:text-foreground underline">
+                        ↺ Restaurar quantidades calculadas
+                      </button>
+                      <div className="text-sm font-bold text-primary">
+                        Material: R$ {materialInfo.total.toFixed(2)}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+
+
               {/* Imagem de referência */}
               <div className="rounded border border-border bg-muted/30 p-3">
                 <div className="flex items-center justify-between mb-2">
