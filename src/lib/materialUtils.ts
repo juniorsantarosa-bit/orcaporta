@@ -6,6 +6,7 @@ export function cleanMaterialName(value?: string | null): string {
   return value
     .replace(/\s+/g, " ")
     .replace(/^MDF\s+/i, "")
+    .replace(/\s*[-–—]?\s*\d+(?:[,.]\d+)?\s*mm\b/gi, "")
     .trim();
 }
 
