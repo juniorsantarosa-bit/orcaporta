@@ -464,6 +464,8 @@ export function OrcamentoSimplesDialog({
 
     const css = `
       @page { size:A4 portrait; margin:14mm; }
+      @page { margin-header: 0; margin-footer: 0; }
+      html { -webkit-print-color-adjust: exact; }
       * { margin:0; padding:0; box-sizing:border-box; }
       body { font-family:Inter,system-ui,sans-serif; color:#000; background:#fff; padding:8px; font-size:11px; }
       .header { display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #333; padding-bottom:8px; margin-bottom:14px; }
