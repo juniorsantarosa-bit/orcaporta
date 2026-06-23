@@ -834,20 +834,36 @@ export function OrcamentoSimplesDialog({
                     </Button>
                   )}
                 </div>
-                <div className="grid grid-cols-7 gap-2">
-                  {(["corte","cortePeca","fita","fitaManual","furo","fresaMetro","serraMetro"] as const).map(k => (
-                    <div key={k}>
-                      <Label className="text-[10px] uppercase text-muted-foreground">
-                        {priceLabel(k)}
-                      </Label>
-                      <Input type="number" step="0.01" min={0}
-                        value={prices[k] ?? 0}
-                        onChange={(e) => updatePrice(k, e.target.value)}
-                        disabled={!!client}
-                        className="h-7 text-xs" />
-                    </div>
-                  ))}
-                </div>
+                {imageBudgets.length > 0 && (
+                  <div className="grid grid-cols-3 gap-2 pb-2 border-b border-border/40">
+                    {(["precoM2","precoFitaMetro","precoFuroDobradica"] as const).map(k => (
+                      <div key={k}>
+                        <Label className="text-[10px] uppercase text-muted-foreground">{priceLabel(k)}</Label>
+                        <Input type="number" step="0.01" min={0}
+                          value={prices[k] ?? 0}
+                          onChange={(e) => updatePrice(k, e.target.value)}
+                          disabled={!!client}
+                          className="h-7 text-xs" />
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {(budgets.length > 0 || aspireBudgets.length > 0) && (
+                  <div className="grid grid-cols-7 gap-2">
+                    {(["corte","cortePeca","fita","fitaManual","furo","fresaMetro","serraMetro"] as const).map(k => (
+                      <div key={k}>
+                        <Label className="text-[10px] uppercase text-muted-foreground">
+                          {priceLabel(k)}
+                        </Label>
+                        <Input type="number" step="0.01" min={0}
+                          value={prices[k] ?? 0}
+                          onChange={(e) => updatePrice(k, e.target.value)}
+                          disabled={!!client}
+                          className="h-7 text-xs" />
+                      </div>
+                    ))}
+                  </div>
+                )}
                 {client && (
                   <p className="text-[10px] text-muted-foreground">
                     Para alterar estes valores, edite o cadastro do cliente.
@@ -1112,6 +1128,9 @@ function priceLabel(k: keyof ClientPriceTable): string {
     case "fresaMetro": return "R$/m fresa";
     case "serraMetro": return "R$/m serra";
     case "chapaM2": return "R$/m² chapa";
+    case "precoM2": return "R$/m² peça";
+    case "precoFitaMetro": return "R$/m fita borda";
+    case "precoFuroDobradica": return "R$ furo dobradiça";
   }
 }
 
