@@ -22,11 +22,15 @@ interface Props {
 }
 
 export function SimplePartsTable({ pieces, selectedId, onSelect, onUpdate, onDelete, layouts, selectedSideIndex, onSelectSide }: Props) {
-  const pieceSheetMap = new Map<number, number>();
+  const pieceSheetMap = new Map<number, Set<number>>();
   if (layouts) {
     layouts.forEach((sheet, sheetIdx) => {
       sheet.pieces.forEach(pp => {
-        if (pp.pieceId !== undefined) pieceSheetMap.set(pp.pieceId, sheetIdx + 1);
+        if (pp.pieceId !== undefined) {
+          const set = pieceSheetMap.get(pp.pieceId) ?? new Set<number>();
+          set.add(sheetIdx + 1);
+          pieceSheetMap.set(pp.pieceId, set);
+        }
       });
     });
   }
@@ -70,7 +74,7 @@ export function SimplePartsTable({ pieces, selectedId, onSelect, onUpdate, onDel
             </thead>
             <tbody>
               {pieces.map((piece, index) => {
-                const sheetNum = pieceSheetMap.get(piece.id);
+                const sheetNums = pieceSheetMap.get(piece.id);
                 const numFuros = piece.numFurosOrcamento ?? piece.furos?.length ?? 0;
                 const isAspire = piece.source === "aspire";
                 const isFrisos = piece.aspireMode === "frisos";
@@ -422,7 +426,7 @@ export function SimplePartsTable({ pieces, selectedId, onSelect, onUpdate, onDel
                       />
                     </td>
                     <td className="px-1 py-1 text-center font-mono text-[10px] text-muted-foreground">
-                      {sheetNum ? `#${sheetNum}` : "—"}
+                      {sheetNums?.size ? Array.from(sheetNums).map(n => `#${n}`).join(",") : "—"}
                     </td>
                     <td className="px-1 py-1 text-center" onClick={(e) => e.stopPropagation()}>
                       {onDelete && (
