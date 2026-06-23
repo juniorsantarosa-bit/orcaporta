@@ -9,7 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { NestingSheet } from "@/types/promob";
 import { CuttingPiece } from "@/types/cutting";
 import { Client, ClientPriceTable, PieceMetaMap, QuoteStatus } from "@/types/commercial";
-import { Calculator, Printer, RotateCcw, Save, UserCircle2 } from "lucide-react";
+import { Calculator, Printer, RotateCcw, Save, UserCircle2, ImagePlus, Trash2 } from "lucide-react";
 import { countSerraCuts } from "@/lib/serraOptimizer";
 import { toast } from "sonner";
 import { DEFAULT_PRICE_TABLE, getQuote, saveQuote } from "@/lib/commercialStore";
@@ -114,6 +114,7 @@ export function OrcamentoSimplesDialog({
   const [status, setStatus] = useState<QuoteStatus>({ enviado: false, pago: false });
   const [pieceMeta, setPieceMeta] = useState<PieceMetaMap>({});
   const [descontoPct, setDescontoPct] = useState<number>(0);
+  const [imagemReferencia, setImagemReferencia] = useState<string>("");
 
   /** Marca quando há mudanças não salvas no orçamento atual. */
   const [dirty, setDirty] = useState(false);
@@ -141,6 +142,7 @@ export function OrcamentoSimplesDialog({
         setStatus(q.status);
         setPieceMeta(q.pieceMeta ?? {});
         setDescontoPct(q.descontoPct ?? 0);
+        setImagemReferencia(q.imagemReferencia ?? "");
         return;
       }
     }
@@ -150,6 +152,7 @@ export function OrcamentoSimplesDialog({
     setStatus({ enviado: false, pago: false });
     setPieceMeta({});
     setDescontoPct(0);
+    setImagemReferencia("");
   }, [open, editingQuoteId, client]);
 
   // Reseta o flag dirty ao abrir/fechar
@@ -164,7 +167,7 @@ export function OrcamentoSimplesDialog({
     if (!open) { mountedRef.v = false; return; }
     if (!mountedRef.v) { mountedRef.v = true; return; }
     setDirty(true);
-  }, [pieces, layouts, observacoes, enderecoEntregaPadrao, status, descontoPct, mountedRef, open]);
+  }, [pieces, layouts, observacoes, enderecoEntregaPadrao, status, descontoPct, imagemReferencia, mountedRef, open]);
 
   // Bloqueia fechar a aba do navegador quando há orçamento não salvo
   useEffect(() => {
@@ -446,6 +449,7 @@ export function OrcamentoSimplesDialog({
       totalCalculado: totals.valorTotal,
       observacoes,
       descontoPct: totals.descontoPct,
+      imagemReferencia: imagemReferencia || undefined,
     });
     onSavedQuote?.(saved.id);
     setDirty(false);
@@ -713,6 +717,14 @@ export function OrcamentoSimplesDialog({
       </div>` : ""}
 
       ${observacoes ? `<div class="obs"><b>Observações</b>${escapeHtml(observacoes).replace(/\n/g, "<br/>")}</div>` : ""}
+
+      ${imagemReferencia ? `
+        <div style="margin-top:12px;page-break-inside:avoid">
+          <h2>Imagem de Referência</h2>
+          <div style="text-align:center;padding:8px;border:1px solid #ddd;border-radius:4px;background:#fafafa">
+            <img src="${imagemReferencia}" alt="Referência" style="max-width:100%;max-height:340px;object-fit:contain" />
+          </div>
+        </div>` : ""}
 
       ${totals.descontoPct > 0 ? `
         <div style="margin-top:12px;padding:8px 12px;border:1px solid #ccc;border-radius:4px;display:flex;justify-content:space-between;font-size:12px">
@@ -1179,6 +1191,39 @@ export function OrcamentoSimplesDialog({
                   </div>
                 </div>
               )}
+
+              {/* Imagem de referência */}
+              <div className="rounded border border-border bg-muted/30 p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <Label className="text-[10px] uppercase text-muted-foreground">
+                    Imagem de referência (sai no PDF)
+                  </Label>
+                  {imagemReferencia && (
+                    <Button variant="ghost" size="sm" className="h-6 text-[10px] gap-1 text-destructive"
+                      onClick={() => setImagemReferencia("")}>
+                      <Trash2 className="h-3 w-3" /> Remover
+                    </Button>
+                  )}
+                </div>
+                {imagemReferencia ? (
+                  <img src={imagemReferencia} alt="Referência"
+                    className="max-h-48 max-w-full rounded border border-border object-contain bg-white" />
+                ) : (
+                  <label className="flex items-center justify-center gap-2 h-20 border-2 border-dashed border-border rounded cursor-pointer hover:bg-muted/50 text-xs text-muted-foreground">
+                    <ImagePlus className="h-4 w-4" />
+                    Anexar imagem (PNG/JPG, máx 3 MB)
+                    <input type="file" accept="image/*" className="hidden"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (!f) return;
+                        if (f.size > 3 * 1024 * 1024) { toast.error("Imagem maior que 3 MB."); return; }
+                        const r = new FileReader();
+                        r.onload = (ev) => setImagemReferencia(String(ev.target?.result ?? ""));
+                        r.readAsDataURL(f);
+                      }} />
+                  </label>
+                )}
+              </div>
 
               {/* Observações */}
               <div>

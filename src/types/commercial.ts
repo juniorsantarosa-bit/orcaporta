@@ -99,6 +99,8 @@ export interface SavedQuote {
   observacoes?: string;
   /** Desconto percentual aplicado no total (0-100) */
   descontoPct?: number;
+  /** Imagem de referência anexa (data URL) — mostrada no PDF */
+  imagemReferencia?: string;
   createdAt: string;
   updatedAt: string;
 }
