@@ -1,1 +1,4 @@
 project_id = "vnngifawkobhvrjinfcy"
+
+[functions.extract-pieces-from-image]
+verify_jwt = false
