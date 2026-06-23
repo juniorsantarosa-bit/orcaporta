@@ -125,6 +125,7 @@ export function ImportarImagemIADialog({ open, onOpenChange, onImport }: Props) 
       observacao: `IA · item ${p.item} · conf ${(p.confidence * 100).toFixed(0)}%`,
       furosDobradica: p.furosDobradica || 0,
       bordaDuplaProvencal: true,
+      provencal: true,
       source: "manual",
     }));
     onImport(cuttingPieces);

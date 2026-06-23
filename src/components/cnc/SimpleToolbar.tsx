@@ -64,6 +64,12 @@ export function SimpleToolbar({
       />
       <TBtn icon={Building2} label="Empresa" onClick={onEmpresa} />
       <Separator orientation="vertical" className="h-10 mx-1" />
+      <TBtn
+        icon={isOptimizing ? Loader2 : Scissors}
+        label={isOptimizing ? "Otimizando..." : "Otimizar"}
+        onClick={onOptimize}
+        disabled={!hasPieces || isOptimizing}
+      />
       <TBtn icon={Calculator} label="Gerar Orçamento" onClick={onOrcamento} accent disabled={!hasPieces} />
       <Separator orientation="vertical" className="h-10 mx-1" />
       <TBtn icon={FolderOpen} label="Orçamentos" onClick={onOrcamentosSalvos} />

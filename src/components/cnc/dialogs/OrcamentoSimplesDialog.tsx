@@ -115,6 +115,12 @@ export function OrcamentoSimplesDialog({
   const [pieceMeta, setPieceMeta] = useState<PieceMetaMap>({});
   const [descontoPct, setDescontoPct] = useState<number>(0);
   const [imagemReferencia, setImagemReferencia] = useState<string>("");
+  // ---- Material (chapas 6mm + 15mm para portas provençais) ----
+  const [incluirMaterial, setIncluirMaterial] = useState<boolean>(false);
+  const [matPreco6, setMatPreco6] = useState<number>(180);
+  const [matPreco15, setMatPreco15] = useState<number>(320);
+  const [matQtd6Override, setMatQtd6Override] = useState<number | null>(null);
+  const [matQtd15Override, setMatQtd15Override] = useState<number | null>(null);
 
   /** Marca quando há mudanças não salvas no orçamento atual. */
   const [dirty, setDirty] = useState(false);
@@ -143,6 +149,11 @@ export function OrcamentoSimplesDialog({
         setPieceMeta(q.pieceMeta ?? {});
         setDescontoPct(q.descontoPct ?? 0);
         setImagemReferencia(q.imagemReferencia ?? "");
+        setIncluirMaterial(q.incluirMaterial ?? false);
+        setMatPreco6(q.materialPrecoChapa6 ?? 180);
+        setMatPreco15(q.materialPrecoChapa15 ?? 320);
+        setMatQtd6Override(q.materialQtdChapa6 ?? null);
+        setMatQtd15Override(q.materialQtdChapa15 ?? null);
         return;
       }
     }
@@ -153,6 +164,11 @@ export function OrcamentoSimplesDialog({
     setPieceMeta({});
     setDescontoPct(0);
     setImagemReferencia("");
+    setIncluirMaterial(false);
+    setMatPreco6(180);
+    setMatPreco15(320);
+    setMatQtd6Override(null);
+    setMatQtd15Override(null);
   }, [open, editingQuoteId, client]);
 
   // Reseta o flag dirty ao abrir/fechar
@@ -167,7 +183,7 @@ export function OrcamentoSimplesDialog({
     if (!open) { mountedRef.v = false; return; }
     if (!mountedRef.v) { mountedRef.v = true; return; }
     setDirty(true);
-  }, [pieces, layouts, observacoes, enderecoEntregaPadrao, status, descontoPct, imagemReferencia, mountedRef, open]);
+  }, [pieces, layouts, observacoes, enderecoEntregaPadrao, status, descontoPct, imagemReferencia, incluirMaterial, matPreco6, matPreco15, matQtd6Override, matQtd15Override, mountedRef, open]);
 
   // Bloqueia fechar a aba do navegador quando há orçamento não salvo
   useEffect(() => {
@@ -267,6 +283,24 @@ export function OrcamentoSimplesDialog({
     }
     return acc;
   }, [imageBudgets]);
+
+  /** Material para portas provençais: 1 chapa 6mm + 1 chapa 15mm por área. */
+  const materialInfo = useMemo(() => {
+    const SHEET_AREA_M2 = (1.84 * 2.75); // 5.06 m²
+    const provencalPieces = pieces.filter(p => p.provencal && p.source !== "aspire");
+    const totalPortas = provencalPieces.reduce((a, p) => a + Math.max(1, p.quantidade || 1), 0);
+    const totalAreaM2 = provencalPieces.reduce(
+      (a, p) => a + (p.largura * p.altura * Math.max(1, p.quantidade || 1)) / 1_000_000, 0,
+    );
+    const estimadoChapas = totalAreaM2 > 0 ? Math.max(1, Math.ceil(totalAreaM2 / SHEET_AREA_M2)) : 0;
+    const qtd6 = matQtd6Override ?? estimadoChapas;
+    const qtd15 = matQtd15Override ?? estimadoChapas;
+    const valor6 = qtd6 * (matPreco6 || 0);
+    const valor15 = qtd15 * (matPreco15 || 0);
+    const total = valor6 + valor15;
+    return { totalPortas, totalAreaM2, estimadoChapas, qtd6, qtd15, valor6, valor15, total };
+  }, [pieces, matPreco6, matPreco15, matQtd6Override, matQtd15Override]);
+
 
   const budgets = useMemo<SheetBudget[]>(() => {
     return layouts.map(sheet => {
@@ -398,9 +432,10 @@ export function OrcamentoSimplesDialog({
     const aspValorFitaManual = aspireBudgets.reduce((a, b) => a + b.valorFitaManualUnit * b.quantidade, 0);
 
     const valorFuros = sawValorFuros;
+    const materialTotal = incluirMaterial ? materialInfo.total : 0;
     const subtotalBruto = sawValorCortes + sawValorFita + sawValorFitaManual + sawValorFuros
       + aspValorFresa + aspValorSerra + aspValorCortes + aspValorFita + aspValorFitaManual
-      + imageTotals.total;
+      + imageTotals.total + materialTotal;
     const descontoPctClamp = Math.max(0, Math.min(100, descontoPct || 0));
     const valorDesconto = subtotalBruto * (descontoPctClamp / 100);
     const valorTotal = subtotalBruto - valorDesconto;
@@ -411,9 +446,9 @@ export function OrcamentoSimplesDialog({
       sawValorCortes, sawValorFita, sawValorFitaManual, sawValorFuros,
       aspValorFresa, aspValorSerra, aspValorCortes, aspValorFita, aspValorFitaManual,
       subtotalBruto, valorDesconto, descontoPct: descontoPctClamp,
-      valorTotal, valorSemFuros, valorFuros,
+      valorTotal, valorSemFuros, valorFuros, materialTotal,
     };
-  }, [budgets, aspireBudgets, imageTotals, descontoPct]);
+  }, [budgets, aspireBudgets, imageTotals, descontoPct, incluirMaterial, materialInfo]);
 
   // -------- handlers --------
 
@@ -450,6 +485,11 @@ export function OrcamentoSimplesDialog({
       observacoes,
       descontoPct: totals.descontoPct,
       imagemReferencia: imagemReferencia || undefined,
+      incluirMaterial,
+      materialPrecoChapa6: matPreco6,
+      materialPrecoChapa15: matPreco15,
+      materialQtdChapa6: matQtd6Override ?? materialInfo.qtd6,
+      materialQtdChapa15: matQtd15Override ?? materialInfo.qtd15,
     });
     onSavedQuote?.(saved.id);
     setDirty(false);
@@ -719,6 +759,20 @@ export function OrcamentoSimplesDialog({
       </div>` : ""}
 
       ${observacoes ? `<div class="obs"><b>Observações</b>${escapeHtml(observacoes).replace(/\n/g, "<br/>")}</div>` : ""}
+
+      ${incluirMaterial && materialInfo.total > 0 ? `
+      <h2>Material</h2>
+      <table>
+        <thead><tr>
+          <th>Item</th><th class="c">Qtd</th><th class="r">R$ / chapa</th><th class="r">Subtotal</th>
+        </tr></thead>
+        <tbody>
+          <tr><td>Chapa 6 mm (quadro provençal)</td><td class="c">${materialInfo.qtd6}</td><td class="r">R$ ${matPreco6.toFixed(2)}</td><td class="r">R$ ${materialInfo.valor6.toFixed(2)}</td></tr>
+          <tr><td>Chapa 15 mm (fundo provençal)</td><td class="c">${materialInfo.qtd15}</td><td class="r">R$ ${matPreco15.toFixed(2)}</td><td class="r">R$ ${materialInfo.valor15.toFixed(2)}</td></tr>
+          <tr class="total-row"><td colspan="3" class="r">TOTAL MATERIAL</td><td class="r">R$ ${materialInfo.total.toFixed(2)}</td></tr>
+        </tbody>
+      </table>` : ""}
+
 
       ${imagemReferencia ? `
         <div style="margin-top:12px;page-break-inside:avoid">
@@ -1193,6 +1247,66 @@ export function OrcamentoSimplesDialog({
                   </div>
                 </div>
               )}
+
+              {/* Material — chapas 6mm + 15mm (portas provençais) */}
+              <div className="rounded border border-border bg-muted/30 p-3 space-y-2">
+                <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer">
+                  <Checkbox
+                    checked={incluirMaterial}
+                    onCheckedChange={(v) => setIncluirMaterial(!!v)}
+                  />
+                  <span>Incluir material no orçamento (chapas 6mm + 15mm — provençal)</span>
+                </label>
+                {incluirMaterial && (
+                  <>
+                    <div className="text-[10px] text-muted-foreground">
+                      {materialInfo.totalPortas} porta(s) provençal · área total{" "}
+                      <b className="text-foreground">{materialInfo.totalAreaM2.toFixed(2)} m²</b>
+                      {" · "}estimativa <b className="text-foreground">{materialInfo.estimadoChapas}</b> chapa(s) por espessura.
+                      Os campos abaixo são editáveis.
+                    </div>
+                    <div className="grid grid-cols-[1fr_120px_120px_140px] gap-2 items-end">
+                      <div className="text-[11px] font-medium text-muted-foreground">Tipo</div>
+                      <div className="text-[10px] uppercase text-muted-foreground">Qtd chapas</div>
+                      <div className="text-[10px] uppercase text-muted-foreground">R$ por chapa</div>
+                      <div className="text-[10px] uppercase text-muted-foreground text-right">Subtotal</div>
+
+                      <div className="text-xs">Chapa <b>6 mm</b> (quadro)</div>
+                      <Input type="number" min={0}
+                        value={matQtd6Override ?? materialInfo.qtd6}
+                        onChange={(e) => setMatQtd6Override(Math.max(0, parseInt(e.target.value) || 0))}
+                        className="h-8 text-xs" />
+                      <Input type="number" step="0.01" min={0}
+                        value={matPreco6}
+                        onChange={(e) => setMatPreco6(Math.max(0, parseFloat(e.target.value) || 0))}
+                        className="h-8 text-xs" />
+                      <div className="text-xs text-right font-semibold">R$ {materialInfo.valor6.toFixed(2)}</div>
+
+                      <div className="text-xs">Chapa <b>15 mm</b> (fundo)</div>
+                      <Input type="number" min={0}
+                        value={matQtd15Override ?? materialInfo.qtd15}
+                        onChange={(e) => setMatQtd15Override(Math.max(0, parseInt(e.target.value) || 0))}
+                        className="h-8 text-xs" />
+                      <Input type="number" step="0.01" min={0}
+                        value={matPreco15}
+                        onChange={(e) => setMatPreco15(Math.max(0, parseFloat(e.target.value) || 0))}
+                        className="h-8 text-xs" />
+                      <div className="text-xs text-right font-semibold">R$ {materialInfo.valor15.toFixed(2)}</div>
+                    </div>
+                    <div className="flex items-center justify-between pt-2 border-t border-border/40">
+                      <button type="button"
+                        onClick={() => { setMatQtd6Override(null); setMatQtd15Override(null); }}
+                        className="text-[10px] text-muted-foreground hover:text-foreground underline">
+                        ↺ Restaurar quantidades calculadas
+                      </button>
+                      <div className="text-sm font-bold text-primary">
+                        Material: R$ {materialInfo.total.toFixed(2)}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+
 
               {/* Imagem de referência */}
               <div className="rounded border border-border bg-muted/30 p-3">
