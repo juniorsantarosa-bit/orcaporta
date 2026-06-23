@@ -9,6 +9,7 @@ import { OrcamentoSimplesDialog } from "@/components/cnc/dialogs/OrcamentoSimple
 import { ClientesDialog } from "@/components/cnc/dialogs/ClientesDialog";
 import { OrcamentosListDialog } from "@/components/cnc/dialogs/OrcamentosListDialog";
 import { RelatoriosDialog } from "@/components/cnc/dialogs/RelatoriosDialog";
+import { EmpresaConfigDialog } from "@/components/cnc/dialogs/EmpresaConfigDialog";
 import { CuttingPiece } from "@/types/cutting";
 import { NestingSheet } from "@/types/promob";
 import { Client, SavedQuote } from "@/types/commercial";
@@ -37,6 +38,7 @@ export default function OrcamentoSimples() {
   const [showClientes, setShowClientes] = useState(false);
   const [showOrcamentosSalvos, setShowOrcamentosSalvos] = useState(false);
   const [showRelatorios, setShowRelatorios] = useState(false);
+  const [showEmpresa, setShowEmpresa] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   /** Quando carregamos um orçamento salvo, mantemos o id para "Atualizar" em vez de criar novo */
   const [editingQuoteId, setEditingQuoteId] = useState<string | null>(null);
@@ -249,6 +251,7 @@ export default function OrcamentoSimples() {
         onClientes={() => setShowClientes(true)}
         onOrcamentosSalvos={() => setShowOrcamentosSalvos(true)}
         onRelatorios={() => setShowRelatorios(true)}
+        onEmpresa={() => setShowEmpresa(true)}
         isOptimizing={isOptimizing}
         hasPieces={pieces.length > 0}
         hasLayouts={layouts.length > 0 || pieces.some(p => p.source === "aspire")}
@@ -321,6 +324,11 @@ export default function OrcamentoSimples() {
       <RelatoriosDialog
         open={showRelatorios}
         onOpenChange={setShowRelatorios}
+      />
+
+      <EmpresaConfigDialog
+        open={showEmpresa}
+        onOpenChange={setShowEmpresa}
       />
     </div>
   );
