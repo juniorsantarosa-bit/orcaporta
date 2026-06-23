@@ -615,7 +615,6 @@ export function OrcamentoSimplesDialog({
         <td class="r">${b.areaM2Unit.toFixed(3)} m²<br/><span style="font-size:9px;color:#666">${b.areaM2Total.toFixed(3)} m² total</span></td>
         <td class="r">${b.fitaMUnit.toFixed(2)} m<br/><span style="font-size:9px;color:#666">${b.fitaMTotal.toFixed(2)} m total</span></td>
         <td class="c">${b.furosUnit}${b.furosUnit > 0 ? `<br/><span style="font-size:9px;color:#666">${b.furosTotal} total</span>` : ""}</td>
-        <td class="r">R$ ${b.totalUnit.toFixed(2)}</td>
         <td class="r"><b>R$ ${b.totalAll.toFixed(2)}</b></td>
       </tr>`;
     });
