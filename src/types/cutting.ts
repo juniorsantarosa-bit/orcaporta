@@ -99,6 +99,8 @@ export interface CuttingPiece {
   bordaDuplaProvencal?: boolean;
   /** Metros lineares de fita de borda por unidade — override manual */
   fitaMetrosOverride?: number;
+  /** Override do valor UNITÁRIO (R$ por unidade) para compensações/ajustes no orçamento */
+  precoUnitarioOverride?: number;
 }
 
 export interface SheetLayout {

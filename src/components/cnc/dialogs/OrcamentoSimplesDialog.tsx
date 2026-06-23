@@ -113,6 +113,7 @@ export function OrcamentoSimplesDialog({
   const [enderecoEntregaPadrao, setEnderecoEntregaPadrao] = useState("");
   const [status, setStatus] = useState<QuoteStatus>({ enviado: false, pago: false });
   const [pieceMeta, setPieceMeta] = useState<PieceMetaMap>({});
+  const [descontoPct, setDescontoPct] = useState<number>(0);
 
   /** Marca quando há mudanças não salvas no orçamento atual. */
   const [dirty, setDirty] = useState(false);
@@ -139,6 +140,7 @@ export function OrcamentoSimplesDialog({
         setEnderecoEntregaPadrao(q.enderecoEntregaPadrao ?? "");
         setStatus(q.status);
         setPieceMeta(q.pieceMeta ?? {});
+        setDescontoPct(q.descontoPct ?? 0);
         return;
       }
     }
@@ -147,6 +149,7 @@ export function OrcamentoSimplesDialog({
     setEnderecoEntregaPadrao(client?.endereco ?? "");
     setStatus({ enviado: false, pago: false });
     setPieceMeta({});
+    setDescontoPct(0);
   }, [open, editingQuoteId, client]);
 
   // Reseta o flag dirty ao abrir/fechar
@@ -161,7 +164,7 @@ export function OrcamentoSimplesDialog({
     if (!open) { mountedRef.v = false; return; }
     if (!mountedRef.v) { mountedRef.v = true; return; }
     setDirty(true);
-  }, [pieces, layouts, observacoes, enderecoEntregaPadrao, status, mountedRef, open]);
+  }, [pieces, layouts, observacoes, enderecoEntregaPadrao, status, descontoPct, mountedRef, open]);
 
   // Bloqueia fechar a aba do navegador quando há orçamento não salvo
   useEffect(() => {
@@ -220,7 +223,9 @@ export function OrcamentoSimplesDialog({
       const valArea = areaM2Unit * precoM2;
       const valFita = fitaMUnit * precoFitaM;
       const valFuros = furosUnit * precoFuro;
-      const totalUnit = valArea + valFita + valFuros;
+      const totalUnitCalc = valArea + valFita + valFuros;
+      const hasOverride = typeof p.precoUnitarioOverride === "number";
+      const totalUnit = hasOverride ? (p.precoUnitarioOverride as number) : totalUnitCalc;
 
       return {
         pieceId: p.id,
@@ -237,7 +242,9 @@ export function OrcamentoSimplesDialog({
         furosTotal: furosUnit * qty,
         dupla,
         valArea, valFita, valFuros,
+        totalUnitCalc,
         totalUnit,
+        hasOverride,
         totalAll: totalUnit * qty,
       };
     });
@@ -388,18 +395,22 @@ export function OrcamentoSimplesDialog({
     const aspValorFitaManual = aspireBudgets.reduce((a, b) => a + b.valorFitaManualUnit * b.quantidade, 0);
 
     const valorFuros = sawValorFuros;
-    const valorTotal = sawValorCortes + sawValorFita + sawValorFitaManual + sawValorFuros
+    const subtotalBruto = sawValorCortes + sawValorFita + sawValorFitaManual + sawValorFuros
       + aspValorFresa + aspValorSerra + aspValorCortes + aspValorFita + aspValorFitaManual
       + imageTotals.total;
-    const valorSemFuros = valorTotal - valorFuros;
+    const descontoPctClamp = Math.max(0, Math.min(100, descontoPct || 0));
+    const valorDesconto = subtotalBruto * (descontoPctClamp / 100);
+    const valorTotal = subtotalBruto - valorDesconto;
+    const valorSemFuros = valorTotal - valorFuros * (1 - descontoPctClamp / 100);
 
     return {
       sawCortes, sawFita, sawFitaManual, sawFuros,
       sawValorCortes, sawValorFita, sawValorFitaManual, sawValorFuros,
       aspValorFresa, aspValorSerra, aspValorCortes, aspValorFita, aspValorFitaManual,
+      subtotalBruto, valorDesconto, descontoPct: descontoPctClamp,
       valorTotal, valorSemFuros, valorFuros,
     };
-  }, [budgets, aspireBudgets, imageTotals]);
+  }, [budgets, aspireBudgets, imageTotals, descontoPct]);
 
   // -------- handlers --------
 
@@ -434,6 +445,7 @@ export function OrcamentoSimplesDialog({
       pieceMeta,
       totalCalculado: totals.valorTotal,
       observacoes,
+      descontoPct: totals.descontoPct,
     });
     onSavedQuote?.(saved.id);
     setDirty(false);
@@ -603,7 +615,6 @@ export function OrcamentoSimplesDialog({
         <td class="r">${b.areaM2Unit.toFixed(3)} m²<br/><span style="font-size:9px;color:#666">${b.areaM2Total.toFixed(3)} m² total</span></td>
         <td class="r">${b.fitaMUnit.toFixed(2)} m<br/><span style="font-size:9px;color:#666">${b.fitaMTotal.toFixed(2)} m total</span></td>
         <td class="c">${b.furosUnit}${b.furosUnit > 0 ? `<br/><span style="font-size:9px;color:#666">${b.furosTotal} total</span>` : ""}</td>
-        <td class="r">R$ ${b.totalUnit.toFixed(2)}</td>
         <td class="r"><b>R$ ${b.totalAll.toFixed(2)}</b></td>
       </tr>`;
     });
@@ -639,12 +650,12 @@ export function OrcamentoSimplesDialog({
       </div>
 
       ${imageBudgets.length > 0 ? `
-      <h2>Peças (m² · fita de borda · dobradiças)</h2>
+      <h2>Peças</h2>
       <table>
         <thead><tr>
           <th>Peça</th><th class="c">Qtd</th><th class="r">Área</th>
           <th class="r">Fita</th><th class="c">Dobradiças</th>
-          <th class="r">Unitário</th><th class="r">Subtotal</th>
+          <th class="r">Subtotal</th>
         </tr></thead>
         <tbody>${imageRows}
           <tr class="total-row">
@@ -653,7 +664,6 @@ export function OrcamentoSimplesDialog({
             <td class="r">${imageTotals.area.toFixed(3)} m²</td>
             <td class="r">${imageTotals.fita.toFixed(2)} m</td>
             <td class="c">${imageTotals.furos}</td>
-            <td></td>
             <td class="r">R$ ${imageTotals.total.toFixed(2)}</td>
           </tr>
         </tbody>
@@ -696,16 +706,22 @@ export function OrcamentoSimplesDialog({
         </tbody>
       </table>` : ""}
 
+      ${(budgets.length > 0 || aspireBudgets.length > 0) ? `
       <div class="pricing">
         <div class="pricing-title">VALORES UNITÁRIOS APLICADOS${client ? ` — ${escapeHtml(client.nome)}` : ""}</div>
-        <div>
-          ${imageBudgets.length > 0 ? `m² peça: R$ ${(prices.precoM2 ?? 0).toFixed(2)} · Fita: R$ ${(prices.precoFitaMetro ?? 0).toFixed(2)}/m · Furo dobradiça: R$ ${(prices.precoFuroDobradica ?? 0).toFixed(2)} cada` : ""}
-          ${(budgets.length > 0 || aspireBudgets.length > 0) ? `<br/>Corte serra: R$ ${prices.corte.toFixed(2)} · Corte peça: R$ ${prices.cortePeca.toFixed(2)} · Fita: R$ ${prices.fita.toFixed(2)}/m · Fresa: R$ ${prices.fresaMetro.toFixed(2)}/m · Serra: R$ ${prices.serraMetro.toFixed(2)}/m` : ""}
-        </div>
-      </div>
+        <div>Corte serra: R$ ${prices.corte.toFixed(2)} · Corte peça: R$ ${prices.cortePeca.toFixed(2)} · Fita: R$ ${prices.fita.toFixed(2)}/m · Fresa: R$ ${prices.fresaMetro.toFixed(2)}/m · Serra: R$ ${prices.serraMetro.toFixed(2)}/m</div>
+      </div>` : ""}
 
       ${observacoes ? `<div class="obs"><b>Observações</b>${escapeHtml(observacoes).replace(/\n/g, "<br/>")}</div>` : ""}
 
+      ${totals.descontoPct > 0 ? `
+        <div style="margin-top:12px;padding:8px 12px;border:1px solid #ccc;border-radius:4px;display:flex;justify-content:space-between;font-size:12px">
+          <span>Subtotal</span><span>R$ ${totals.subtotalBruto.toFixed(2)}</span>
+        </div>
+        <div style="padding:8px 12px;border:1px solid #ccc;border-top:none;border-radius:0;display:flex;justify-content:space-between;font-size:12px;color:#059669">
+          <span>Desconto (${totals.descontoPct.toFixed(1)}%)</span><span>− R$ ${totals.valorDesconto.toFixed(2)}</span>
+        </div>
+      ` : ""}
       <div class="grand">
         <span style="font-size:13px;font-weight:600;color:#555">${budgets.length > 0 ? `Total sem furos: R$ ${totals.valorSemFuros.toFixed(2)}` : ""}</span>
         <span>Total: R$ ${totals.valorTotal.toFixed(2)}</span>
@@ -999,7 +1015,25 @@ export function OrcamentoSimplesDialog({
                                   className="h-7 text-[11px] text-center"
                                 />
                               </td>
-                              <td className="px-2 py-1.5 text-right font-mono">R$ {b.totalUnit.toFixed(2)}</td>
+                              <td className="px-2 py-1.5 text-right">
+                                <div className="flex items-center gap-1 justify-end">
+                                  <Input
+                                    type="number" step="0.01" min={0}
+                                    value={b.totalUnit.toFixed(2)}
+                                    onChange={(e) => onUpdatePiece?.(b.pieceId, { precoUnitarioOverride: parseFloat(e.target.value) || 0 })}
+                                    className={`h-7 w-20 text-[11px] text-right font-mono ${b.hasOverride ? "border-amber-500 text-amber-500" : ""}`}
+                                    title={b.hasOverride ? `Valor sobrescrito (calculado: R$ ${b.totalUnitCalc.toFixed(2)})` : "Valor calculado — edite para sobrescrever"}
+                                  />
+                                  {b.hasOverride && (
+                                    <button
+                                      type="button"
+                                      onClick={() => onUpdatePiece?.(b.pieceId, { precoUnitarioOverride: undefined })}
+                                      className="text-[10px] text-muted-foreground hover:text-foreground"
+                                      title="Restaurar valor calculado"
+                                    >↺</button>
+                                  )}
+                                </div>
+                              </td>
                               <td className="px-2 py-1.5 text-right font-semibold">R$ {b.totalAll.toFixed(2)}</td>
                             </tr>
                           );
@@ -1157,6 +1191,26 @@ export function OrcamentoSimplesDialog({
                 />
               </div>
 
+              {/* Desconto */}
+              <div className="rounded border border-border bg-muted/30 p-3 flex items-center gap-4">
+                <div className="flex-1">
+                  <Label className="text-[10px] uppercase text-muted-foreground">Desconto neste orçamento (%)</Label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Input
+                      type="number" min={0} max={100} step="0.5"
+                      value={descontoPct}
+                      onChange={(e) => setDescontoPct(Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)))}
+                      className="h-8 w-24 text-xs"
+                    />
+                    <span className="text-xs text-muted-foreground">
+                      {totals.descontoPct > 0
+                        ? <>Subtotal: <b className="text-foreground">R$ {totals.subtotalBruto.toFixed(2)}</b> · Desconto: <b className="text-emerald-500">− R$ {totals.valorDesconto.toFixed(2)}</b></>
+                        : "Sem desconto"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
               <div className={budgets.length > 0 ? "grid grid-cols-2 gap-2" : ""}>
                 {budgets.length > 0 && (
                   <div className="rounded border border-border bg-muted/40 p-3 flex flex-col">
@@ -1167,6 +1221,7 @@ export function OrcamentoSimplesDialog({
                 <div className="rounded border-2 border-primary/40 bg-primary/5 p-3 flex flex-col">
                   <span className="text-[10px] uppercase text-muted-foreground">
                     {budgets.length > 0 ? "Total com Furos" : "Total"}
+                    {totals.descontoPct > 0 ? ` (após ${totals.descontoPct.toFixed(1)}% desc.)` : ""}
                   </span>
                   <span className="text-lg font-bold text-primary">R$ {totals.valorTotal.toFixed(2)}</span>
                 </div>

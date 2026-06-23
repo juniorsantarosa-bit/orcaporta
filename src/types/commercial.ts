@@ -97,6 +97,8 @@ export interface SavedQuote {
   totalCalculado: number;
   /** Observações livres */
   observacoes?: string;
+  /** Desconto percentual aplicado no total (0-100) */
+  descontoPct?: number;
   createdAt: string;
   updatedAt: string;
 }
