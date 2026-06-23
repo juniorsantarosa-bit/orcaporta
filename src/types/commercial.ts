@@ -76,6 +76,19 @@ export interface PieceReceiptStatus {
 /** Estado por peça armazenado no orçamento */
 export type PieceMetaMap = Record<number, PieceReceiptStatus>;
 
+export interface MaterialQuoteLine {
+  /** Tipo/cor do MDF, ex: Branco TX */
+  material: string;
+  /** Espessura da chapa */
+  espessura: 6 | 15;
+  /** Quantidade de chapas usada no orçamento */
+  quantidade: number;
+  /** Valor unitário da chapa */
+  precoChapa: number;
+  /** Total da linha */
+  valorTotal: number;
+}
+
 export interface SavedQuote {
   id: string;
   /** Número sequencial amigável (auto) */
@@ -111,6 +124,8 @@ export interface SavedQuote {
   materialQtdChapa6?: number;
   /** Quantidade override (manual) de chapas 15mm */
   materialQtdChapa15?: number;
+  /** Linhas detalhadas de material por cor/tipo e espessura */
+  materialChapas?: MaterialQuoteLine[];
   createdAt: string;
   updatedAt: string;
 }

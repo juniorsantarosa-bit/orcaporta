@@ -85,6 +85,7 @@ export function SimpleSheetView({ layouts, selectedPieceId, onSelectPiece, selec
 
         <div className="text-[10px] text-muted-foreground flex gap-3">
           <span>{sheet.material}</span>
+          <span>{sheet.espessura}mm</span>
           <span>{sheet.sheetWidth}×{sheet.sheetHeight}mm</span>
           <span className="text-primary font-medium">{sheet.efficiency.toFixed(1)}% aproveitamento</span>
           <span>{sheet.pieces.length} peças</span>

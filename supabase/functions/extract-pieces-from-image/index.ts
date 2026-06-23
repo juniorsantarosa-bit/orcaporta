@@ -1,6 +1,6 @@
 // Edge function: lê uma imagem (foto/print de projeto) e extrai a lista
 // de peças usando Gemini multimodal via Lovable AI Gateway.
-// Retorna: { pieces: [{item, descricao, larguraMm, alturaMm, espessuraMm, quantidade, confidence}], cotasNoDesenho: number[], divergencias: string[] }
+// Retorna: { pieces: [{item, descricao, material, larguraMm, alturaMm, espessuraMm, quantidade, confidence}], cotasNoDesenho: number[], divergencias: string[] }
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -14,6 +14,7 @@ A imagem contém um desenho técnico com peças numeradas (1, 2, 3...) e uma TAB
 Extraia ESTRITAMENTE da tabela:
 - item: número inteiro da peça
 - descricao: texto completo exato (ex: "Porta Giro Esq MDF Branco TX - Clássica (Sem Furação)")
+- material: tipo/cor do MDF extraído da descrição, SEM a palavra MDF e SEM o modelo após o hífen (ex: "Branco TX", "Louro Freijó Trend")
 - larguraMm, alturaMm, espessuraMm: dimensões em milímetros (a dimensão geralmente vem como "LxAxE", ex "313x675x18,5" → 313, 675, 18.5). Vírgula é separador decimal.
 - quantidade: se a tabela tiver coluna Qtd use; senão conte quantas vezes a peça aparece no desenho (não inferir, melhor 1 se incerto).
 - furosDobradica: número de furos de dobradiça visíveis no desenho desta peça (círculos de Ø35mm ao longo da borda lateral, geralmente 2 para portas pequenas, 3 para portas médias, 4+ para portas altas). Se a peça NÃO é uma porta giro ou não há furos visíveis, retorne 0.
@@ -35,6 +36,7 @@ const SCHEMA = {
         properties: {
           item: { type: "integer" },
           descricao: { type: "string" },
+          material: { type: "string" },
           larguraMm: { type: "number" },
           alturaMm: { type: "number" },
           espessuraMm: { type: "number" },
@@ -42,7 +44,7 @@ const SCHEMA = {
           furosDobradica: { type: "integer" },
           confidence: { type: "number" },
         },
-        required: ["item", "descricao", "larguraMm", "alturaMm", "espessuraMm", "quantidade", "furosDobradica", "confidence"],
+        required: ["item", "descricao", "material", "larguraMm", "alturaMm", "espessuraMm", "quantidade", "furosDobradica", "confidence"],
         additionalProperties: false,
       },
     },
