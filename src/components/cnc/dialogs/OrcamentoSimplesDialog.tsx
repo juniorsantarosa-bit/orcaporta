@@ -223,7 +223,9 @@ export function OrcamentoSimplesDialog({
       const valArea = areaM2Unit * precoM2;
       const valFita = fitaMUnit * precoFitaM;
       const valFuros = furosUnit * precoFuro;
-      const totalUnit = valArea + valFita + valFuros;
+      const totalUnitCalc = valArea + valFita + valFuros;
+      const hasOverride = typeof p.precoUnitarioOverride === "number";
+      const totalUnit = hasOverride ? (p.precoUnitarioOverride as number) : totalUnitCalc;
 
       return {
         pieceId: p.id,
@@ -240,7 +242,9 @@ export function OrcamentoSimplesDialog({
         furosTotal: furosUnit * qty,
         dupla,
         valArea, valFita, valFuros,
+        totalUnitCalc,
         totalUnit,
+        hasOverride,
         totalAll: totalUnit * qty,
       };
     });
