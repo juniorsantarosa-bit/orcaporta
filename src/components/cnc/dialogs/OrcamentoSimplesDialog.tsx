@@ -114,6 +114,7 @@ export function OrcamentoSimplesDialog({
   const [status, setStatus] = useState<QuoteStatus>({ enviado: false, pago: false });
   const [pieceMeta, setPieceMeta] = useState<PieceMetaMap>({});
   const [descontoPct, setDescontoPct] = useState<number>(0);
+  const [imagemReferencia, setImagemReferencia] = useState<string>("");
 
   /** Marca quando há mudanças não salvas no orçamento atual. */
   const [dirty, setDirty] = useState(false);
