@@ -395,18 +395,22 @@ export function OrcamentoSimplesDialog({
     const aspValorFitaManual = aspireBudgets.reduce((a, b) => a + b.valorFitaManualUnit * b.quantidade, 0);
 
     const valorFuros = sawValorFuros;
-    const valorTotal = sawValorCortes + sawValorFita + sawValorFitaManual + sawValorFuros
+    const subtotalBruto = sawValorCortes + sawValorFita + sawValorFitaManual + sawValorFuros
       + aspValorFresa + aspValorSerra + aspValorCortes + aspValorFita + aspValorFitaManual
       + imageTotals.total;
-    const valorSemFuros = valorTotal - valorFuros;
+    const descontoPctClamp = Math.max(0, Math.min(100, descontoPct || 0));
+    const valorDesconto = subtotalBruto * (descontoPctClamp / 100);
+    const valorTotal = subtotalBruto - valorDesconto;
+    const valorSemFuros = valorTotal - valorFuros * (1 - descontoPctClamp / 100);
 
     return {
       sawCortes, sawFita, sawFitaManual, sawFuros,
       sawValorCortes, sawValorFita, sawValorFitaManual, sawValorFuros,
       aspValorFresa, aspValorSerra, aspValorCortes, aspValorFita, aspValorFitaManual,
+      subtotalBruto, valorDesconto, descontoPct: descontoPctClamp,
       valorTotal, valorSemFuros, valorFuros,
     };
-  }, [budgets, aspireBudgets, imageTotals]);
+  }, [budgets, aspireBudgets, imageTotals, descontoPct]);
 
   // -------- handlers --------
 
