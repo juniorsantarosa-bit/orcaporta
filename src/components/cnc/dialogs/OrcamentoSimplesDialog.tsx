@@ -1015,7 +1015,25 @@ export function OrcamentoSimplesDialog({
                                   className="h-7 text-[11px] text-center"
                                 />
                               </td>
-                              <td className="px-2 py-1.5 text-right font-mono">R$ {b.totalUnit.toFixed(2)}</td>
+                              <td className="px-2 py-1.5 text-right">
+                                <div className="flex items-center gap-1 justify-end">
+                                  <Input
+                                    type="number" step="0.01" min={0}
+                                    value={b.totalUnit.toFixed(2)}
+                                    onChange={(e) => onUpdatePiece?.(b.pieceId, { precoUnitarioOverride: parseFloat(e.target.value) || 0 })}
+                                    className={`h-7 w-20 text-[11px] text-right font-mono ${b.hasOverride ? "border-amber-500 text-amber-500" : ""}`}
+                                    title={b.hasOverride ? `Valor sobrescrito (calculado: R$ ${b.totalUnitCalc.toFixed(2)})` : "Valor calculado — edite para sobrescrever"}
+                                  />
+                                  {b.hasOverride && (
+                                    <button
+                                      type="button"
+                                      onClick={() => onUpdatePiece?.(b.pieceId, { precoUnitarioOverride: undefined })}
+                                      className="text-[10px] text-muted-foreground hover:text-foreground"
+                                      title="Restaurar valor calculado"
+                                    >↺</button>
+                                  )}
+                                </div>
+                              </td>
                               <td className="px-2 py-1.5 text-right font-semibold">R$ {b.totalAll.toFixed(2)}</td>
                             </tr>
                           );
