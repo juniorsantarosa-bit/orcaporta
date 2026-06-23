@@ -706,16 +706,22 @@ export function OrcamentoSimplesDialog({
         </tbody>
       </table>` : ""}
 
+      ${(budgets.length > 0 || aspireBudgets.length > 0) ? `
       <div class="pricing">
         <div class="pricing-title">VALORES UNITÁRIOS APLICADOS${client ? ` — ${escapeHtml(client.nome)}` : ""}</div>
-        <div>
-          ${imageBudgets.length > 0 ? `m² peça: R$ ${(prices.precoM2 ?? 0).toFixed(2)} · Fita: R$ ${(prices.precoFitaMetro ?? 0).toFixed(2)}/m · Furo dobradiça: R$ ${(prices.precoFuroDobradica ?? 0).toFixed(2)} cada` : ""}
-          ${(budgets.length > 0 || aspireBudgets.length > 0) ? `<br/>Corte serra: R$ ${prices.corte.toFixed(2)} · Corte peça: R$ ${prices.cortePeca.toFixed(2)} · Fita: R$ ${prices.fita.toFixed(2)}/m · Fresa: R$ ${prices.fresaMetro.toFixed(2)}/m · Serra: R$ ${prices.serraMetro.toFixed(2)}/m` : ""}
-        </div>
-      </div>
+        <div>Corte serra: R$ ${prices.corte.toFixed(2)} · Corte peça: R$ ${prices.cortePeca.toFixed(2)} · Fita: R$ ${prices.fita.toFixed(2)}/m · Fresa: R$ ${prices.fresaMetro.toFixed(2)}/m · Serra: R$ ${prices.serraMetro.toFixed(2)}/m</div>
+      </div>` : ""}
 
       ${observacoes ? `<div class="obs"><b>Observações</b>${escapeHtml(observacoes).replace(/\n/g, "<br/>")}</div>` : ""}
 
+      ${totals.descontoPct > 0 ? `
+        <div style="margin-top:12px;padding:8px 12px;border:1px solid #ccc;border-radius:4px;display:flex;justify-content:space-between;font-size:12px">
+          <span>Subtotal</span><span>R$ ${totals.subtotalBruto.toFixed(2)}</span>
+        </div>
+        <div style="padding:8px 12px;border:1px solid #ccc;border-top:none;border-radius:0;display:flex;justify-content:space-between;font-size:12px;color:#059669">
+          <span>Desconto (${totals.descontoPct.toFixed(1)}%)</span><span>− R$ ${totals.valorDesconto.toFixed(2)}</span>
+        </div>
+      ` : ""}
       <div class="grand">
         <span style="font-size:13px;font-weight:600;color:#555">${budgets.length > 0 ? `Total sem furos: R$ ${totals.valorSemFuros.toFixed(2)}` : ""}</span>
         <span>Total: R$ ${totals.valorTotal.toFixed(2)}</span>
