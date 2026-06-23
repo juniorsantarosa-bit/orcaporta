@@ -633,7 +633,7 @@ export function OrcamentoSimplesDialog({
 
       <div class="info">
         <div><b>Data:</b> ${today}</div>
-        ${imageBudgets.length > 0 ? `<div><b>Itens:</b> ${imageBudgets.length}</div>` : ""}
+        ${imageBudgets.length > 0 ? `<div><b>Itens:</b> ${imageBudgets.length}</div><div><b>Qtd total:</b> ${imageTotals.qtd}</div>` : ""}
         ${budgets.length > 0 ? `<div><b>Chapas:</b> ${budgets.length}</div>` : ""}
         ${aspireBudgets.length > 0 ? `<div><b>Peças usinadas:</b> ${aspireBudgets.length}</div>` : ""}
       </div>
