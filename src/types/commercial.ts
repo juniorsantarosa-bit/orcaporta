@@ -101,6 +101,16 @@ export interface SavedQuote {
   descontoPct?: number;
   /** Imagem de referência anexa (data URL) — mostrada no PDF */
   imagemReferencia?: string;
+  /** Incluir material (chapas 6mm + 15mm provençal) no orçamento */
+  incluirMaterial?: boolean;
+  /** Preço por chapa de 6mm (R$) — usado no cálculo de material */
+  materialPrecoChapa6?: number;
+  /** Preço por chapa de 15mm (R$) — usado no cálculo de material */
+  materialPrecoChapa15?: number;
+  /** Quantidade override (manual) de chapas 6mm */
+  materialQtdChapa6?: number;
+  /** Quantidade override (manual) de chapas 15mm */
+  materialQtdChapa15?: number;
   createdAt: string;
   updatedAt: string;
 }
