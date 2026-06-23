@@ -13,6 +13,7 @@ import { Calculator, Printer, RotateCcw, Save, UserCircle2 } from "lucide-react"
 import { countSerraCuts } from "@/lib/serraOptimizer";
 import { toast } from "sonner";
 import { DEFAULT_PRICE_TABLE, getQuote, saveQuote } from "@/lib/commercialStore";
+import { loadCompany, CompanyInfo } from "@/lib/companyStore";
 
 interface Props {
   open: boolean;
@@ -45,6 +46,9 @@ function loadPrices(): ClientPriceTable {
       fresaMetro: Number(v.fresaMetro) || DEFAULT_PRICE_TABLE.fresaMetro,
       serraMetro: Number(v.serraMetro) || DEFAULT_PRICE_TABLE.serraMetro,
       chapaM2: Number(v.chapaM2) || 0,
+      precoM2: Number(v.precoM2) || DEFAULT_PRICE_TABLE.precoM2,
+      precoFitaMetro: Number(v.precoFitaMetro) || DEFAULT_PRICE_TABLE.precoFitaMetro,
+      precoFuroDobradica: Number(v.precoFuroDobradica) || DEFAULT_PRICE_TABLE.precoFuroDobradica,
     };
   } catch {
     return DEFAULT_PRICE_TABLE;
@@ -187,6 +191,72 @@ export function OrcamentoSimplesDialog({
   const sawPieces = useMemo(() => pieces.filter(p => p.source !== "aspire"), [pieces]);
   const sawPieceById = useMemo(() => new Map(sawPieces.map(p => [p.id, p])), [sawPieces]);
 
+  /** Peças vindas da importação por imagem (sem layouts/aspire). */
+  const imagePieces = useMemo(
+    () => pieces.filter(p => p.source !== "aspire" && !layouts.some(s => s.pieces.some(pp => pp.pieceId === p.id))),
+    [pieces, layouts],
+  );
+
+  /** Empresa para o cabeçalho do PDF. */
+  const [company, setCompany] = useState<CompanyInfo>(() => loadCompany());
+  useEffect(() => { if (open) setCompany(loadCompany()); }, [open]);
+
+  /** Orçamento por peça (modo imagem): área × R$/m² + fita × R$/m + furos × R$/furo. */
+  const imageBudgets = useMemo(() => {
+    return imagePieces.map(p => {
+      const qty = Math.max(1, p.quantidade || 1);
+      const areaM2Unit = (p.largura * p.altura) / 1_000_000;
+      const perimM = (2 * (p.largura + p.altura)) / 1000;
+      const dupla = p.bordaDuplaProvencal !== false; // default true
+      const fitaMUnit = p.fitaMetrosOverride !== undefined
+        ? p.fitaMetrosOverride
+        : perimM * (dupla ? 2 : 1);
+      const furosUnit = p.furosDobradica ?? 0;
+
+      const precoM2 = prices.precoM2 ?? DEFAULT_PRICE_TABLE.precoM2!;
+      const precoFitaM = prices.precoFitaMetro ?? DEFAULT_PRICE_TABLE.precoFitaMetro!;
+      const precoFuro = prices.precoFuroDobradica ?? DEFAULT_PRICE_TABLE.precoFuroDobradica!;
+
+      const valArea = areaM2Unit * precoM2;
+      const valFita = fitaMUnit * precoFitaM;
+      const valFuros = furosUnit * precoFuro;
+      const totalUnit = valArea + valFita + valFuros;
+
+      return {
+        pieceId: p.id,
+        descricao: p.descricao,
+        largura: p.largura,
+        altura: p.altura,
+        espessura: p.espessura,
+        quantidade: qty,
+        areaM2Unit,
+        areaM2Total: areaM2Unit * qty,
+        fitaMUnit,
+        fitaMTotal: fitaMUnit * qty,
+        furosUnit,
+        furosTotal: furosUnit * qty,
+        dupla,
+        valArea, valFita, valFuros,
+        totalUnit,
+        totalAll: totalUnit * qty,
+      };
+    });
+  }, [imagePieces, prices]);
+
+  const imageTotals = useMemo(() => {
+    const acc = { area: 0, fita: 0, furos: 0, valArea: 0, valFita: 0, valFuros: 0, total: 0 };
+    for (const b of imageBudgets) {
+      acc.area += b.areaM2Total;
+      acc.fita += b.fitaMTotal;
+      acc.furos += b.furosTotal;
+      acc.valArea += b.valArea * b.quantidade;
+      acc.valFita += b.valFita * b.quantidade;
+      acc.valFuros += b.valFuros * b.quantidade;
+      acc.total += b.totalAll;
+    }
+    return acc;
+  }, [imageBudgets]);
+
   const budgets = useMemo<SheetBudget[]>(() => {
     return layouts.map(sheet => {
       const numCortes = countSerraCuts(sheet);
@@ -318,7 +388,8 @@ export function OrcamentoSimplesDialog({
 
     const valorFuros = sawValorFuros;
     const valorTotal = sawValorCortes + sawValorFita + sawValorFitaManual + sawValorFuros
-      + aspValorFresa + aspValorSerra + aspValorCortes + aspValorFita + aspValorFitaManual;
+      + aspValorFresa + aspValorSerra + aspValorCortes + aspValorFita + aspValorFitaManual
+      + imageTotals.total;
     const valorSemFuros = valorTotal - valorFuros;
 
     return {
@@ -327,7 +398,7 @@ export function OrcamentoSimplesDialog({
       aspValorFresa, aspValorSerra, aspValorCortes, aspValorFita, aspValorFitaManual,
       valorTotal, valorSemFuros, valorFuros,
     };
-  }, [budgets, aspireBudgets]);
+  }, [budgets, aspireBudgets, imageTotals]);
 
   // -------- handlers --------
 
@@ -522,22 +593,69 @@ export function OrcamentoSimplesDialog({
       }
     });
 
+    // -------- Image-mode rows --------
+    let imageRows = "";
+    imageBudgets.forEach(b => {
+      imageRows += `<tr>
+        <td><b>${escapeHtml(b.descricao)}</b><div style="font-size:9px;color:#666">${b.largura}×${b.altura}×${b.espessura} mm${b.dupla ? " · <i>fita dupla (provençal)</i>" : ""}</div></td>
+        <td class="c">${b.quantidade}</td>
+        <td class="r">${b.areaM2Unit.toFixed(3)} m²<br/><span style="font-size:9px;color:#666">${b.areaM2Total.toFixed(3)} m² total</span></td>
+        <td class="r">${b.fitaMUnit.toFixed(2)} m<br/><span style="font-size:9px;color:#666">${b.fitaMTotal.toFixed(2)} m total</span></td>
+        <td class="c">${b.furosUnit}${b.furosUnit > 0 ? `<br/><span style="font-size:9px;color:#666">${b.furosTotal} total</span>` : ""}</td>
+        <td class="r">R$ ${b.totalUnit.toFixed(2)}</td>
+        <td class="r"><b>R$ ${b.totalAll.toFixed(2)}</b></td>
+      </tr>`;
+    });
+
+    // -------- Header da empresa --------
+    const headerCompany = `
+      <div class="header">
+        <div style="display:flex;align-items:center;gap:14px">
+          ${company.logoDataUrl ? `<img src="${company.logoDataUrl}" alt="Logo" style="max-height:54px;max-width:160px;object-fit:contain" />` : `<div class="logo">⚡ ${escapeHtml(company.nome || "MAXCUT")}</div>`}
+          <div style="font-size:10px;line-height:1.4;color:#444">
+            ${company.logoDataUrl ? `<div style="font-weight:700;font-size:13px;color:#000">${escapeHtml(company.nome)}</div>` : ""}
+            ${company.cnpj ? `<div>CNPJ/CPF: ${escapeHtml(company.cnpj)}</div>` : ""}
+            ${company.telefone ? `<div>${escapeHtml(company.telefone)}${company.email ? ` · ${escapeHtml(company.email)}` : ""}</div>` : (company.email ? `<div>${escapeHtml(company.email)}</div>` : "")}
+            ${company.endereco ? `<div>${escapeHtml(company.endereco)}</div>` : ""}
+          </div>
+        </div>
+        <div style="font-size:10px;color:#888;text-align:right">${today}</div>
+      </div>`;
+
     w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Orçamento</title>
       <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
       <style>${css}</style></head><body>
-      <div class="header">
-        <div class="logo">⚡ MAX<span class="green">CUT</span></div>
-        <div style="font-size:10px;color:#888">${today}</div>
-      </div>
-      <div class="title">ORÇAMENTO DE CORTE</div>
+      ${headerCompany}
+      <div class="title">ORÇAMENTO</div>
 
       ${clientBlock}
 
       <div class="info">
         <div><b>Data:</b> ${today}</div>
-        <div><b>Chapas:</b> ${budgets.length}</div>
-        <div><b>Peças usinadas:</b> ${aspireBudgets.length}</div>
+        ${imageBudgets.length > 0 ? `<div><b>Itens:</b> ${imageBudgets.length}</div>` : ""}
+        ${budgets.length > 0 ? `<div><b>Chapas:</b> ${budgets.length}</div>` : ""}
+        ${aspireBudgets.length > 0 ? `<div><b>Peças usinadas:</b> ${aspireBudgets.length}</div>` : ""}
       </div>
+
+      ${imageBudgets.length > 0 ? `
+      <h2>Peças (m² · fita de borda · dobradiças)</h2>
+      <table>
+        <thead><tr>
+          <th>Peça</th><th class="c">Qtd</th><th class="r">Área</th>
+          <th class="r">Fita</th><th class="c">Dobradiças</th>
+          <th class="r">Unitário</th><th class="r">Subtotal</th>
+        </tr></thead>
+        <tbody>${imageRows}
+          <tr class="total-row">
+            <td colspan="2" class="r">TOTAIS</td>
+            <td class="r">${imageTotals.area.toFixed(3)} m²</td>
+            <td class="r">${imageTotals.fita.toFixed(2)} m</td>
+            <td class="c">${imageTotals.furos}</td>
+            <td></td>
+            <td class="r">R$ ${imageTotals.total.toFixed(2)}</td>
+          </tr>
+        </tbody>
+      </table>` : ""}
 
       ${budgets.length > 0 ? `
       <h2>Corte em Serra (Chapas)</h2>
@@ -579,29 +697,25 @@ export function OrcamentoSimplesDialog({
       <div class="pricing">
         <div class="pricing-title">VALORES UNITÁRIOS APLICADOS${client ? ` — ${escapeHtml(client.nome)}` : ""}</div>
         <div>
-          Corte de serra (chapa): R$ ${prices.corte.toFixed(2)} cada · 
-          Corte por peça: R$ ${prices.cortePeca.toFixed(2)} cada · 
-          Fita de borda: R$ ${prices.fita.toFixed(2)}/m · 
-          Furo: R$ ${prices.furo.toFixed(2)} cada · 
-          Fresa (router): R$ ${prices.fresaMetro.toFixed(2)}/m · 
-          Serra (metro linear): R$ ${prices.serraMetro.toFixed(2)}/m
+          ${imageBudgets.length > 0 ? `m² peça: R$ ${(prices.precoM2 ?? 0).toFixed(2)} · Fita: R$ ${(prices.precoFitaMetro ?? 0).toFixed(2)}/m · Furo dobradiça: R$ ${(prices.precoFuroDobradica ?? 0).toFixed(2)} cada` : ""}
+          ${(budgets.length > 0 || aspireBudgets.length > 0) ? `<br/>Corte serra: R$ ${prices.corte.toFixed(2)} · Corte peça: R$ ${prices.cortePeca.toFixed(2)} · Fita: R$ ${prices.fita.toFixed(2)}/m · Fresa: R$ ${prices.fresaMetro.toFixed(2)}/m · Serra: R$ ${prices.serraMetro.toFixed(2)}/m` : ""}
         </div>
       </div>
 
       ${observacoes ? `<div class="obs"><b>Observações</b>${escapeHtml(observacoes).replace(/\n/g, "<br/>")}</div>` : ""}
 
       <div class="grand">
-        <span style="font-size:13px;font-weight:600;color:#555">Total sem furos: R$ ${totals.valorSemFuros.toFixed(2)}</span>
+        <span style="font-size:13px;font-weight:600;color:#555">${budgets.length > 0 ? `Total sem furos: R$ ${totals.valorSemFuros.toFixed(2)}` : ""}</span>
         <span>Total: R$ ${totals.valorTotal.toFixed(2)}</span>
       </div>
-      <div class="footer">Orçamento gerado em ${today} — Válido por 30 dias</div>
+      <div class="footer">${escapeHtml(company.rodape || "Orçamento válido por 30 dias")} — gerado em ${today}</div>
     </body></html>`);
     w.document.close();
     w.focus();
     setTimeout(() => w.print(), 400);
   };
 
-  const isEmpty = layouts.length === 0 && aspirePieces.length === 0;
+  const isEmpty = layouts.length === 0 && aspirePieces.length === 0 && imageBudgets.length === 0;
 
   /** Pergunta antes de fechar / imprimir se há mudanças não salvas */
   const confirmSaveBeforeAction = (action: () => void, actionLabel: string) => {
@@ -720,20 +834,36 @@ export function OrcamentoSimplesDialog({
                     </Button>
                   )}
                 </div>
-                <div className="grid grid-cols-7 gap-2">
-                  {(["corte","cortePeca","fita","fitaManual","furo","fresaMetro","serraMetro"] as const).map(k => (
-                    <div key={k}>
-                      <Label className="text-[10px] uppercase text-muted-foreground">
-                        {priceLabel(k)}
-                      </Label>
-                      <Input type="number" step="0.01" min={0}
-                        value={prices[k] ?? 0}
-                        onChange={(e) => updatePrice(k, e.target.value)}
-                        disabled={!!client}
-                        className="h-7 text-xs" />
-                    </div>
-                  ))}
-                </div>
+                {imageBudgets.length > 0 && (
+                  <div className="grid grid-cols-3 gap-2 pb-2 border-b border-border/40">
+                    {(["precoM2","precoFitaMetro","precoFuroDobradica"] as const).map(k => (
+                      <div key={k}>
+                        <Label className="text-[10px] uppercase text-muted-foreground">{priceLabel(k)}</Label>
+                        <Input type="number" step="0.01" min={0}
+                          value={prices[k] ?? 0}
+                          onChange={(e) => updatePrice(k, e.target.value)}
+                          disabled={!!client}
+                          className="h-7 text-xs" />
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {(budgets.length > 0 || aspireBudgets.length > 0) && (
+                  <div className="grid grid-cols-7 gap-2">
+                    {(["corte","cortePeca","fita","fitaManual","furo","fresaMetro","serraMetro"] as const).map(k => (
+                      <div key={k}>
+                        <Label className="text-[10px] uppercase text-muted-foreground">
+                          {priceLabel(k)}
+                        </Label>
+                        <Input type="number" step="0.01" min={0}
+                          value={prices[k] ?? 0}
+                          onChange={(e) => updatePrice(k, e.target.value)}
+                          disabled={!!client}
+                          className="h-7 text-xs" />
+                      </div>
+                    ))}
+                  </div>
+                )}
                 {client && (
                   <p className="text-[10px] text-muted-foreground">
                     Para alterar estes valores, edite o cadastro do cliente.
@@ -814,7 +944,79 @@ export function OrcamentoSimplesDialog({
                 </div>
               )}
 
-              {/* Resumo Serra */}
+              {/* Resumo Imagem (m²/fita/dobradiças) */}
+              {imageBudgets.length > 0 && (
+                <div className="space-y-1.5">
+                  <div className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">
+                    Peças por Imagem — Área · Fita · Dobradiças
+                  </div>
+                  <div className="border border-border rounded overflow-hidden">
+                    <table className="w-full text-xs">
+                      <thead className="bg-muted">
+                        <tr className="text-[10px] uppercase text-muted-foreground">
+                          <th className="px-2 py-2 text-left">Peça</th>
+                          <th className="px-2 py-2 text-center w-12">Qt</th>
+                          <th className="px-2 py-2 text-right w-20">Área/un</th>
+                          <th className="px-2 py-2 text-center w-24" title="Fita dupla = externa + interna (provençal)">Fita dupla</th>
+                          <th className="px-2 py-2 text-right w-20">Fita m/un</th>
+                          <th className="px-2 py-2 text-center w-16">Dobr.</th>
+                          <th className="px-2 py-2 text-right w-20">Unitário</th>
+                          <th className="px-2 py-2 text-right w-20">Subtotal</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {imageBudgets.map(b => {
+                          const p = pieces.find(pp => pp.id === b.pieceId)!;
+                          return (
+                            <tr key={b.pieceId} className="border-t border-border">
+                              <td className="px-2 py-1.5">
+                                <div className="font-medium truncate max-w-[260px]">{b.descricao}</div>
+                                <div className="text-[10px] text-muted-foreground font-mono">{b.largura}×{b.altura}×{b.espessura} mm</div>
+                              </td>
+                              <td className="px-1 py-1.5 text-center">{b.quantidade}</td>
+                              <td className="px-2 py-1.5 text-right font-mono">{b.areaM2Unit.toFixed(3)}</td>
+                              <td className="px-1 py-1.5 text-center">
+                                <Checkbox
+                                  checked={b.dupla}
+                                  onCheckedChange={(v) => onUpdatePiece?.(b.pieceId, { bordaDuplaProvencal: !!v })}
+                                />
+                              </td>
+                              <td className="px-1 py-1.5 text-right">
+                                <Input
+                                  type="number" step="0.01" min={0}
+                                  value={b.fitaMUnit.toFixed(2)}
+                                  onChange={(e) => onUpdatePiece?.(b.pieceId, { fitaMetrosOverride: parseFloat(e.target.value) || 0 })}
+                                  className="h-7 text-[11px] text-right font-mono"
+                                />
+                              </td>
+                              <td className="px-1 py-1.5 text-center">
+                                <Input
+                                  type="number" min={0}
+                                  value={p.furosDobradica ?? 0}
+                                  onChange={(e) => onUpdatePiece?.(b.pieceId, { furosDobradica: parseInt(e.target.value) || 0 })}
+                                  className="h-7 text-[11px] text-center"
+                                />
+                              </td>
+                              <td className="px-2 py-1.5 text-right font-mono">R$ {b.totalUnit.toFixed(2)}</td>
+                              <td className="px-2 py-1.5 text-right font-semibold">R$ {b.totalAll.toFixed(2)}</td>
+                            </tr>
+                          );
+                        })}
+                        <tr className="bg-muted/50 border-t-2 border-border font-semibold">
+                          <td className="px-2 py-1.5 text-right" colSpan={2}>TOTAIS</td>
+                          <td className="px-2 py-1.5 text-right font-mono">{imageTotals.area.toFixed(3)} m²</td>
+                          <td></td>
+                          <td className="px-2 py-1.5 text-right font-mono">{imageTotals.fita.toFixed(2)} m</td>
+                          <td className="px-2 py-1.5 text-center">{imageTotals.furos}</td>
+                          <td></td>
+                          <td className="px-2 py-1.5 text-right text-primary">R$ {imageTotals.total.toFixed(2)}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
               {budgets.length > 0 && (
                 <div className="space-y-1.5">
                   <div className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">Corte em Serra</div>
@@ -998,6 +1200,9 @@ function priceLabel(k: keyof ClientPriceTable): string {
     case "fresaMetro": return "R$/m fresa";
     case "serraMetro": return "R$/m serra";
     case "chapaM2": return "R$/m² chapa";
+    case "precoM2": return "R$/m² peça";
+    case "precoFitaMetro": return "R$/m fita borda";
+    case "precoFuroDobradica": return "R$ furo dobradiça";
   }
 }
 

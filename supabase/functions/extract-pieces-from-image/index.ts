@@ -16,6 +16,7 @@ Extraia ESTRITAMENTE da tabela:
 - descricao: texto completo exato (ex: "Porta Giro Esq MDF Branco TX - Clássica (Sem Furação)")
 - larguraMm, alturaMm, espessuraMm: dimensões em milímetros (a dimensão geralmente vem como "LxAxE", ex "313x675x18,5" → 313, 675, 18.5). Vírgula é separador decimal.
 - quantidade: se a tabela tiver coluna Qtd use; senão conte quantas vezes a peça aparece no desenho (não inferir, melhor 1 se incerto).
+- furosDobradica: número de furos de dobradiça visíveis no desenho desta peça (círculos de Ø35mm ao longo da borda lateral, geralmente 2 para portas pequenas, 3 para portas médias, 4+ para portas altas). Se a peça NÃO é uma porta giro ou não há furos visíveis, retorne 0.
 - confidence: 0.0–1.0 — sua confiança nessa linha.
 
 Adicionalmente, leia as COTAS escritas dentro do desenho (números soltos como 688, 313, 505, 85, 1932) e devolva em "cotasNoDesenho". NÃO invente, só liste o que está escrito visível.
@@ -38,9 +39,10 @@ const SCHEMA = {
           alturaMm: { type: "number" },
           espessuraMm: { type: "number" },
           quantidade: { type: "integer" },
+          furosDobradica: { type: "integer" },
           confidence: { type: "number" },
         },
-        required: ["item", "descricao", "larguraMm", "alturaMm", "espessuraMm", "quantidade", "confidence"],
+        required: ["item", "descricao", "larguraMm", "alturaMm", "espessuraMm", "quantidade", "furosDobradica", "confidence"],
         additionalProperties: false,
       },
     },

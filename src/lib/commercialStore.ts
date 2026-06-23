@@ -19,6 +19,9 @@ export const DEFAULT_PRICE_TABLE: ClientPriceTable = {
   fresaMetro: 8.0,
   serraMetro: 5.0,
   chapaM2: 0,
+  precoM2: 180.0,
+  precoFitaMetro: 6.0,
+  precoFuroDobradica: 4.0,
 };
 
 function safeParse<T>(raw: string | null, fallback: T): T {

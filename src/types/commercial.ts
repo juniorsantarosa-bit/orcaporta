@@ -26,6 +26,12 @@ export interface ClientPriceTable {
   serraMetro: number;
   /** R$ por m² de chapa (opcional, informativo) */
   chapaM2?: number;
+  /** R$ por m² de peça acabada (modo orçamento por imagem) */
+  precoM2?: number;
+  /** R$ por metro linear de fita de borda (modo orçamento por imagem) */
+  precoFitaMetro?: number;
+  /** R$ por furo de dobradiça (modo orçamento por imagem) */
+  precoFuroDobradica?: number;
 }
 
 export interface Client {

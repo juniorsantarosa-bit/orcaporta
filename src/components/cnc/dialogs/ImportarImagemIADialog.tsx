@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +22,7 @@ interface ExtractedPiece {
   alturaMm: number;
   espessuraMm: number;
   quantidade: number;
+  furosDobradica: number;
   confidence: number;
 }
 
@@ -55,20 +56,11 @@ export function ImportarImagemIADialog({ open, onOpenChange, onImport }: Props) 
     setPieces([]);
   }, []);
 
-  const handleFile = async (f: File) => {
-    setFile(f);
-    setResult(null);
-    setPieces([]);
-    const url = await fileToDataUrl(f);
-    setPreviewUrl(url);
-  };
-
-  const handleExtract = async () => {
-    if (!previewUrl) return;
+  const runExtraction = useCallback(async (dataUrl: string) => {
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("extract-pieces-from-image", {
-        body: { imageDataUrl: previewUrl },
+        body: { imageDataUrl: dataUrl },
       });
       if (error) {
         toast.error(error.message || "Falha ao analisar imagem.");
@@ -88,7 +80,20 @@ export function ImportarImagemIADialog({ open, onOpenChange, onImport }: Props) 
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  const handleFile = async (f: File) => {
+    setFile(f);
+    setResult(null);
+    setPieces([]);
+    const url = await fileToDataUrl(f);
+    setPreviewUrl(url);
+    // Auto-extração: assim que a imagem é carregada, dispara a IA.
+    runExtraction(url);
   };
+
+  // Limpa estado ao fechar
+  useEffect(() => { if (!open) reset(); }, [open, reset]);
 
   const updatePiece = (idx: number, patch: Partial<ExtractedPiece>) => {
     setPieces(prev => prev.map((p, i) => (i === idx ? { ...p, ...patch } : p)));
@@ -112,12 +117,15 @@ export function ImportarImagemIADialog({ open, onOpenChange, onImport }: Props) 
       espessura: p.espessuraMm,
       material: "",
       quantidade: p.quantidade,
-      bordaInf: false,
-      bordaSup: false,
-      bordaEsq: false,
-      bordaDir: false,
+      bordaInf: true,
+      bordaSup: true,
+      bordaEsq: true,
+      bordaDir: true,
       veio: false,
       observacao: `IA · item ${p.item} · conf ${(p.confidence * 100).toFixed(0)}%`,
+      furosDobradica: p.furosDobradica || 0,
+      bordaDuplaProvencal: true,
+      source: "manual",
     }));
     onImport(cuttingPieces);
     toast.success(`${cuttingPieces.length} peça(s) importada(s).`);
@@ -161,7 +169,7 @@ export function ImportarImagemIADialog({ open, onOpenChange, onImport }: Props) 
             <ImagePlus className="h-16 w-16 mx-auto text-muted-foreground mb-3" />
             <p className="text-base text-muted-foreground">Clique para enviar uma imagem do projeto</p>
             <p className="text-xs text-muted-foreground mt-2">
-              A IA lê a tabela de peças e as cotas do desenho, e gera a lista pronta para orçar.
+              A IA lê a tabela, conta furos de dobradiça e valida as cotas — automaticamente.
             </p>
             <p className="text-[10px] text-muted-foreground mt-1">PNG, JPG, WEBP — até ~10 MB.</p>
           </div>
@@ -171,12 +179,7 @@ export function ImportarImagemIADialog({ open, onOpenChange, onImport }: Props) 
             <div className="border border-border rounded-lg overflow-hidden bg-muted/30 flex flex-col">
               <div className="px-3 py-2 border-b border-border flex items-center justify-between bg-card">
                 <span className="text-xs font-medium truncate">{file?.name}</span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 text-xs"
-                  onClick={reset}
-                >
+                <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={reset}>
                   Trocar
                 </Button>
               </div>
@@ -189,40 +192,19 @@ export function ImportarImagemIADialog({ open, onOpenChange, onImport }: Props) 
             <div className="border border-border rounded-lg flex flex-col overflow-hidden">
               <div className="px-3 py-2 border-b border-border bg-card flex items-center justify-between">
                 <span className="text-xs font-medium">Peças extraídas</span>
-                {!result && (
-                  <Button size="sm" className="h-7 text-xs" onClick={handleExtract} disabled={loading}>
-                    {loading ? (
-                      <>
-                        <Loader2 className="h-3 w-3 mr-1 animate-spin" /> Lendo imagem…
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="h-3 w-3 mr-1" /> Analisar com IA
-                      </>
-                    )}
-                  </Button>
-                )}
                 {result && (
-                  <Badge variant="outline" className="text-[10px]">
-                    {pieces.length} peça(s)
-                  </Badge>
+                  <Badge variant="outline" className="text-[10px]">{pieces.length} peça(s)</Badge>
                 )}
               </div>
-
-              {!result && !loading && (
-                <div className="flex-1 flex items-center justify-center text-xs text-muted-foreground p-6 text-center">
-                  Clique em <b className="mx-1">Analisar com IA</b> para extrair a lista de peças desta imagem.
-                </div>
-              )}
 
               {loading && (
                 <div className="flex-1 flex flex-col items-center justify-center gap-2 text-xs text-muted-foreground">
                   <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                  <span>Lendo a imagem… isso leva ~10–30 s.</span>
+                  <span>Lendo a imagem com IA… (~10–30 s)</span>
                 </div>
               )}
 
-              {result && (
+              {!loading && result && (
                 <ScrollArea className="flex-1">
                   <div className="p-2 space-y-2">
                     {result.divergencias.length > 0 && (
@@ -241,10 +223,11 @@ export function ImportarImagemIADialog({ open, onOpenChange, onImport }: Props) 
                         <tr className="border-b border-border">
                           <th className="text-left py-1 px-1 w-8">#</th>
                           <th className="text-left py-1 px-1">Descrição</th>
-                          <th className="text-left py-1 px-1 w-16">L</th>
-                          <th className="text-left py-1 px-1 w-16">A</th>
-                          <th className="text-left py-1 px-1 w-14">E</th>
-                          <th className="text-left py-1 px-1 w-12">Qtd</th>
+                          <th className="text-left py-1 px-1 w-14">L</th>
+                          <th className="text-left py-1 px-1 w-14">A</th>
+                          <th className="text-left py-1 px-1 w-12">E</th>
+                          <th className="text-left py-1 px-1 w-10">Qtd</th>
+                          <th className="text-left py-1 px-1 w-10" title="Furos de dobradiça">Dob.</th>
                           <th className="text-left py-1 px-1 w-10">Conf</th>
                           <th className="w-6"></th>
                         </tr>
@@ -253,64 +236,45 @@ export function ImportarImagemIADialog({ open, onOpenChange, onImport }: Props) 
                         {pieces.map((p, i) => (
                           <tr key={i} className="border-b border-border/50">
                             <td className="py-1 px-1">
-                              <Input
-                                type="number"
-                                value={p.item}
+                              <Input type="number" value={p.item}
                                 onChange={(e) => updatePiece(i, { item: parseInt(e.target.value) || 0 })}
-                                className="h-6 text-[11px] px-1"
-                              />
+                                className="h-6 text-[11px] px-1" />
                             </td>
                             <td className="py-1 px-1">
-                              <Input
-                                value={p.descricao}
+                              <Input value={p.descricao}
                                 onChange={(e) => updatePiece(i, { descricao: e.target.value })}
-                                className="h-6 text-[11px] px-1"
-                              />
+                                className="h-6 text-[11px] px-1" />
                             </td>
                             <td className="py-1 px-1">
-                              <Input
-                                type="number"
-                                value={p.larguraMm}
+                              <Input type="number" value={p.larguraMm}
                                 onChange={(e) => updatePiece(i, { larguraMm: parseFloat(e.target.value) || 0 })}
-                                className="h-6 text-[11px] px-1"
-                              />
+                                className="h-6 text-[11px] px-1" />
                             </td>
                             <td className="py-1 px-1">
-                              <Input
-                                type="number"
-                                value={p.alturaMm}
+                              <Input type="number" value={p.alturaMm}
                                 onChange={(e) => updatePiece(i, { alturaMm: parseFloat(e.target.value) || 0 })}
-                                className="h-6 text-[11px] px-1"
-                              />
+                                className="h-6 text-[11px] px-1" />
                             </td>
                             <td className="py-1 px-1">
-                              <Input
-                                type="number"
-                                step="0.1"
-                                value={p.espessuraMm}
+                              <Input type="number" step="0.1" value={p.espessuraMm}
                                 onChange={(e) => updatePiece(i, { espessuraMm: parseFloat(e.target.value) || 0 })}
-                                className="h-6 text-[11px] px-1"
-                              />
+                                className="h-6 text-[11px] px-1" />
                             </td>
                             <td className="py-1 px-1">
-                              <Input
-                                type="number"
-                                min={1}
-                                value={p.quantidade}
+                              <Input type="number" min={1} value={p.quantidade}
                                 onChange={(e) => updatePiece(i, { quantidade: parseInt(e.target.value) || 1 })}
-                                className="h-6 text-[11px] px-1"
-                              />
+                                className="h-6 text-[11px] px-1" />
+                            </td>
+                            <td className="py-1 px-1">
+                              <Input type="number" min={0} value={p.furosDobradica}
+                                onChange={(e) => updatePiece(i, { furosDobradica: parseInt(e.target.value) || 0 })}
+                                className="h-6 text-[11px] px-1" />
                             </td>
                             <td className={`py-1 px-1 font-mono ${confColor(p.confidence)}`}>
                               {(p.confidence * 100).toFixed(0)}%
                             </td>
                             <td className="py-1 px-1">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-5 w-5"
-                                onClick={() => removePiece(i)}
-                              >
+                              <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => removePiece(i)}>
                                 <Trash2 className="h-3 w-3" />
                               </Button>
                             </td>
@@ -326,9 +290,7 @@ export function ImportarImagemIADialog({ open, onOpenChange, onImport }: Props) 
                         </div>
                         <div className="flex flex-wrap gap-1">
                           {result.cotasNoDesenho.map((c, i) => (
-                            <Badge key={i} variant="secondary" className="text-[10px] font-mono">
-                              {c}
-                            </Badge>
+                            <Badge key={i} variant="secondary" className="text-[10px] font-mono">{c}</Badge>
                           ))}
                         </div>
                       </div>
@@ -342,7 +304,7 @@ export function ImportarImagemIADialog({ open, onOpenChange, onImport }: Props) 
 
         <DialogFooter className="mt-2">
           <Button variant="outline" onClick={() => handleClose(false)}>Cancelar</Button>
-          <Button onClick={handleConfirm} disabled={pieces.length === 0}>
+          <Button onClick={handleConfirm} disabled={pieces.length === 0 || loading}>
             Importar {pieces.length > 0 ? `(${pieces.length})` : ""}
           </Button>
         </DialogFooter>

@@ -1,4 +1,4 @@
-import { FileUp, Scissors, Calculator, Loader2, FilePlus, Users, FolderOpen, BarChart3 } from "lucide-react";
+import { FileUp, Scissors, Calculator, Loader2, FilePlus, Users, FolderOpen, BarChart3, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -11,6 +11,7 @@ interface SimpleToolbarProps {
   onClientes: () => void;
   onOrcamentosSalvos: () => void;
   onRelatorios: () => void;
+  onEmpresa: () => void;
   isOptimizing?: boolean;
   hasPieces: boolean;
   hasLayouts: boolean;
@@ -46,37 +47,31 @@ function TBtn({
 }
 
 export function SimpleToolbar({
-  onNew, onImport, onOptimize, onOrcamento, onClientes, onOrcamentosSalvos, onRelatorios,
+  onNew, onImport, onOptimize, onOrcamento, onClientes, onOrcamentosSalvos, onRelatorios, onEmpresa,
   isOptimizing, hasPieces, hasLayouts, selectedClientName,
 }: SimpleToolbarProps) {
   return (
     <div className="flex items-center gap-2 px-4 py-2 bg-card border-b border-border">
       <TBtn icon={FilePlus} label="Novo" onClick={onNew} />
-      <TBtn icon={FileUp} label="Importar Peças" onClick={onImport} />
+      <TBtn icon={FileUp} label="Importar Imagem" onClick={onImport} />
       <Separator orientation="vertical" className="h-10 mx-1" />
       <TBtn
         icon={Users}
-        label={selectedClientName ? "Cliente" : "Cliente"}
+        label="Cliente"
         sublabel={selectedClientName ?? "nenhum"}
         onClick={onClientes}
         accent={!!selectedClientName}
       />
+      <TBtn icon={Building2} label="Empresa" onClick={onEmpresa} />
       <Separator orientation="vertical" className="h-10 mx-1" />
-      <TBtn
-        icon={isOptimizing ? Loader2 : Scissors}
-        label={isOptimizing ? "Otimizando..." : "Otimizar"}
-        onClick={onOptimize}
-        accent
-        disabled={isOptimizing || !hasPieces}
-      />
-      <TBtn icon={Calculator} label="Gerar Orçamento" onClick={onOrcamento} accent disabled={!hasLayouts} />
+      <TBtn icon={Calculator} label="Gerar Orçamento" onClick={onOrcamento} accent disabled={!hasPieces} />
       <Separator orientation="vertical" className="h-10 mx-1" />
       <TBtn icon={FolderOpen} label="Orçamentos" onClick={onOrcamentosSalvos} />
       <TBtn icon={BarChart3} label="Relatórios" onClick={onRelatorios} />
 
       <div className="flex-1" />
       <span className="text-[10px] text-muted-foreground uppercase tracking-wider mr-2">
-        Modo Serra · Versão Orçamento
+        Orçamento por Imagem · IA
       </span>
     </div>
   );
