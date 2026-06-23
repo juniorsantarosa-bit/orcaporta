@@ -288,7 +288,7 @@ export default function OrcamentoSimples() {
         </ResizablePanelGroup>
       </div>
 
-      <ImportarPecasDialog
+      <ImportarImagemIADialog
         open={showImport}
         onOpenChange={setShowImport}
         onImport={handleImport}
