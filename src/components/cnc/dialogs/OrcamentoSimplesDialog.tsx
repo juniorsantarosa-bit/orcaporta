@@ -760,6 +760,20 @@ export function OrcamentoSimplesDialog({
 
       ${observacoes ? `<div class="obs"><b>Observações</b>${escapeHtml(observacoes).replace(/\n/g, "<br/>")}</div>` : ""}
 
+      ${incluirMaterial && materialInfo.total > 0 ? `
+      <h2>Material</h2>
+      <table>
+        <thead><tr>
+          <th>Item</th><th class="c">Qtd</th><th class="r">R$ / chapa</th><th class="r">Subtotal</th>
+        </tr></thead>
+        <tbody>
+          <tr><td>Chapa 6 mm (quadro provençal)</td><td class="c">${materialInfo.qtd6}</td><td class="r">R$ ${matPreco6.toFixed(2)}</td><td class="r">R$ ${materialInfo.valor6.toFixed(2)}</td></tr>
+          <tr><td>Chapa 15 mm (fundo provençal)</td><td class="c">${materialInfo.qtd15}</td><td class="r">R$ ${matPreco15.toFixed(2)}</td><td class="r">R$ ${materialInfo.valor15.toFixed(2)}</td></tr>
+          <tr class="total-row"><td colspan="3" class="r">TOTAL MATERIAL</td><td class="r">R$ ${materialInfo.total.toFixed(2)}</td></tr>
+        </tbody>
+      </table>` : ""}
+
+
       ${imagemReferencia ? `
         <div style="margin-top:12px;page-break-inside:avoid">
           <h2>Imagem de Referência</h2>
