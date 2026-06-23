@@ -650,12 +650,12 @@ export function OrcamentoSimplesDialog({
       </div>
 
       ${imageBudgets.length > 0 ? `
-      <h2>Peças (m² · fita de borda · dobradiças)</h2>
+      <h2>Peças</h2>
       <table>
         <thead><tr>
           <th>Peça</th><th class="c">Qtd</th><th class="r">Área</th>
           <th class="r">Fita</th><th class="c">Dobradiças</th>
-          <th class="r">Unitário</th><th class="r">Subtotal</th>
+          <th class="r">Subtotal</th>
         </tr></thead>
         <tbody>${imageRows}
           <tr class="total-row">
@@ -664,7 +664,6 @@ export function OrcamentoSimplesDialog({
             <td class="r">${imageTotals.area.toFixed(3)} m²</td>
             <td class="r">${imageTotals.fita.toFixed(2)} m</td>
             <td class="c">${imageTotals.furos}</td>
-            <td></td>
             <td class="r">R$ ${imageTotals.total.toFixed(2)}</td>
           </tr>
         </tbody>
