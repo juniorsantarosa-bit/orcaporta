@@ -106,7 +106,13 @@ export function SimplePartsTable({ pieces, selectedId, onSelect, onUpdate, onDel
                         className="h-6 text-[10px] text-right px-1 w-14 ml-auto font-mono"
                       />
                     </td>
-                    <td className="px-2 py-1 text-right font-mono text-[10px]">{piece.espessura}</td>
+                    <td className="px-1 py-1 text-right" onClick={(e) => e.stopPropagation()}>
+                      <Input
+                        type="number" min={0} step="0.1" value={piece.espessura}
+                        onChange={(e) => onUpdate(piece.id, { espessura: Math.max(0, parseFloat(e.target.value) || 0) })}
+                        className="h-6 text-[10px] text-right px-1 w-12 ml-auto font-mono"
+                      />
+                    </td>
                     <td className="px-1 py-1" onClick={(e) => e.stopPropagation()}>
                       <Input
                         value={piece.material}

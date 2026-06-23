@@ -8,6 +8,7 @@ import { CuttingPiece } from "@/types/cutting";
 import { ImagePlus, Loader2, Sparkles, AlertTriangle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { normalizeMaterialName } from "@/lib/materialUtils";
 
 interface Props {
   open: boolean;
@@ -21,6 +22,7 @@ interface ExtractedPiece {
   larguraMm: number;
   alturaMm: number;
   espessuraMm: number;
+  material?: string;
   quantidade: number;
   furosDobradica: number;
   confidence: number;
@@ -72,7 +74,7 @@ export function ImportarImagemIADialog({ open, onOpenChange, onImport }: Props) 
         return;
       }
       setResult(r);
-      setPieces(r.pieces);
+      setPieces(r.pieces.map(p => ({ ...p, material: normalizeMaterialName(p.material, p.descricao) })));
       toast.success(`${r.pieces.length} peça(s) extraída(s).`);
     } catch (e) {
       console.error(e);
@@ -115,7 +117,7 @@ export function ImportarImagemIADialog({ open, onOpenChange, onImport }: Props) 
       largura: p.larguraMm,
       altura: p.alturaMm,
       espessura: p.espessuraMm,
-      material: "",
+      material: normalizeMaterialName(p.material, p.descricao),
       quantidade: p.quantidade,
       bordaInf: true,
       bordaSup: true,
@@ -224,6 +226,7 @@ export function ImportarImagemIADialog({ open, onOpenChange, onImport }: Props) 
                         <tr className="border-b border-border">
                           <th className="text-left py-1 px-1 w-8">#</th>
                           <th className="text-left py-1 px-1">Descrição</th>
+                          <th className="text-left py-1 px-1 w-28">Material</th>
                           <th className="text-left py-1 px-1 w-14">L</th>
                           <th className="text-left py-1 px-1 w-14">A</th>
                           <th className="text-left py-1 px-1 w-12">E</th>
@@ -244,6 +247,11 @@ export function ImportarImagemIADialog({ open, onOpenChange, onImport }: Props) 
                             <td className="py-1 px-1">
                               <Input value={p.descricao}
                                 onChange={(e) => updatePiece(i, { descricao: e.target.value })}
+                                className="h-6 text-[11px] px-1" />
+                            </td>
+                            <td className="py-1 px-1">
+                              <Input value={p.material ?? ""}
+                                onChange={(e) => updatePiece(i, { material: e.target.value })}
                                 className="h-6 text-[11px] px-1" />
                             </td>
                             <td className="py-1 px-1">
