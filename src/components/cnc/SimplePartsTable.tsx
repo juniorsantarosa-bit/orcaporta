@@ -406,10 +406,6 @@ export function SimplePartsTable({ pieces, selectedId, onSelect, onUpdate, onDel
                       </>
                     )}
 
-                    {isAspire && (
-                      <td className="px-1 py-1 text-center text-muted-foreground">—</td>
-                    )}
-
                     <td className="px-1 py-1 text-center" onClick={(e) => e.stopPropagation()}>
                       <Input
                         type="number"
