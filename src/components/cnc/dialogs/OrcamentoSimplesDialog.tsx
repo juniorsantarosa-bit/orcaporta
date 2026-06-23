@@ -1005,7 +1005,8 @@ export function OrcamentoSimplesDialog({
                           );
                         })}
                         <tr className="bg-muted/50 border-t-2 border-border font-semibold">
-                          <td className="px-2 py-1.5 text-right" colSpan={2}>TOTAIS</td>
+                          <td className="px-2 py-1.5 text-right">TOTAIS</td>
+                          <td className="px-2 py-1.5 text-center">{imageTotals.qtd}</td>
                           <td className="px-2 py-1.5 text-right font-mono">{imageTotals.area.toFixed(3)} m²</td>
                           <td></td>
                           <td className="px-2 py-1.5 text-right font-mono">{imageTotals.fita.toFixed(2)} m</td>
