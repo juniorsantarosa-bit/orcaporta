@@ -388,7 +388,8 @@ export function OrcamentoSimplesDialog({
 
     const valorFuros = sawValorFuros;
     const valorTotal = sawValorCortes + sawValorFita + sawValorFitaManual + sawValorFuros
-      + aspValorFresa + aspValorSerra + aspValorCortes + aspValorFita + aspValorFitaManual;
+      + aspValorFresa + aspValorSerra + aspValorCortes + aspValorFita + aspValorFitaManual
+      + imageTotals.total;
     const valorSemFuros = valorTotal - valorFuros;
 
     return {
@@ -397,7 +398,7 @@ export function OrcamentoSimplesDialog({
       aspValorFresa, aspValorSerra, aspValorCortes, aspValorFita, aspValorFitaManual,
       valorTotal, valorSemFuros, valorFuros,
     };
-  }, [budgets, aspireBudgets]);
+  }, [budgets, aspireBudgets, imageTotals]);
 
   // -------- handlers --------
 
