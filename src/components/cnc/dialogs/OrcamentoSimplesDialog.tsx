@@ -525,8 +525,9 @@ export function OrcamentoSimplesDialog({
       incluirMaterial,
       materialPrecoChapa6: matPreco6,
       materialPrecoChapa15: matPreco15,
-      materialQtdChapa6: matQtd6Override ?? materialInfo.qtd6,
-      materialQtdChapa15: matQtd15Override ?? materialInfo.qtd15,
+      materialQtdChapa6: materialInfo.qtd6,
+      materialQtdChapa15: materialInfo.qtd15,
+      materialChapas: materialInfo.materialChapas,
     });
     onSavedQuote?.(saved.id);
     setDirty(false);
