@@ -446,9 +446,9 @@ export function OrcamentoSimplesDialog({
       sawValorCortes, sawValorFita, sawValorFitaManual, sawValorFuros,
       aspValorFresa, aspValorSerra, aspValorCortes, aspValorFita, aspValorFitaManual,
       subtotalBruto, valorDesconto, descontoPct: descontoPctClamp,
-      valorTotal, valorSemFuros, valorFuros,
+      valorTotal, valorSemFuros, valorFuros, materialTotal,
     };
-  }, [budgets, aspireBudgets, imageTotals, descontoPct]);
+  }, [budgets, aspireBudgets, imageTotals, descontoPct, incluirMaterial, materialInfo]);
 
   // -------- handlers --------
 
