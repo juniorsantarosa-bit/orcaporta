@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { SimpleToolbar } from "@/components/cnc/SimpleToolbar";
 import { SimpleSheetView } from "@/components/cnc/SimpleSheetView";
 import { SimplePartsTable } from "@/components/cnc/SimplePartsTable";
-import { ImportarPecasDialog } from "@/components/cnc/dialogs/ImportarPecasDialog";
+import { ImportarImagemIADialog } from "@/components/cnc/dialogs/ImportarImagemIADialog";
 import { OrcamentoSimplesDialog } from "@/components/cnc/dialogs/OrcamentoSimplesDialog";
 import { ClientesDialog } from "@/components/cnc/dialogs/ClientesDialog";
 import { OrcamentosListDialog } from "@/components/cnc/dialogs/OrcamentosListDialog";
