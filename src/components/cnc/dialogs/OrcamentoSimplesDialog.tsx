@@ -805,8 +805,10 @@ export function OrcamentoSimplesDialog({
           <th>Item</th><th class="c">Qtd</th><th class="r">R$ / chapa</th><th class="r">Subtotal</th>
         </tr></thead>
         <tbody>
-          <tr><td>Chapa 6 mm (quadro provençal)</td><td class="c">${materialInfo.qtd6}</td><td class="r">R$ ${matPreco6.toFixed(2)}</td><td class="r">R$ ${materialInfo.valor6.toFixed(2)}</td></tr>
-          <tr><td>Chapa 15 mm (fundo provençal)</td><td class="c">${materialInfo.qtd15}</td><td class="r">R$ ${matPreco15.toFixed(2)}</td><td class="r">R$ ${materialInfo.valor15.toFixed(2)}</td></tr>
+          ${materialInfo.groups.map(g => `
+            <tr><td>${escapeHtml(g.material)} — chapa 6 mm (quadro provençal)</td><td class="c">${g.qtd6}</td><td class="r">R$ ${matPreco6.toFixed(2)}</td><td class="r">R$ ${g.valor6.toFixed(2)}</td></tr>
+            <tr><td>${escapeHtml(g.material)} — chapa 15 mm (fundo provençal)</td><td class="c">${g.qtd15}</td><td class="r">R$ ${matPreco15.toFixed(2)}</td><td class="r">R$ ${g.valor15.toFixed(2)}</td></tr>
+          `).join("")}
           <tr class="total-row"><td colspan="3" class="r">TOTAL MATERIAL</td><td class="r">R$ ${materialInfo.total.toFixed(2)}</td></tr>
         </tbody>
       </table>` : ""}
