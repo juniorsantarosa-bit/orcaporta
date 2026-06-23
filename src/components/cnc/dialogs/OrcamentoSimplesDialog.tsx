@@ -449,6 +449,7 @@ export function OrcamentoSimplesDialog({
       totalCalculado: totals.valorTotal,
       observacoes,
       descontoPct: totals.descontoPct,
+      imagemReferencia: imagemReferencia || undefined,
     });
     onSavedQuote?.(saved.id);
     setDirty(false);
