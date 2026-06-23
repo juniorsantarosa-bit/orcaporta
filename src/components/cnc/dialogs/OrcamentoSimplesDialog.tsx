@@ -432,9 +432,10 @@ export function OrcamentoSimplesDialog({
     const aspValorFitaManual = aspireBudgets.reduce((a, b) => a + b.valorFitaManualUnit * b.quantidade, 0);
 
     const valorFuros = sawValorFuros;
+    const materialTotal = incluirMaterial ? materialInfo.total : 0;
     const subtotalBruto = sawValorCortes + sawValorFita + sawValorFitaManual + sawValorFuros
       + aspValorFresa + aspValorSerra + aspValorCortes + aspValorFita + aspValorFitaManual
-      + imageTotals.total;
+      + imageTotals.total + materialTotal;
     const descontoPctClamp = Math.max(0, Math.min(100, descontoPct || 0));
     const valorDesconto = subtotalBruto * (descontoPctClamp / 100);
     const valorTotal = subtotalBruto - valorDesconto;
