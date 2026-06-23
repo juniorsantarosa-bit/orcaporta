@@ -191,6 +191,72 @@ export function OrcamentoSimplesDialog({
   const sawPieces = useMemo(() => pieces.filter(p => p.source !== "aspire"), [pieces]);
   const sawPieceById = useMemo(() => new Map(sawPieces.map(p => [p.id, p])), [sawPieces]);
 
+  /** Peças vindas da importação por imagem (sem layouts/aspire). */
+  const imagePieces = useMemo(
+    () => pieces.filter(p => p.source !== "aspire" && !layouts.some(s => s.pieces.some(pp => pp.pieceId === p.id))),
+    [pieces, layouts],
+  );
+
+  /** Empresa para o cabeçalho do PDF. */
+  const [company, setCompany] = useState<CompanyInfo>(() => loadCompany());
+  useEffect(() => { if (open) setCompany(loadCompany()); }, [open]);
+
+  /** Orçamento por peça (modo imagem): área × R$/m² + fita × R$/m + furos × R$/furo. */
+  const imageBudgets = useMemo(() => {
+    return imagePieces.map(p => {
+      const qty = Math.max(1, p.quantidade || 1);
+      const areaM2Unit = (p.largura * p.altura) / 1_000_000;
+      const perimM = (2 * (p.largura + p.altura)) / 1000;
+      const dupla = p.bordaDuplaProvencal !== false; // default true
+      const fitaMUnit = p.fitaMetrosOverride !== undefined
+        ? p.fitaMetrosOverride
+        : perimM * (dupla ? 2 : 1);
+      const furosUnit = p.furosDobradica ?? 0;
+
+      const precoM2 = prices.precoM2 ?? DEFAULT_PRICE_TABLE.precoM2!;
+      const precoFitaM = prices.precoFitaMetro ?? DEFAULT_PRICE_TABLE.precoFitaMetro!;
+      const precoFuro = prices.precoFuroDobradica ?? DEFAULT_PRICE_TABLE.precoFuroDobradica!;
+
+      const valArea = areaM2Unit * precoM2;
+      const valFita = fitaMUnit * precoFitaM;
+      const valFuros = furosUnit * precoFuro;
+      const totalUnit = valArea + valFita + valFuros;
+
+      return {
+        pieceId: p.id,
+        descricao: p.descricao,
+        largura: p.largura,
+        altura: p.altura,
+        espessura: p.espessura,
+        quantidade: qty,
+        areaM2Unit,
+        areaM2Total: areaM2Unit * qty,
+        fitaMUnit,
+        fitaMTotal: fitaMUnit * qty,
+        furosUnit,
+        furosTotal: furosUnit * qty,
+        dupla,
+        valArea, valFita, valFuros,
+        totalUnit,
+        totalAll: totalUnit * qty,
+      };
+    });
+  }, [imagePieces, prices]);
+
+  const imageTotals = useMemo(() => {
+    const acc = { area: 0, fita: 0, furos: 0, valArea: 0, valFita: 0, valFuros: 0, total: 0 };
+    for (const b of imageBudgets) {
+      acc.area += b.areaM2Total;
+      acc.fita += b.fitaMTotal;
+      acc.furos += b.furosTotal;
+      acc.valArea += b.valArea * b.quantidade;
+      acc.valFita += b.valFita * b.quantidade;
+      acc.valFuros += b.valFuros * b.quantidade;
+      acc.total += b.totalAll;
+    }
+    return acc;
+  }, [imageBudgets]);
+
   const budgets = useMemo<SheetBudget[]>(() => {
     return layouts.map(sheet => {
       const numCortes = countSerraCuts(sheet);
