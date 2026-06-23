@@ -244,8 +244,9 @@ export function OrcamentoSimplesDialog({
   }, [imagePieces, prices]);
 
   const imageTotals = useMemo(() => {
-    const acc = { area: 0, fita: 0, furos: 0, valArea: 0, valFita: 0, valFuros: 0, total: 0 };
+    const acc = { qtd: 0, area: 0, fita: 0, furos: 0, valArea: 0, valFita: 0, valFuros: 0, total: 0 };
     for (const b of imageBudgets) {
+      acc.qtd += b.quantidade;
       acc.area += b.areaM2Total;
       acc.fita += b.fitaMTotal;
       acc.furos += b.furosTotal;
@@ -632,7 +633,7 @@ export function OrcamentoSimplesDialog({
 
       <div class="info">
         <div><b>Data:</b> ${today}</div>
-        ${imageBudgets.length > 0 ? `<div><b>Itens:</b> ${imageBudgets.length}</div>` : ""}
+        ${imageBudgets.length > 0 ? `<div><b>Itens:</b> ${imageBudgets.length}</div><div><b>Qtd total:</b> ${imageTotals.qtd}</div>` : ""}
         ${budgets.length > 0 ? `<div><b>Chapas:</b> ${budgets.length}</div>` : ""}
         ${aspireBudgets.length > 0 ? `<div><b>Peças usinadas:</b> ${aspireBudgets.length}</div>` : ""}
       </div>
@@ -647,7 +648,8 @@ export function OrcamentoSimplesDialog({
         </tr></thead>
         <tbody>${imageRows}
           <tr class="total-row">
-            <td colspan="2" class="r">TOTAIS</td>
+            <td class="r">TOTAIS</td>
+            <td class="c">${imageTotals.qtd}</td>
             <td class="r">${imageTotals.area.toFixed(3)} m²</td>
             <td class="r">${imageTotals.fita.toFixed(2)} m</td>
             <td class="c">${imageTotals.furos}</td>
@@ -1003,7 +1005,8 @@ export function OrcamentoSimplesDialog({
                           );
                         })}
                         <tr className="bg-muted/50 border-t-2 border-border font-semibold">
-                          <td className="px-2 py-1.5 text-right" colSpan={2}>TOTAIS</td>
+                          <td className="px-2 py-1.5 text-right">TOTAIS</td>
+                          <td className="px-2 py-1.5 text-center">{imageTotals.qtd}</td>
                           <td className="px-2 py-1.5 text-right font-mono">{imageTotals.area.toFixed(3)} m²</td>
                           <td></td>
                           <td className="px-2 py-1.5 text-right font-mono">{imageTotals.fita.toFixed(2)} m</td>

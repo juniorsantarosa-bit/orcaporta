@@ -217,10 +217,39 @@ export function ClientesDialog({ open, onOpenChange, selectedClientId, onSelect 
                   </div>
 
                   <div className="border-t border-border pt-3">
-                    <div className="text-xs font-semibold uppercase text-muted-foreground mb-2">
-                      Valores Negociados
+                    <div className="text-xs font-semibold uppercase text-primary mb-2">
+                      Orçamento por Imagem (m² · fita · dobradiças)
                     </div>
                     <div className="grid grid-cols-3 gap-3">
+                      <div>
+                        <Label className="text-[10px] uppercase">R$ por m² da peça</Label>
+                        <Input type="number" step="0.01" min={0}
+                          value={editing.precos.precoM2 ?? 0}
+                          onChange={(e) => updatePreco("precoM2", e.target.value)} />
+                      </div>
+                      <div>
+                        <Label className="text-[10px] uppercase">R$/m fita de borda</Label>
+                        <Input type="number" step="0.01" min={0}
+                          value={editing.precos.precoFitaMetro ?? 0}
+                          onChange={(e) => updatePreco("precoFitaMetro", e.target.value)} />
+                      </div>
+                      <div>
+                        <Label className="text-[10px] uppercase">R$ por furo dobradiça</Label>
+                        <Input type="number" step="0.01" min={0}
+                          value={editing.precos.precoFuroDobradica ?? 0}
+                          onChange={(e) => updatePreco("precoFuroDobradica", e.target.value)} />
+                      </div>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mt-2">
+                      Fita dupla (provençal): cobra externa + interna automaticamente (2 × perímetro).
+                    </p>
+                  </div>
+
+                  <details className="border-t border-border pt-3">
+                    <summary className="text-xs font-semibold uppercase text-muted-foreground mb-2 cursor-pointer hover:text-foreground">
+                      Valores legados (corte CNC / Aspire)
+                    </summary>
+                    <div className="grid grid-cols-3 gap-3 mt-2">
                       <div>
                         <Label className="text-[10px] uppercase">R$ corte (chapa)</Label>
                         <Input type="number" step="0.01" min={0}
@@ -264,7 +293,7 @@ export function ClientesDialog({ open, onOpenChange, selectedClientId, onSelect 
                           onChange={(e) => updatePreco("serraMetro", e.target.value)} />
                       </div>
                     </div>
-                  </div>
+                  </details>
                 </div>
               </ScrollArea>
             )}
