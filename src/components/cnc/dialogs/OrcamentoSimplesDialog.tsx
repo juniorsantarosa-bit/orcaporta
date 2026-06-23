@@ -718,6 +718,14 @@ export function OrcamentoSimplesDialog({
 
       ${observacoes ? `<div class="obs"><b>Observações</b>${escapeHtml(observacoes).replace(/\n/g, "<br/>")}</div>` : ""}
 
+      ${imagemReferencia ? `
+        <div style="margin-top:12px;page-break-inside:avoid">
+          <h2>Imagem de Referência</h2>
+          <div style="text-align:center;padding:8px;border:1px solid #ddd;border-radius:4px;background:#fafafa">
+            <img src="${imagemReferencia}" alt="Referência" style="max-width:100%;max-height:340px;object-fit:contain" />
+          </div>
+        </div>` : ""}
+
       ${totals.descontoPct > 0 ? `
         <div style="margin-top:12px;padding:8px 12px;border:1px solid #ccc;border-radius:4px;display:flex;justify-content:space-between;font-size:12px">
           <span>Subtotal</span><span>R$ ${totals.subtotalBruto.toFixed(2)}</span>
