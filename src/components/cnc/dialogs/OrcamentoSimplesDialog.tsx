@@ -485,6 +485,11 @@ export function OrcamentoSimplesDialog({
       observacoes,
       descontoPct: totals.descontoPct,
       imagemReferencia: imagemReferencia || undefined,
+      incluirMaterial,
+      materialPrecoChapa6: matPreco6,
+      materialPrecoChapa15: matPreco15,
+      materialQtdChapa6: matQtd6Override ?? materialInfo.qtd6,
+      materialQtdChapa15: matQtd15Override ?? materialInfo.qtd15,
     });
     onSavedQuote?.(saved.id);
     setDirty(false);
