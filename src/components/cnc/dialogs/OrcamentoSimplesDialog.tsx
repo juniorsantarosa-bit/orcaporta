@@ -1191,6 +1191,26 @@ export function OrcamentoSimplesDialog({
                 />
               </div>
 
+              {/* Desconto */}
+              <div className="rounded border border-border bg-muted/30 p-3 flex items-center gap-4">
+                <div className="flex-1">
+                  <Label className="text-[10px] uppercase text-muted-foreground">Desconto neste orçamento (%)</Label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Input
+                      type="number" min={0} max={100} step="0.5"
+                      value={descontoPct}
+                      onChange={(e) => setDescontoPct(Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)))}
+                      className="h-8 w-24 text-xs"
+                    />
+                    <span className="text-xs text-muted-foreground">
+                      {totals.descontoPct > 0
+                        ? <>Subtotal: <b className="text-foreground">R$ {totals.subtotalBruto.toFixed(2)}</b> · Desconto: <b className="text-emerald-500">− R$ {totals.valorDesconto.toFixed(2)}</b></>
+                        : "Sem desconto"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
               <div className={budgets.length > 0 ? "grid grid-cols-2 gap-2" : ""}>
                 {budgets.length > 0 && (
                   <div className="rounded border border-border bg-muted/40 p-3 flex flex-col">
@@ -1201,6 +1221,7 @@ export function OrcamentoSimplesDialog({
                 <div className="rounded border-2 border-primary/40 bg-primary/5 p-3 flex flex-col">
                   <span className="text-[10px] uppercase text-muted-foreground">
                     {budgets.length > 0 ? "Total com Furos" : "Total"}
+                    {totals.descontoPct > 0 ? ` (após ${totals.descontoPct.toFixed(1)}% desc.)` : ""}
                   </span>
                   <span className="text-lg font-bold text-primary">R$ {totals.valorTotal.toFixed(2)}</span>
                 </div>
