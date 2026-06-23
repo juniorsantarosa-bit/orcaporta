@@ -445,6 +445,7 @@ export function OrcamentoSimplesDialog({
       pieceMeta,
       totalCalculado: totals.valorTotal,
       observacoes,
+      descontoPct: totals.descontoPct,
     });
     onSavedQuote?.(saved.id);
     setDirty(false);
