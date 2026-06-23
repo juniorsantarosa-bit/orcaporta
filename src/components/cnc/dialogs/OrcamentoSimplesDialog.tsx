@@ -944,7 +944,79 @@ export function OrcamentoSimplesDialog({
                 </div>
               )}
 
-              {/* Resumo Serra */}
+              {/* Resumo Imagem (m²/fita/dobradiças) */}
+              {imageBudgets.length > 0 && (
+                <div className="space-y-1.5">
+                  <div className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">
+                    Peças por Imagem — Área · Fita · Dobradiças
+                  </div>
+                  <div className="border border-border rounded overflow-hidden">
+                    <table className="w-full text-xs">
+                      <thead className="bg-muted">
+                        <tr className="text-[10px] uppercase text-muted-foreground">
+                          <th className="px-2 py-2 text-left">Peça</th>
+                          <th className="px-2 py-2 text-center w-12">Qt</th>
+                          <th className="px-2 py-2 text-right w-20">Área/un</th>
+                          <th className="px-2 py-2 text-center w-24" title="Fita dupla = externa + interna (provençal)">Fita dupla</th>
+                          <th className="px-2 py-2 text-right w-20">Fita m/un</th>
+                          <th className="px-2 py-2 text-center w-16">Dobr.</th>
+                          <th className="px-2 py-2 text-right w-20">Unitário</th>
+                          <th className="px-2 py-2 text-right w-20">Subtotal</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {imageBudgets.map(b => {
+                          const p = pieces.find(pp => pp.id === b.pieceId)!;
+                          return (
+                            <tr key={b.pieceId} className="border-t border-border">
+                              <td className="px-2 py-1.5">
+                                <div className="font-medium truncate max-w-[260px]">{b.descricao}</div>
+                                <div className="text-[10px] text-muted-foreground font-mono">{b.largura}×{b.altura}×{b.espessura} mm</div>
+                              </td>
+                              <td className="px-1 py-1.5 text-center">{b.quantidade}</td>
+                              <td className="px-2 py-1.5 text-right font-mono">{b.areaM2Unit.toFixed(3)}</td>
+                              <td className="px-1 py-1.5 text-center">
+                                <Checkbox
+                                  checked={b.dupla}
+                                  onCheckedChange={(v) => onUpdatePiece?.(b.pieceId, { bordaDuplaProvencal: !!v })}
+                                />
+                              </td>
+                              <td className="px-1 py-1.5 text-right">
+                                <Input
+                                  type="number" step="0.01" min={0}
+                                  value={b.fitaMUnit.toFixed(2)}
+                                  onChange={(e) => onUpdatePiece?.(b.pieceId, { fitaMetrosOverride: parseFloat(e.target.value) || 0 })}
+                                  className="h-7 text-[11px] text-right font-mono"
+                                />
+                              </td>
+                              <td className="px-1 py-1.5 text-center">
+                                <Input
+                                  type="number" min={0}
+                                  value={p.furosDobradica ?? 0}
+                                  onChange={(e) => onUpdatePiece?.(b.pieceId, { furosDobradica: parseInt(e.target.value) || 0 })}
+                                  className="h-7 text-[11px] text-center"
+                                />
+                              </td>
+                              <td className="px-2 py-1.5 text-right font-mono">R$ {b.totalUnit.toFixed(2)}</td>
+                              <td className="px-2 py-1.5 text-right font-semibold">R$ {b.totalAll.toFixed(2)}</td>
+                            </tr>
+                          );
+                        })}
+                        <tr className="bg-muted/50 border-t-2 border-border font-semibold">
+                          <td className="px-2 py-1.5 text-right" colSpan={2}>TOTAIS</td>
+                          <td className="px-2 py-1.5 text-right font-mono">{imageTotals.area.toFixed(3)} m²</td>
+                          <td></td>
+                          <td className="px-2 py-1.5 text-right font-mono">{imageTotals.fita.toFixed(2)} m</td>
+                          <td className="px-2 py-1.5 text-center">{imageTotals.furos}</td>
+                          <td></td>
+                          <td className="px-2 py-1.5 text-right text-primary">R$ {imageTotals.total.toFixed(2)}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
               {budgets.length > 0 && (
                 <div className="space-y-1.5">
                   <div className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">Corte em Serra</div>
