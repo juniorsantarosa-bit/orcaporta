@@ -244,8 +244,9 @@ export function OrcamentoSimplesDialog({
   }, [imagePieces, prices]);
 
   const imageTotals = useMemo(() => {
-    const acc = { area: 0, fita: 0, furos: 0, valArea: 0, valFita: 0, valFuros: 0, total: 0 };
+    const acc = { qtd: 0, area: 0, fita: 0, furos: 0, valArea: 0, valFita: 0, valFuros: 0, total: 0 };
     for (const b of imageBudgets) {
+      acc.qtd += b.quantidade;
       acc.area += b.areaM2Total;
       acc.fita += b.fitaMTotal;
       acc.furos += b.furosTotal;
