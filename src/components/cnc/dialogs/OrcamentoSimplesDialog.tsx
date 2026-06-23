@@ -284,6 +284,24 @@ export function OrcamentoSimplesDialog({
     return acc;
   }, [imageBudgets]);
 
+  /** Material para portas provençais: 1 chapa 6mm + 1 chapa 15mm por área. */
+  const materialInfo = useMemo(() => {
+    const SHEET_AREA_M2 = (1.84 * 2.75); // 5.06 m²
+    const provencalPieces = pieces.filter(p => p.provencal && p.source !== "aspire");
+    const totalPortas = provencalPieces.reduce((a, p) => a + Math.max(1, p.quantidade || 1), 0);
+    const totalAreaM2 = provencalPieces.reduce(
+      (a, p) => a + (p.largura * p.altura * Math.max(1, p.quantidade || 1)) / 1_000_000, 0,
+    );
+    const estimadoChapas = totalAreaM2 > 0 ? Math.max(1, Math.ceil(totalAreaM2 / SHEET_AREA_M2)) : 0;
+    const qtd6 = matQtd6Override ?? estimadoChapas;
+    const qtd15 = matQtd15Override ?? estimadoChapas;
+    const valor6 = qtd6 * (matPreco6 || 0);
+    const valor15 = qtd15 * (matPreco15 || 0);
+    const total = valor6 + valor15;
+    return { totalPortas, totalAreaM2, estimadoChapas, qtd6, qtd15, valor6, valor15, total };
+  }, [pieces, matPreco6, matPreco15, matQtd6Override, matQtd15Override]);
+
+
   const budgets = useMemo<SheetBudget[]>(() => {
     return layouts.map(sheet => {
       const numCortes = countSerraCuts(sheet);
