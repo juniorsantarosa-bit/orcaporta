@@ -115,6 +115,12 @@ export function OrcamentoSimplesDialog({
   const [pieceMeta, setPieceMeta] = useState<PieceMetaMap>({});
   const [descontoPct, setDescontoPct] = useState<number>(0);
   const [imagemReferencia, setImagemReferencia] = useState<string>("");
+  // ---- Material (chapas 6mm + 15mm para portas provençais) ----
+  const [incluirMaterial, setIncluirMaterial] = useState<boolean>(false);
+  const [matPreco6, setMatPreco6] = useState<number>(180);
+  const [matPreco15, setMatPreco15] = useState<number>(320);
+  const [matQtd6Override, setMatQtd6Override] = useState<number | null>(null);
+  const [matQtd15Override, setMatQtd15Override] = useState<number | null>(null);
 
   /** Marca quando há mudanças não salvas no orçamento atual. */
   const [dirty, setDirty] = useState(false);
