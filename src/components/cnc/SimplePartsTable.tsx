@@ -397,7 +397,17 @@ export function SimplePartsTable({ pieces, selectedId, onSelect, onUpdate, onDel
                             </PopoverContent>
                           </Popover>
                         </td>
+                        <td className="px-1 py-1 text-center" onClick={(e) => e.stopPropagation()}>
+                          <Checkbox
+                            checked={!!piece.provencal}
+                            onCheckedChange={(v) => onUpdate(piece.id, { provencal: !!v })}
+                          />
+                        </td>
                       </>
+                    )}
+
+                    {isAspire && (
+                      <td className="px-1 py-1 text-center text-muted-foreground">—</td>
                     )}
 
                     <td className="px-1 py-1 text-center" onClick={(e) => e.stopPropagation()}>
