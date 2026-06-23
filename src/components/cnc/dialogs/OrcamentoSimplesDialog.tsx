@@ -593,22 +593,69 @@ export function OrcamentoSimplesDialog({
       }
     });
 
+    // -------- Image-mode rows --------
+    let imageRows = "";
+    imageBudgets.forEach(b => {
+      imageRows += `<tr>
+        <td><b>${escapeHtml(b.descricao)}</b><div style="font-size:9px;color:#666">${b.largura}×${b.altura}×${b.espessura} mm${b.dupla ? " · <i>fita dupla (provençal)</i>" : ""}</div></td>
+        <td class="c">${b.quantidade}</td>
+        <td class="r">${b.areaM2Unit.toFixed(3)} m²<br/><span style="font-size:9px;color:#666">${b.areaM2Total.toFixed(3)} m² total</span></td>
+        <td class="r">${b.fitaMUnit.toFixed(2)} m<br/><span style="font-size:9px;color:#666">${b.fitaMTotal.toFixed(2)} m total</span></td>
+        <td class="c">${b.furosUnit}${b.furosUnit > 0 ? `<br/><span style="font-size:9px;color:#666">${b.furosTotal} total</span>` : ""}</td>
+        <td class="r">R$ ${b.totalUnit.toFixed(2)}</td>
+        <td class="r"><b>R$ ${b.totalAll.toFixed(2)}</b></td>
+      </tr>`;
+    });
+
+    // -------- Header da empresa --------
+    const headerCompany = `
+      <div class="header">
+        <div style="display:flex;align-items:center;gap:14px">
+          ${company.logoDataUrl ? `<img src="${company.logoDataUrl}" alt="Logo" style="max-height:54px;max-width:160px;object-fit:contain" />` : `<div class="logo">⚡ ${escapeHtml(company.nome || "MAXCUT")}</div>`}
+          <div style="font-size:10px;line-height:1.4;color:#444">
+            ${company.logoDataUrl ? `<div style="font-weight:700;font-size:13px;color:#000">${escapeHtml(company.nome)}</div>` : ""}
+            ${company.cnpj ? `<div>CNPJ/CPF: ${escapeHtml(company.cnpj)}</div>` : ""}
+            ${company.telefone ? `<div>${escapeHtml(company.telefone)}${company.email ? ` · ${escapeHtml(company.email)}` : ""}</div>` : (company.email ? `<div>${escapeHtml(company.email)}</div>` : "")}
+            ${company.endereco ? `<div>${escapeHtml(company.endereco)}</div>` : ""}
+          </div>
+        </div>
+        <div style="font-size:10px;color:#888;text-align:right">${today}</div>
+      </div>`;
+
     w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Orçamento</title>
       <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
       <style>${css}</style></head><body>
-      <div class="header">
-        <div class="logo">⚡ MAX<span class="green">CUT</span></div>
-        <div style="font-size:10px;color:#888">${today}</div>
-      </div>
-      <div class="title">ORÇAMENTO DE CORTE</div>
+      ${headerCompany}
+      <div class="title">ORÇAMENTO</div>
 
       ${clientBlock}
 
       <div class="info">
         <div><b>Data:</b> ${today}</div>
-        <div><b>Chapas:</b> ${budgets.length}</div>
-        <div><b>Peças usinadas:</b> ${aspireBudgets.length}</div>
+        ${imageBudgets.length > 0 ? `<div><b>Itens:</b> ${imageBudgets.length}</div>` : ""}
+        ${budgets.length > 0 ? `<div><b>Chapas:</b> ${budgets.length}</div>` : ""}
+        ${aspireBudgets.length > 0 ? `<div><b>Peças usinadas:</b> ${aspireBudgets.length}</div>` : ""}
       </div>
+
+      ${imageBudgets.length > 0 ? `
+      <h2>Peças (m² · fita de borda · dobradiças)</h2>
+      <table>
+        <thead><tr>
+          <th>Peça</th><th class="c">Qtd</th><th class="r">Área</th>
+          <th class="r">Fita</th><th class="c">Dobradiças</th>
+          <th class="r">Unitário</th><th class="r">Subtotal</th>
+        </tr></thead>
+        <tbody>${imageRows}
+          <tr class="total-row">
+            <td colspan="2" class="r">TOTAIS</td>
+            <td class="r">${imageTotals.area.toFixed(3)} m²</td>
+            <td class="r">${imageTotals.fita.toFixed(2)} m</td>
+            <td class="c">${imageTotals.furos}</td>
+            <td></td>
+            <td class="r">R$ ${imageTotals.total.toFixed(2)}</td>
+          </tr>
+        </tbody>
+      </table>` : ""}
 
       ${budgets.length > 0 ? `
       <h2>Corte em Serra (Chapas)</h2>
@@ -650,22 +697,18 @@ export function OrcamentoSimplesDialog({
       <div class="pricing">
         <div class="pricing-title">VALORES UNITÁRIOS APLICADOS${client ? ` — ${escapeHtml(client.nome)}` : ""}</div>
         <div>
-          Corte de serra (chapa): R$ ${prices.corte.toFixed(2)} cada · 
-          Corte por peça: R$ ${prices.cortePeca.toFixed(2)} cada · 
-          Fita de borda: R$ ${prices.fita.toFixed(2)}/m · 
-          Furo: R$ ${prices.furo.toFixed(2)} cada · 
-          Fresa (router): R$ ${prices.fresaMetro.toFixed(2)}/m · 
-          Serra (metro linear): R$ ${prices.serraMetro.toFixed(2)}/m
+          ${imageBudgets.length > 0 ? `m² peça: R$ ${(prices.precoM2 ?? 0).toFixed(2)} · Fita: R$ ${(prices.precoFitaMetro ?? 0).toFixed(2)}/m · Furo dobradiça: R$ ${(prices.precoFuroDobradica ?? 0).toFixed(2)} cada` : ""}
+          ${(budgets.length > 0 || aspireBudgets.length > 0) ? `<br/>Corte serra: R$ ${prices.corte.toFixed(2)} · Corte peça: R$ ${prices.cortePeca.toFixed(2)} · Fita: R$ ${prices.fita.toFixed(2)}/m · Fresa: R$ ${prices.fresaMetro.toFixed(2)}/m · Serra: R$ ${prices.serraMetro.toFixed(2)}/m` : ""}
         </div>
       </div>
 
       ${observacoes ? `<div class="obs"><b>Observações</b>${escapeHtml(observacoes).replace(/\n/g, "<br/>")}</div>` : ""}
 
       <div class="grand">
-        <span style="font-size:13px;font-weight:600;color:#555">Total sem furos: R$ ${totals.valorSemFuros.toFixed(2)}</span>
+        <span style="font-size:13px;font-weight:600;color:#555">${budgets.length > 0 ? `Total sem furos: R$ ${totals.valorSemFuros.toFixed(2)}` : ""}</span>
         <span>Total: R$ ${totals.valorTotal.toFixed(2)}</span>
       </div>
-      <div class="footer">Orçamento gerado em ${today} — Válido por 30 dias</div>
+      <div class="footer">${escapeHtml(company.rodape || "Orçamento válido por 30 dias")} — gerado em ${today}</div>
     </body></html>`);
     w.document.close();
     w.focus();
