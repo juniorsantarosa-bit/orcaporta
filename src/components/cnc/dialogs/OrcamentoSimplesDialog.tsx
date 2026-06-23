@@ -149,6 +149,11 @@ export function OrcamentoSimplesDialog({
         setPieceMeta(q.pieceMeta ?? {});
         setDescontoPct(q.descontoPct ?? 0);
         setImagemReferencia(q.imagemReferencia ?? "");
+        setIncluirMaterial(q.incluirMaterial ?? false);
+        setMatPreco6(q.materialPrecoChapa6 ?? 180);
+        setMatPreco15(q.materialPrecoChapa15 ?? 320);
+        setMatQtd6Override(q.materialQtdChapa6 ?? null);
+        setMatQtd15Override(q.materialQtdChapa15 ?? null);
         return;
       }
     }
@@ -159,6 +164,11 @@ export function OrcamentoSimplesDialog({
     setPieceMeta({});
     setDescontoPct(0);
     setImagemReferencia("");
+    setIncluirMaterial(false);
+    setMatPreco6(180);
+    setMatPreco15(320);
+    setMatQtd6Override(null);
+    setMatQtd15Override(null);
   }, [open, editingQuoteId, client]);
 
   // Reseta o flag dirty ao abrir/fechar
