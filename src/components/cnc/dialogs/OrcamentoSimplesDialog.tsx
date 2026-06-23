@@ -1184,6 +1184,39 @@ export function OrcamentoSimplesDialog({
                 </div>
               )}
 
+              {/* Imagem de referência */}
+              <div className="rounded border border-border bg-muted/30 p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <Label className="text-[10px] uppercase text-muted-foreground">
+                    Imagem de referência (sai no PDF)
+                  </Label>
+                  {imagemReferencia && (
+                    <Button variant="ghost" size="sm" className="h-6 text-[10px] gap-1 text-destructive"
+                      onClick={() => setImagemReferencia("")}>
+                      <Trash2 className="h-3 w-3" /> Remover
+                    </Button>
+                  )}
+                </div>
+                {imagemReferencia ? (
+                  <img src={imagemReferencia} alt="Referência"
+                    className="max-h-48 max-w-full rounded border border-border object-contain bg-white" />
+                ) : (
+                  <label className="flex items-center justify-center gap-2 h-20 border-2 border-dashed border-border rounded cursor-pointer hover:bg-muted/50 text-xs text-muted-foreground">
+                    <ImagePlus className="h-4 w-4" />
+                    Anexar imagem (PNG/JPG, máx 3 MB)
+                    <input type="file" accept="image/*" className="hidden"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (!f) return;
+                        if (f.size > 3 * 1024 * 1024) { toast.error("Imagem maior que 3 MB."); return; }
+                        const r = new FileReader();
+                        r.onload = (ev) => setImagemReferencia(String(ev.target?.result ?? ""));
+                        r.readAsDataURL(f);
+                      }} />
+                  </label>
+                )}
+              </div>
+
               {/* Observações */}
               <div>
                 <Label className="text-[10px] uppercase">Observações (saem no PDF)</Label>
