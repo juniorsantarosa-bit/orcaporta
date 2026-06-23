@@ -192,7 +192,9 @@ function parseLine(line: string): Move | null {
  *     within ±0.05 mm. That isolates the actual contour pass.
  */
 export function parseAspireFile(text: string): AspirePiece {
-  const lines = text.split(/\r?\n/);
+  // Aspire .tap files sometimes use CR-only line endings — split on any
+  // run of \r and/or \n so each motion ends up on its own line.
+  const lines = text.split(/[\r\n]+/);
 
   // Pass 1: scan all motions and find min Z reached on G1.
   let curX = 0, curY = 0, curZ = 0;
