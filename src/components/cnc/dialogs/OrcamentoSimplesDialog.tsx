@@ -9,7 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { NestingSheet } from "@/types/promob";
 import { CuttingPiece } from "@/types/cutting";
 import { Client, ClientPriceTable, PieceMetaMap, QuoteStatus } from "@/types/commercial";
-import { Calculator, Printer, RotateCcw, Save, UserCircle2 } from "lucide-react";
+import { Calculator, Printer, RotateCcw, Save, UserCircle2, ImagePlus, Trash2 } from "lucide-react";
 import { countSerraCuts } from "@/lib/serraOptimizer";
 import { toast } from "sonner";
 import { DEFAULT_PRICE_TABLE, getQuote, saveQuote } from "@/lib/commercialStore";
