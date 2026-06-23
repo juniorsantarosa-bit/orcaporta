@@ -88,6 +88,17 @@ export interface CuttingPiece {
   materialRecebido?: boolean;
   /** Endereço de entrega específico desta peça (se diferente do padrão) */
   enderecoEntrega?: string;
+
+  // -------- Orçamento por imagem (m²/fita/dobradiças) --------
+  /** Número de furos de dobradiça por unidade (cobrado por unidade) */
+  furosDobradica?: number;
+  /**
+   * Fita de borda DUPLA (provençal): cobra fita externa + interna
+   * (= 2 × perímetro). Default true quando importado por imagem.
+   */
+  bordaDuplaProvencal?: boolean;
+  /** Metros lineares de fita de borda por unidade — override manual */
+  fitaMetrosOverride?: number;
 }
 
 export interface SheetLayout {
