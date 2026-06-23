@@ -101,6 +101,12 @@ export interface CuttingPiece {
   fitaMetrosOverride?: number;
   /** Override do valor UNITÁRIO (R$ por unidade) para compensações/ajustes no orçamento */
   precoUnitarioOverride?: number;
+  /**
+   * Porta provençal: cada unidade consome 2 peças — uma de 15mm (fundo) e
+   * uma de 6mm (quadro), ambas nas mesmas dimensões. Usado para cálculo de
+   * material no orçamento.
+   */
+  provencal?: boolean;
 }
 
 export interface SheetLayout {
