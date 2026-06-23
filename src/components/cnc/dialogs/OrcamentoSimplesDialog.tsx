@@ -183,7 +183,7 @@ export function OrcamentoSimplesDialog({
     if (!open) { mountedRef.v = false; return; }
     if (!mountedRef.v) { mountedRef.v = true; return; }
     setDirty(true);
-  }, [pieces, layouts, observacoes, enderecoEntregaPadrao, status, descontoPct, imagemReferencia, mountedRef, open]);
+  }, [pieces, layouts, observacoes, enderecoEntregaPadrao, status, descontoPct, imagemReferencia, incluirMaterial, matPreco6, matPreco15, matQtd6Override, matQtd15Override, mountedRef, open]);
 
   // Bloqueia fechar a aba do navegador quando há orçamento não salvo
   useEffect(() => {
