@@ -140,6 +140,7 @@ export function OrcamentoSimplesDialog({
         setEnderecoEntregaPadrao(q.enderecoEntregaPadrao ?? "");
         setStatus(q.status);
         setPieceMeta(q.pieceMeta ?? {});
+        setDescontoPct(q.descontoPct ?? 0);
         return;
       }
     }
@@ -148,6 +149,7 @@ export function OrcamentoSimplesDialog({
     setEnderecoEntregaPadrao(client?.endereco ?? "");
     setStatus({ enviado: false, pago: false });
     setPieceMeta({});
+    setDescontoPct(0);
   }, [open, editingQuoteId, client]);
 
   // Reseta o flag dirty ao abrir/fechar
