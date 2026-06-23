@@ -672,7 +672,7 @@ export function OrcamentoSimplesDialog({
     setTimeout(() => w.print(), 400);
   };
 
-  const isEmpty = layouts.length === 0 && aspirePieces.length === 0;
+  const isEmpty = layouts.length === 0 && aspirePieces.length === 0 && imageBudgets.length === 0;
 
   /** Pergunta antes de fechar / imprimir se há mudanças não salvas */
   const confirmSaveBeforeAction = (action: () => void, actionLabel: string) => {
