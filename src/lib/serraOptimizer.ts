@@ -9,6 +9,7 @@
  */
 import { CuttingPiece } from "@/types/cutting";
 import { NestingSheet } from "@/types/promob";
+import { normalizeMaterialName } from "@/lib/materialUtils";
 
 export interface SerraOptions {
   sheetWidth: number;
@@ -150,10 +151,11 @@ export function optimizeSerra(
   // Group by material + thickness
   const byMaterial = new Map<string, CuttingPiece[]>();
   for (const piece of pieces) {
-    const normalizedMaterial = piece.material.trim().toLowerCase();
+    const material = normalizeMaterialName(piece.material, piece.descricao);
+    const normalizedMaterial = material.toLowerCase();
     const key = `${normalizedMaterial}|${piece.espessura}`;
     if (!byMaterial.has(key)) byMaterial.set(key, []);
-    byMaterial.get(key)!.push(piece);
+    byMaterial.get(key)!.push({ ...piece, material });
   }
 
   const allSheets: NestingSheet[] = [];

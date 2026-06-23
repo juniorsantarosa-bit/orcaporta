@@ -15,6 +15,7 @@ import { NestingSheet } from "@/types/promob";
 import { Client, SavedQuote } from "@/types/commercial";
 import { getClient } from "@/lib/commercialStore";
 import { optimizeSerra } from "@/lib/serraOptimizer";
+import { expandProvencalPiecesForSheets } from "@/lib/materialUtils";
 import {
   ResizableHandle,
   ResizablePanel,
@@ -164,11 +165,12 @@ export default function OrcamentoSimples() {
     toast.loading("Otimizando (modo Serra)...", { id: "opt" });
 
     setTimeout(() => {
-      const sawSheets = sawPieces.length > 0
-        ? optimizeSerra(sawPieces, {
+      const sawPiecesForOptimization = expandProvencalPiecesForSheets(sawPieces);
+      const sawSheets = sawPiecesForOptimization.length > 0
+        ? optimizeSerra(sawPiecesForOptimization, {
             sheetWidth: 1840, sheetHeight: 2750,
-            espessura: sawPieces[0]?.espessura ?? 15,
-            material: sawPieces[0]?.material ?? "MDF",
+            espessura: sawPiecesForOptimization[0]?.espessura ?? 15,
+            material: sawPiecesForOptimization[0]?.material ?? "MDF",
             gap: 4, refiloX: 8, refiloY: 8, allowRotation: true,
           })
         : [];
