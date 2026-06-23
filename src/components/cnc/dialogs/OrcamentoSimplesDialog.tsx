@@ -13,6 +13,7 @@ import { Calculator, Printer, RotateCcw, Save, UserCircle2 } from "lucide-react"
 import { countSerraCuts } from "@/lib/serraOptimizer";
 import { toast } from "sonner";
 import { DEFAULT_PRICE_TABLE, getQuote, saveQuote } from "@/lib/commercialStore";
+import { loadCompany, CompanyInfo } from "@/lib/companyStore";
 
 interface Props {
   open: boolean;
@@ -45,6 +46,9 @@ function loadPrices(): ClientPriceTable {
       fresaMetro: Number(v.fresaMetro) || DEFAULT_PRICE_TABLE.fresaMetro,
       serraMetro: Number(v.serraMetro) || DEFAULT_PRICE_TABLE.serraMetro,
       chapaM2: Number(v.chapaM2) || 0,
+      precoM2: Number(v.precoM2) || DEFAULT_PRICE_TABLE.precoM2,
+      precoFitaMetro: Number(v.precoFitaMetro) || DEFAULT_PRICE_TABLE.precoFitaMetro,
+      precoFuroDobradica: Number(v.precoFuroDobradica) || DEFAULT_PRICE_TABLE.precoFuroDobradica,
     };
   } catch {
     return DEFAULT_PRICE_TABLE;
