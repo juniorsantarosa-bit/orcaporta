@@ -142,6 +142,7 @@ export function OrcamentoSimplesDialog({
         setStatus(q.status);
         setPieceMeta(q.pieceMeta ?? {});
         setDescontoPct(q.descontoPct ?? 0);
+        setImagemReferencia(q.imagemReferencia ?? "");
         return;
       }
     }
@@ -151,6 +152,7 @@ export function OrcamentoSimplesDialog({
     setStatus({ enviado: false, pago: false });
     setPieceMeta({});
     setDescontoPct(0);
+    setImagemReferencia("");
   }, [open, editingQuoteId, client]);
 
   // Reseta o flag dirty ao abrir/fechar
