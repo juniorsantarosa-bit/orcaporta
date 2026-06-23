@@ -1300,42 +1300,52 @@ export function OrcamentoSimplesDialog({
                 {incluirMaterial && (
                   <>
                     <div className="text-[10px] text-muted-foreground">
-                      {materialInfo.totalPortas} porta(s) provençal · área total{" "}
+                      {materialInfo.totalPortas} porta(s) provençal · {materialInfo.groups.length} material(is)/cor(es) · área total{" "}
                       <b className="text-foreground">{materialInfo.totalAreaM2.toFixed(2)} m²</b>
-                      {" · "}estimativa <b className="text-foreground">{materialInfo.estimadoChapas}</b> chapa(s) por espessura.
+                      {" · "}estimativa total <b className="text-foreground">{materialInfo.estimadoChapas}</b> chapa(s) por espessura.
                       Os campos abaixo são editáveis.
                     </div>
                     <div className="grid grid-cols-[1fr_120px_120px_140px] gap-2 items-end">
-                      <div className="text-[11px] font-medium text-muted-foreground">Tipo</div>
+                      <div className="text-[11px] font-medium text-muted-foreground">Material / tipo</div>
                       <div className="text-[10px] uppercase text-muted-foreground">Qtd chapas</div>
                       <div className="text-[10px] uppercase text-muted-foreground">R$ por chapa</div>
                       <div className="text-[10px] uppercase text-muted-foreground text-right">Subtotal</div>
 
-                      <div className="text-xs">Chapa <b>6 mm</b> (quadro)</div>
-                      <Input type="number" min={0}
-                        value={matQtd6Override ?? materialInfo.qtd6}
-                        onChange={(e) => setMatQtd6Override(Math.max(0, parseInt(e.target.value) || 0))}
-                        className="h-8 text-xs" />
-                      <Input type="number" step="0.01" min={0}
-                        value={matPreco6}
-                        onChange={(e) => setMatPreco6(Math.max(0, parseFloat(e.target.value) || 0))}
-                        className="h-8 text-xs" />
-                      <div className="text-xs text-right font-semibold">R$ {materialInfo.valor6.toFixed(2)}</div>
+                      {materialInfo.groups.map((g) => (
+                        <div key={g.material} className="contents">
+                          <div className="text-xs"><b>{g.material}</b> · chapa <b>6 mm</b> (quadro)</div>
+                          <Input type="number" min={0}
+                            value={g.qtd6}
+                            onChange={(e) => {
+                              const qtd6 = Math.max(0, parseInt(e.target.value) || 0);
+                              setMatQtdOverrides(prev => ({ ...prev, [g.material]: { ...(prev[g.material] ?? {}), qtd6 } }));
+                            }}
+                            className="h-8 text-xs" />
+                          <Input type="number" step="0.01" min={0}
+                            value={matPreco6}
+                            onChange={(e) => setMatPreco6(Math.max(0, parseFloat(e.target.value) || 0))}
+                            className="h-8 text-xs" />
+                          <div className="text-xs text-right font-semibold">R$ {g.valor6.toFixed(2)}</div>
 
-                      <div className="text-xs">Chapa <b>15 mm</b> (fundo)</div>
-                      <Input type="number" min={0}
-                        value={matQtd15Override ?? materialInfo.qtd15}
-                        onChange={(e) => setMatQtd15Override(Math.max(0, parseInt(e.target.value) || 0))}
-                        className="h-8 text-xs" />
-                      <Input type="number" step="0.01" min={0}
-                        value={matPreco15}
-                        onChange={(e) => setMatPreco15(Math.max(0, parseFloat(e.target.value) || 0))}
-                        className="h-8 text-xs" />
-                      <div className="text-xs text-right font-semibold">R$ {materialInfo.valor15.toFixed(2)}</div>
+                          <div className="text-xs"><b>{g.material}</b> · chapa <b>15 mm</b> (fundo)</div>
+                          <Input type="number" min={0}
+                            value={g.qtd15}
+                            onChange={(e) => {
+                              const qtd15 = Math.max(0, parseInt(e.target.value) || 0);
+                              setMatQtdOverrides(prev => ({ ...prev, [g.material]: { ...(prev[g.material] ?? {}), qtd15 } }));
+                            }}
+                            className="h-8 text-xs" />
+                          <Input type="number" step="0.01" min={0}
+                            value={matPreco15}
+                            onChange={(e) => setMatPreco15(Math.max(0, parseFloat(e.target.value) || 0))}
+                            className="h-8 text-xs" />
+                          <div className="text-xs text-right font-semibold">R$ {g.valor15.toFixed(2)}</div>
+                        </div>
+                      ))}
                     </div>
                     <div className="flex items-center justify-between pt-2 border-t border-border/40">
                       <button type="button"
-                        onClick={() => { setMatQtd6Override(null); setMatQtd15Override(null); }}
+                        onClick={() => { setMatQtd6Override(null); setMatQtd15Override(null); setMatQtdOverrides({}); }}
                         className="text-[10px] text-muted-foreground hover:text-foreground underline">
                         ↺ Restaurar quantidades calculadas
                       </button>
