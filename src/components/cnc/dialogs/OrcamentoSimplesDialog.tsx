@@ -14,7 +14,7 @@ import { countSerraCuts } from "@/lib/serraOptimizer";
 import { toast } from "sonner";
 import { DEFAULT_PRICE_TABLE, getQuote, saveQuote } from "@/lib/commercialStore";
 import { loadCompany, CompanyInfo } from "@/lib/companyStore";
-import { normalizeMaterialName } from "@/lib/materialUtils";
+import { normalizeMaterialName, getDoorType, doorTypeSheetSpec, DOOR_TYPE_LABEL } from "@/lib/materialUtils";
 
 interface Props {
   open: boolean;
@@ -116,13 +116,15 @@ export function OrcamentoSimplesDialog({
   const [pieceMeta, setPieceMeta] = useState<PieceMetaMap>({});
   const [descontoPct, setDescontoPct] = useState<number>(0);
   const [imagemReferencia, setImagemReferencia] = useState<string>("");
-  // ---- Material (chapas 6mm + 15mm para portas provençais) ----
+  // ---- Material (chapas 6mm/15mm/18mm conforme tipo de porta) ----
   const [incluirMaterial, setIncluirMaterial] = useState<boolean>(false);
   const [matPreco6, setMatPreco6] = useState<number>(180);
   const [matPreco15, setMatPreco15] = useState<number>(320);
+  const [matPreco18, setMatPreco18] = useState<number>(380);
   const [matQtd6Override, setMatQtd6Override] = useState<number | null>(null);
   const [matQtd15Override, setMatQtd15Override] = useState<number | null>(null);
-  const [matQtdOverrides, setMatQtdOverrides] = useState<Record<string, { qtd6?: number; qtd15?: number }>>({});
+  /** Overrides por (material, espessura) — chave externa = material, chave interna = espessura. */
+  const [matQtdOverrides, setMatQtdOverrides] = useState<Record<string, Record<number, number>>>({});
 
   /** Marca quando há mudanças não salvas no orçamento atual. */
   const [dirty, setDirty] = useState(false);
@@ -154,18 +156,19 @@ export function OrcamentoSimplesDialog({
         setIncluirMaterial(q.incluirMaterial ?? false);
         setMatPreco6(q.materialPrecoChapa6 ?? 180);
         setMatPreco15(q.materialPrecoChapa15 ?? 320);
+        setMatPreco18(q.materialPrecoChapa18 ?? 380);
         setMatQtd6Override(null);
         setMatQtd15Override(null);
-        const savedOverrides: Record<string, { qtd6?: number; qtd15?: number }> = {};
+        const savedOverrides: Record<string, Record<number, number>> = {};
         for (const line of q.materialChapas ?? []) {
           const key = normalizeMaterialName(line.material);
-          savedOverrides[key] = {
-            ...(savedOverrides[key] ?? {}),
-            ...(line.espessura === 6 ? { qtd6: line.quantidade } : { qtd15: line.quantidade }),
-          };
+          savedOverrides[key] = { ...(savedOverrides[key] ?? {}), [line.espessura]: line.quantidade };
         }
         if (Object.keys(savedOverrides).length === 0 && (q.materialQtdChapa6 || q.materialQtdChapa15)) {
-          savedOverrides.MDF = { qtd6: q.materialQtdChapa6, qtd15: q.materialQtdChapa15 };
+          savedOverrides.MDF = {
+            ...(q.materialQtdChapa6 ? { 6: q.materialQtdChapa6 } : {}),
+            ...(q.materialQtdChapa15 ? { 15: q.materialQtdChapa15 } : {}),
+          };
         }
         setMatQtdOverrides(savedOverrides);
         return;
@@ -181,6 +184,7 @@ export function OrcamentoSimplesDialog({
     setIncluirMaterial(false);
     setMatPreco6(180);
     setMatPreco15(320);
+    setMatPreco18(380);
     setMatQtd6Override(null);
     setMatQtd15Override(null);
     setMatQtdOverrides({});
@@ -198,7 +202,7 @@ export function OrcamentoSimplesDialog({
     if (!open) { mountedRef.v = false; return; }
     if (!mountedRef.v) { mountedRef.v = true; return; }
     setDirty(true);
-  }, [pieces, layouts, observacoes, enderecoEntregaPadrao, status, descontoPct, imagemReferencia, incluirMaterial, matPreco6, matPreco15, matQtd6Override, matQtd15Override, matQtdOverrides, mountedRef, open]);
+  }, [pieces, layouts, observacoes, enderecoEntregaPadrao, status, descontoPct, imagemReferencia, incluirMaterial, matPreco6, matPreco15, matPreco18, matQtd6Override, matQtd15Override, matQtdOverrides, mountedRef, open]);
 
   // Bloqueia fechar a aba do navegador quando há orçamento não salvo
   useEffect(() => {
@@ -299,44 +303,72 @@ export function OrcamentoSimplesDialog({
     return acc;
   }, [imageBudgets]);
 
-  /** Material para portas provençais: mínimo 1 chapa 6mm + 1 chapa 15mm por material/cor. */
+  /** Material — chapas por (cor/tipo, espessura) conforme o tipo de porta de cada peça. */
   const materialInfo = useMemo(() => {
     const SHEET_AREA_M2 = (1.84 * 2.75); // 5.06 m²
-    const provencalPieces = pieces.filter(p => p.provencal && p.source !== "aspire");
-    const grouped = new Map<string, { material: string; totalPortas: number; totalAreaM2: number }>();
-    for (const p of provencalPieces) {
+    const precoPorEspessura = (esp: number) =>
+      esp === 6 ? matPreco6 : esp === 15 ? matPreco15 : esp === 18 ? matPreco18 : 0;
+
+    // doorPieces = todas as peças que entram no cálculo de chapa (modo imagem/manual)
+    const doorPieces = pieces.filter(p => p.source !== "aspire");
+
+    // grouped: material -> { types: doorTypes presentes (display), perEsp: { espessura -> areaM2 } }
+    const grouped = new Map<string, {
+      material: string;
+      totalPortas: number;
+      perEsp: Map<number, number>; // espessura -> área m² acumulada
+      types: Set<'single18' | 'provencal' | 'triple6'>;
+    }>();
+
+    for (const p of doorPieces) {
       const material = normalizeMaterialName(p.material, p.descricao);
       const qty = Math.max(1, p.quantidade || 1);
-      const cur = grouped.get(material) ?? { material, totalPortas: 0, totalAreaM2: 0 };
+      const type = getDoorType(p);
+      const spec = doorTypeSheetSpec(type);
+      const areaUnit = (p.largura * p.altura) / 1_000_000;
+      const cur = grouped.get(material) ?? {
+        material, totalPortas: 0, perEsp: new Map<number, number>(), types: new Set(),
+      };
       cur.totalPortas += qty;
-      cur.totalAreaM2 += (p.largura * p.altura * qty) / 1_000_000;
+      cur.types.add(type);
+      for (const { espessura, mult } of spec) {
+        cur.perEsp.set(espessura, (cur.perEsp.get(espessura) ?? 0) + areaUnit * qty * mult);
+      }
       grouped.set(material, cur);
     }
 
     const groups = Array.from(grouped.values()).map((g) => {
-      const estimadoChapas = g.totalAreaM2 > 0 ? Math.max(1, Math.ceil(g.totalAreaM2 / SHEET_AREA_M2)) : 0;
-      const override = matQtdOverrides[g.material] ?? {};
-      const qtd6 = override.qtd6 ?? estimadoChapas;
-      const qtd15 = override.qtd15 ?? estimadoChapas;
-      const valor6 = qtd6 * (matPreco6 || 0);
-      const valor15 = qtd15 * (matPreco15 || 0);
-      return { ...g, estimadoChapas, qtd6, qtd15, valor6, valor15, total: valor6 + valor15 };
-    });
+      const overrides = matQtdOverrides[g.material] ?? {};
+      const rows = Array.from(g.perEsp.entries())
+        .sort((a, b) => b[0] - a[0]) // 18, 15, 6
+        .map(([espessura, area]) => {
+          const estimado = area > 0 ? Math.max(1, Math.ceil(area / SHEET_AREA_M2)) : 0;
+          const qtd = overrides[espessura] ?? estimado;
+          const preco = precoPorEspessura(espessura) || 0;
+          const valor = qtd * preco;
+          return { espessura, areaM2: area, estimado, qtd, preco, valor };
+        });
+      const totalAreaM2 = rows.reduce((a, r) => a + r.areaM2, 0);
+      const total = rows.reduce((a, r) => a + r.valor, 0);
+      const tiposLabel = Array.from(g.types).map(t => DOOR_TYPE_LABEL[t]).join(' · ');
+      return { material: g.material, totalPortas: g.totalPortas, totalAreaM2, rows, total, tiposLabel };
+    }).filter(g => g.rows.length > 0);
 
     const totalPortas = groups.reduce((a, g) => a + g.totalPortas, 0);
     const totalAreaM2 = groups.reduce((a, g) => a + g.totalAreaM2, 0);
-    const estimadoChapas = groups.reduce((a, g) => a + g.estimadoChapas, 0);
-    const qtd6 = groups.reduce((a, g) => a + g.qtd6, 0);
-    const qtd15 = groups.reduce((a, g) => a + g.qtd15, 0);
-    const valor6 = groups.reduce((a, g) => a + g.valor6, 0);
-    const valor15 = groups.reduce((a, g) => a + g.valor15, 0);
-    const total = valor6 + valor15;
-    const materialChapas = groups.flatMap(g => ([
-      { material: g.material, espessura: 6 as const, quantidade: g.qtd6, precoChapa: matPreco6 || 0, valorTotal: g.valor6 },
-      { material: g.material, espessura: 15 as const, quantidade: g.qtd15, precoChapa: matPreco15 || 0, valorTotal: g.valor15 },
-    ]));
-    return { groups, materialChapas, totalPortas, totalAreaM2, estimadoChapas, qtd6, qtd15, valor6, valor15, total };
-  }, [pieces, matPreco6, matPreco15, matQtdOverrides]);
+    const total = groups.reduce((a, g) => a + g.total, 0);
+    const materialChapas = groups.flatMap(g => g.rows.map(r => ({
+      material: g.material,
+      espessura: r.espessura,
+      quantidade: r.qtd,
+      precoChapa: r.preco,
+      valorTotal: r.valor,
+    })));
+    // back-compat: somatórios 6/15 totais
+    const qtd6 = materialChapas.filter(l => l.espessura === 6).reduce((a, l) => a + l.quantidade, 0);
+    const qtd15 = materialChapas.filter(l => l.espessura === 15).reduce((a, l) => a + l.quantidade, 0);
+    return { groups, materialChapas, totalPortas, totalAreaM2, qtd6, qtd15, total };
+  }, [pieces, matPreco6, matPreco15, matPreco18, matQtdOverrides]);
 
 
   const budgets = useMemo<SheetBudget[]>(() => {
@@ -525,6 +557,7 @@ export function OrcamentoSimplesDialog({
       incluirMaterial,
       materialPrecoChapa6: matPreco6,
       materialPrecoChapa15: matPreco15,
+      materialPrecoChapa18: matPreco18,
       materialQtdChapa6: materialInfo.qtd6,
       materialQtdChapa15: materialInfo.qtd15,
       materialChapas: materialInfo.materialChapas,
@@ -805,10 +838,9 @@ export function OrcamentoSimplesDialog({
           <th>Item</th><th class="c">Qtd</th><th class="r">R$ / chapa</th><th class="r">Subtotal</th>
         </tr></thead>
         <tbody>
-          ${materialInfo.groups.map(g => `
-            <tr><td>${escapeHtml(g.material)} — chapa 6 mm (quadro provençal)</td><td class="c">${g.qtd6}</td><td class="r">R$ ${matPreco6.toFixed(2)}</td><td class="r">R$ ${g.valor6.toFixed(2)}</td></tr>
-            <tr><td>${escapeHtml(g.material)} — chapa 15 mm (fundo provençal)</td><td class="c">${g.qtd15}</td><td class="r">R$ ${matPreco15.toFixed(2)}</td><td class="r">R$ ${g.valor15.toFixed(2)}</td></tr>
-          `).join("")}
+          ${materialInfo.groups.map(g => g.rows.map(r => `
+            <tr><td>${escapeHtml(g.material)} — chapa ${r.espessura} mm</td><td class="c">${r.qtd}</td><td class="r">R$ ${r.preco.toFixed(2)}</td><td class="r">R$ ${r.valor.toFixed(2)}</td></tr>
+          `).join("")).join("")}
           <tr class="total-row"><td colspan="3" class="r">TOTAL MATERIAL</td><td class="r">R$ ${materialInfo.total.toFixed(2)}</td></tr>
         </tbody>
       </table>` : ""}
@@ -1288,58 +1320,59 @@ export function OrcamentoSimplesDialog({
                 </div>
               )}
 
-              {/* Material — chapas 6mm + 15mm (portas provençais) */}
+              {/* Material — chapas conforme tipo de porta (6/15/18 mm) */}
               <div className="rounded border border-border bg-muted/30 p-3 space-y-2">
                 <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer">
                   <Checkbox
                     checked={incluirMaterial}
                     onCheckedChange={(v) => setIncluirMaterial(!!v)}
                   />
-                  <span>Incluir material no orçamento (chapas 6mm + 15mm — provençal)</span>
+                  <span>Incluir material no orçamento (chapas — conforme tipo de porta de cada peça)</span>
                 </label>
                 {incluirMaterial && (
                   <>
                     <div className="text-[10px] text-muted-foreground">
-                      {materialInfo.totalPortas} porta(s) provençal · {materialInfo.groups.length} material(is)/cor(es) · área total{" "}
+                      {materialInfo.totalPortas} porta(s) · {materialInfo.groups.length} material(is)/cor(es) · área total{" "}
                       <b className="text-foreground">{materialInfo.totalAreaM2.toFixed(2)} m²</b>
-                      {" · "}estimativa total <b className="text-foreground">{materialInfo.estimadoChapas}</b> chapa(s) por espessura.
-                      Os campos abaixo são editáveis.
+                      {". "}As quantidades estimadas e os preços por chapa abaixo são editáveis.
                     </div>
-                    <div className="grid grid-cols-[1fr_120px_120px_140px] gap-2 items-end">
-                      <div className="text-[11px] font-medium text-muted-foreground">Material / tipo</div>
+                    <div className="grid grid-cols-[1fr_110px_120px_130px] gap-2 items-end">
+                      <div className="text-[11px] font-medium text-muted-foreground">Material / espessura</div>
                       <div className="text-[10px] uppercase text-muted-foreground">Qtd chapas</div>
                       <div className="text-[10px] uppercase text-muted-foreground">R$ por chapa</div>
                       <div className="text-[10px] uppercase text-muted-foreground text-right">Subtotal</div>
 
                       {materialInfo.groups.map((g) => (
                         <div key={g.material} className="contents">
-                          <div className="text-xs"><b>{g.material}</b> · chapa <b>6 mm</b> (quadro)</div>
-                          <Input type="number" min={0}
-                            value={g.qtd6}
-                            onChange={(e) => {
-                              const qtd6 = Math.max(0, parseInt(e.target.value) || 0);
-                              setMatQtdOverrides(prev => ({ ...prev, [g.material]: { ...(prev[g.material] ?? {}), qtd6 } }));
-                            }}
-                            className="h-8 text-xs" />
-                          <Input type="number" step="0.01" min={0}
-                            value={matPreco6}
-                            onChange={(e) => setMatPreco6(Math.max(0, parseFloat(e.target.value) || 0))}
-                            className="h-8 text-xs" />
-                          <div className="text-xs text-right font-semibold">R$ {g.valor6.toFixed(2)}</div>
-
-                          <div className="text-xs"><b>{g.material}</b> · chapa <b>15 mm</b> (fundo)</div>
-                          <Input type="number" min={0}
-                            value={g.qtd15}
-                            onChange={(e) => {
-                              const qtd15 = Math.max(0, parseInt(e.target.value) || 0);
-                              setMatQtdOverrides(prev => ({ ...prev, [g.material]: { ...(prev[g.material] ?? {}), qtd15 } }));
-                            }}
-                            className="h-8 text-xs" />
-                          <Input type="number" step="0.01" min={0}
-                            value={matPreco15}
-                            onChange={(e) => setMatPreco15(Math.max(0, parseFloat(e.target.value) || 0))}
-                            className="h-8 text-xs" />
-                          <div className="text-xs text-right font-semibold">R$ {g.valor15.toFixed(2)}</div>
+                          <div className="col-span-4 text-[10px] text-muted-foreground border-t border-border/40 pt-1.5 mt-1">
+                            <b className="text-foreground">{g.material}</b> · {g.totalPortas} porta(s) · {g.totalAreaM2.toFixed(2)} m²
+                            <span className="ml-1 text-[9px] uppercase opacity-70">[{g.tiposLabel}]</span>
+                          </div>
+                          {g.rows.map((r) => (
+                            <div key={r.espessura} className="contents">
+                              <div className="text-xs">chapa <b>{r.espessura} mm</b></div>
+                              <Input type="number" min={0}
+                                value={r.qtd}
+                                onChange={(e) => {
+                                  const qtd = Math.max(0, parseInt(e.target.value) || 0);
+                                  setMatQtdOverrides(prev => ({
+                                    ...prev,
+                                    [g.material]: { ...(prev[g.material] ?? {}), [r.espessura]: qtd },
+                                  }));
+                                }}
+                                className="h-8 text-xs" />
+                              <Input type="number" step="0.01" min={0}
+                                value={r.preco}
+                                onChange={(e) => {
+                                  const v = Math.max(0, parseFloat(e.target.value) || 0);
+                                  if (r.espessura === 6) setMatPreco6(v);
+                                  else if (r.espessura === 15) setMatPreco15(v);
+                                  else if (r.espessura === 18) setMatPreco18(v);
+                                }}
+                                className="h-8 text-xs" />
+                              <div className="text-xs text-right font-semibold">R$ {r.valor.toFixed(2)}</div>
+                            </div>
+                          ))}
                         </div>
                       ))}
                     </div>

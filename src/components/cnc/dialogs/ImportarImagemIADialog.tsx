@@ -5,10 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { CuttingPiece } from "@/types/cutting";
-import { ImagePlus, Loader2, Sparkles, AlertTriangle, Trash2 } from "lucide-react";
+import { ImagePlus, Loader2, Sparkles, AlertTriangle, Trash2, Layers } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { normalizeMaterialName } from "@/lib/materialUtils";
+import { normalizeMaterialName, DOOR_TYPE_LABEL } from "@/lib/materialUtils";
+
+type DoorType = 'single18' | 'provencal' | 'triple6';
 
 interface Props {
   open: boolean;
@@ -50,12 +52,14 @@ export function ImportarImagemIADialog({ open, onOpenChange, onImport }: Props) 
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ExtractionResult | null>(null);
   const [pieces, setPieces] = useState<ExtractedPiece[]>([]);
+  const [doorType, setDoorType] = useState<DoorType>('provencal');
 
   const reset = useCallback(() => {
     setFile(null);
     setPreviewUrl(null);
     setResult(null);
     setPieces([]);
+    // mantém doorType para o próximo import
   }, []);
 
   const runExtraction = useCallback(async (dataUrl: string) => {
@@ -124,10 +128,11 @@ export function ImportarImagemIADialog({ open, onOpenChange, onImport }: Props) 
       bordaEsq: true,
       bordaDir: true,
       veio: false,
-      observacao: `IA · item ${p.item} · conf ${(p.confidence * 100).toFixed(0)}%`,
+      observacao: `IA · item ${p.item} · conf ${(p.confidence * 100).toFixed(0)}% · ${DOOR_TYPE_LABEL[doorType]}`,
       furosDobradica: p.furosDobradica || 0,
-      bordaDuplaProvencal: true,
-      provencal: true,
+      bordaDuplaProvencal: doorType === 'provencal',
+      doorType,
+      provencal: doorType === 'provencal',
       source: "manual",
     }));
     onImport(cuttingPieces);
@@ -155,26 +160,57 @@ export function ImportarImagemIADialog({ open, onOpenChange, onImport }: Props) 
         </DialogHeader>
 
         {!previewUrl ? (
-          <div
-            className="border-2 border-dashed border-border rounded-lg p-12 text-center cursor-pointer hover:border-primary/50 transition-colors flex-1 flex flex-col items-center justify-center"
-            onClick={() => fileRef.current?.click()}
-          >
-            <input
-              ref={fileRef}
-              type="file"
-              className="hidden"
-              accept="image/*"
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) handleFile(f);
-              }}
-            />
-            <ImagePlus className="h-16 w-16 mx-auto text-muted-foreground mb-3" />
-            <p className="text-base text-muted-foreground">Clique para enviar uma imagem do projeto</p>
-            <p className="text-xs text-muted-foreground mt-2">
-              A IA lê a tabela, conta furos de dobradiça e valida as cotas — automaticamente.
-            </p>
-            <p className="text-[10px] text-muted-foreground mt-1">PNG, JPG, WEBP — até ~10 MB.</p>
+          <div className="flex-1 flex flex-col gap-4">
+            {/* Seletor obrigatório de tipo de porta — antes da IA ler */}
+            <div className="rounded-lg border border-border bg-muted/30 p-3">
+              <div className="flex items-center gap-2 text-xs font-semibold mb-2">
+                <Layers className="h-4 w-4 text-primary" />
+                Tipo de porta (define quantas chapas de cada espessura serão orçadas)
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {(['single18','provencal','triple6'] as const).map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setDoorType(t)}
+                    className={`text-left rounded border px-3 py-2 text-xs transition-colors ${
+                      doorType === t
+                        ? 'border-primary bg-primary/10 text-foreground'
+                        : 'border-border hover:bg-muted/50 text-muted-foreground'
+                    }`}
+                  >
+                    <div className="font-semibold text-foreground">{DOOR_TYPE_LABEL[t]}</div>
+                    <div className="text-[10px] mt-0.5 text-muted-foreground">
+                      {t === 'single18' && 'Porta lisa — 1 chapa única de 18mm.'}
+                      {t === 'provencal' && 'Frente + fundo — chapa 6mm sobre chapa 15mm.'}
+                      {t === 'triple6' && 'Três chapas 6mm coladas (faceadas) formando 18mm.'}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div
+              className="border-2 border-dashed border-border rounded-lg p-12 text-center cursor-pointer hover:border-primary/50 transition-colors flex-1 flex flex-col items-center justify-center"
+              onClick={() => fileRef.current?.click()}
+            >
+              <input
+                ref={fileRef}
+                type="file"
+                className="hidden"
+                accept="image/*"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) handleFile(f);
+                }}
+              />
+              <ImagePlus className="h-16 w-16 mx-auto text-muted-foreground mb-3" />
+              <p className="text-base text-muted-foreground">Clique para enviar uma imagem do projeto</p>
+              <p className="text-xs text-muted-foreground mt-2">
+                A IA lê a tabela, conta furos de dobradiça e valida as cotas — automaticamente.
+              </p>
+              <p className="text-[10px] text-muted-foreground mt-1">PNG, JPG, WEBP — até ~10 MB.</p>
+            </div>
           </div>
         ) : (
           <div className="flex-1 grid grid-cols-2 gap-3 overflow-hidden">
