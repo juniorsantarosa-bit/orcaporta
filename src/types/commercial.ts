@@ -79,8 +79,8 @@ export type PieceMetaMap = Record<number, PieceReceiptStatus>;
 export interface MaterialQuoteLine {
   /** Tipo/cor do MDF, ex: Branco TX */
   material: string;
-  /** Espessura da chapa */
-  espessura: 6 | 15;
+  /** Espessura da chapa (6, 15 ou 18 mm conforme o tipo de porta) */
+  espessura: number;
   /** Quantidade de chapas usada no orçamento */
   quantidade: number;
   /** Valor unitário da chapa */
@@ -120,6 +120,8 @@ export interface SavedQuote {
   materialPrecoChapa6?: number;
   /** Preço por chapa de 15mm (R$) — usado no cálculo de material */
   materialPrecoChapa15?: number;
+  /** Preço por chapa de 18mm (R$) — usado no cálculo de material */
+  materialPrecoChapa18?: number;
   /** Quantidade override (manual) de chapas 6mm */
   materialQtdChapa6?: number;
   /** Quantidade override (manual) de chapas 15mm */

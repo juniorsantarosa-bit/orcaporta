@@ -103,10 +103,17 @@ export interface CuttingPiece {
   precoUnitarioOverride?: number;
   /**
    * Porta provençal: cada unidade consome 2 peças — uma de 15mm (fundo) e
-   * uma de 6mm (quadro), ambas nas mesmas dimensões. Usado para cálculo de
-   * material no orçamento.
+   * uma de 6mm (quadro), ambas nas mesmas dimensões.
+   * @deprecated use `doorType` ('provencal'). Mantido para retrocompat.
    */
   provencal?: boolean;
+  /**
+   * Tipo da porta para cálculo de chapas:
+   *  - 'single18'  → 1 chapa 18mm
+   *  - 'provencal' → 1 chapa 15mm + 1 chapa 6mm (frente provençal)
+   *  - 'triple6'   → 3 chapas 6mm coladas (forma 18mm)
+   */
+  doorType?: 'single18' | 'provencal' | 'triple6';
 }
 
 export interface SheetLayout {
