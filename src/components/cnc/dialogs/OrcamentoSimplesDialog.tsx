@@ -837,10 +837,9 @@ export function OrcamentoSimplesDialog({
           <th>Item</th><th class="c">Qtd</th><th class="r">R$ / chapa</th><th class="r">Subtotal</th>
         </tr></thead>
         <tbody>
-          ${materialInfo.groups.map(g => `
-            <tr><td>${escapeHtml(g.material)} — chapa 6 mm (quadro provençal)</td><td class="c">${g.qtd6}</td><td class="r">R$ ${matPreco6.toFixed(2)}</td><td class="r">R$ ${g.valor6.toFixed(2)}</td></tr>
-            <tr><td>${escapeHtml(g.material)} — chapa 15 mm (fundo provençal)</td><td class="c">${g.qtd15}</td><td class="r">R$ ${matPreco15.toFixed(2)}</td><td class="r">R$ ${g.valor15.toFixed(2)}</td></tr>
-          `).join("")}
+          ${materialInfo.groups.map(g => g.rows.map(r => `
+            <tr><td>${escapeHtml(g.material)} — chapa ${r.espessura} mm</td><td class="c">${r.qtd}</td><td class="r">R$ ${r.preco.toFixed(2)}</td><td class="r">R$ ${r.valor.toFixed(2)}</td></tr>
+          `).join("")).join("")}
           <tr class="total-row"><td colspan="3" class="r">TOTAL MATERIAL</td><td class="r">R$ ${materialInfo.total.toFixed(2)}</td></tr>
         </tbody>
       </table>` : ""}
@@ -1320,58 +1319,59 @@ export function OrcamentoSimplesDialog({
                 </div>
               )}
 
-              {/* Material — chapas 6mm + 15mm (portas provençais) */}
+              {/* Material — chapas conforme tipo de porta (6/15/18 mm) */}
               <div className="rounded border border-border bg-muted/30 p-3 space-y-2">
                 <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer">
                   <Checkbox
                     checked={incluirMaterial}
                     onCheckedChange={(v) => setIncluirMaterial(!!v)}
                   />
-                  <span>Incluir material no orçamento (chapas 6mm + 15mm — provençal)</span>
+                  <span>Incluir material no orçamento (chapas — conforme tipo de porta de cada peça)</span>
                 </label>
                 {incluirMaterial && (
                   <>
                     <div className="text-[10px] text-muted-foreground">
-                      {materialInfo.totalPortas} porta(s) provençal · {materialInfo.groups.length} material(is)/cor(es) · área total{" "}
+                      {materialInfo.totalPortas} porta(s) · {materialInfo.groups.length} material(is)/cor(es) · área total{" "}
                       <b className="text-foreground">{materialInfo.totalAreaM2.toFixed(2)} m²</b>
-                      {" · "}estimativa total <b className="text-foreground">{materialInfo.estimadoChapas}</b> chapa(s) por espessura.
-                      Os campos abaixo são editáveis.
+                      {". "}As quantidades estimadas e os preços por chapa abaixo são editáveis.
                     </div>
-                    <div className="grid grid-cols-[1fr_120px_120px_140px] gap-2 items-end">
-                      <div className="text-[11px] font-medium text-muted-foreground">Material / tipo</div>
+                    <div className="grid grid-cols-[1fr_110px_120px_130px] gap-2 items-end">
+                      <div className="text-[11px] font-medium text-muted-foreground">Material / espessura</div>
                       <div className="text-[10px] uppercase text-muted-foreground">Qtd chapas</div>
                       <div className="text-[10px] uppercase text-muted-foreground">R$ por chapa</div>
                       <div className="text-[10px] uppercase text-muted-foreground text-right">Subtotal</div>
 
                       {materialInfo.groups.map((g) => (
                         <div key={g.material} className="contents">
-                          <div className="text-xs"><b>{g.material}</b> · chapa <b>6 mm</b> (quadro)</div>
-                          <Input type="number" min={0}
-                            value={g.qtd6}
-                            onChange={(e) => {
-                              const qtd6 = Math.max(0, parseInt(e.target.value) || 0);
-                              setMatQtdOverrides(prev => ({ ...prev, [g.material]: { ...(prev[g.material] ?? {}), qtd6 } }));
-                            }}
-                            className="h-8 text-xs" />
-                          <Input type="number" step="0.01" min={0}
-                            value={matPreco6}
-                            onChange={(e) => setMatPreco6(Math.max(0, parseFloat(e.target.value) || 0))}
-                            className="h-8 text-xs" />
-                          <div className="text-xs text-right font-semibold">R$ {g.valor6.toFixed(2)}</div>
-
-                          <div className="text-xs"><b>{g.material}</b> · chapa <b>15 mm</b> (fundo)</div>
-                          <Input type="number" min={0}
-                            value={g.qtd15}
-                            onChange={(e) => {
-                              const qtd15 = Math.max(0, parseInt(e.target.value) || 0);
-                              setMatQtdOverrides(prev => ({ ...prev, [g.material]: { ...(prev[g.material] ?? {}), qtd15 } }));
-                            }}
-                            className="h-8 text-xs" />
-                          <Input type="number" step="0.01" min={0}
-                            value={matPreco15}
-                            onChange={(e) => setMatPreco15(Math.max(0, parseFloat(e.target.value) || 0))}
-                            className="h-8 text-xs" />
-                          <div className="text-xs text-right font-semibold">R$ {g.valor15.toFixed(2)}</div>
+                          <div className="col-span-4 text-[10px] text-muted-foreground border-t border-border/40 pt-1.5 mt-1">
+                            <b className="text-foreground">{g.material}</b> · {g.totalPortas} porta(s) · {g.totalAreaM2.toFixed(2)} m²
+                            <span className="ml-1 text-[9px] uppercase opacity-70">[{g.tiposLabel}]</span>
+                          </div>
+                          {g.rows.map((r) => (
+                            <div key={r.espessura} className="contents">
+                              <div className="text-xs">chapa <b>{r.espessura} mm</b></div>
+                              <Input type="number" min={0}
+                                value={r.qtd}
+                                onChange={(e) => {
+                                  const qtd = Math.max(0, parseInt(e.target.value) || 0);
+                                  setMatQtdOverrides(prev => ({
+                                    ...prev,
+                                    [g.material]: { ...(prev[g.material] ?? {}), [r.espessura]: qtd },
+                                  }));
+                                }}
+                                className="h-8 text-xs" />
+                              <Input type="number" step="0.01" min={0}
+                                value={r.preco}
+                                onChange={(e) => {
+                                  const v = Math.max(0, parseFloat(e.target.value) || 0);
+                                  if (r.espessura === 6) setMatPreco6(v);
+                                  else if (r.espessura === 15) setMatPreco15(v);
+                                  else if (r.espessura === 18) setMatPreco18(v);
+                                }}
+                                className="h-8 text-xs" />
+                              <div className="text-xs text-right font-semibold">R$ {r.valor.toFixed(2)}</div>
+                            </div>
+                          ))}
                         </div>
                       ))}
                     </div>
