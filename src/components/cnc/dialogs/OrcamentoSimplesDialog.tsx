@@ -14,7 +14,7 @@ import { countSerraCuts } from "@/lib/serraOptimizer";
 import { toast } from "sonner";
 import { DEFAULT_PRICE_TABLE, getQuote, saveQuote } from "@/lib/commercialStore";
 import { loadCompany, CompanyInfo } from "@/lib/companyStore";
-import { normalizeMaterialName } from "@/lib/materialUtils";
+import { normalizeMaterialName, getDoorType, doorTypeSheetSpec, DOOR_TYPE_LABEL } from "@/lib/materialUtils";
 
 interface Props {
   open: boolean;
@@ -116,13 +116,15 @@ export function OrcamentoSimplesDialog({
   const [pieceMeta, setPieceMeta] = useState<PieceMetaMap>({});
   const [descontoPct, setDescontoPct] = useState<number>(0);
   const [imagemReferencia, setImagemReferencia] = useState<string>("");
-  // ---- Material (chapas 6mm + 15mm para portas provençais) ----
+  // ---- Material (chapas 6mm/15mm/18mm conforme tipo de porta) ----
   const [incluirMaterial, setIncluirMaterial] = useState<boolean>(false);
   const [matPreco6, setMatPreco6] = useState<number>(180);
   const [matPreco15, setMatPreco15] = useState<number>(320);
+  const [matPreco18, setMatPreco18] = useState<number>(380);
   const [matQtd6Override, setMatQtd6Override] = useState<number | null>(null);
   const [matQtd15Override, setMatQtd15Override] = useState<number | null>(null);
-  const [matQtdOverrides, setMatQtdOverrides] = useState<Record<string, { qtd6?: number; qtd15?: number }>>({});
+  /** Overrides por (material, espessura) — chave externa = material, chave interna = espessura. */
+  const [matQtdOverrides, setMatQtdOverrides] = useState<Record<string, Record<number, number>>>({});
 
   /** Marca quando há mudanças não salvas no orçamento atual. */
   const [dirty, setDirty] = useState(false);
@@ -154,18 +156,19 @@ export function OrcamentoSimplesDialog({
         setIncluirMaterial(q.incluirMaterial ?? false);
         setMatPreco6(q.materialPrecoChapa6 ?? 180);
         setMatPreco15(q.materialPrecoChapa15 ?? 320);
+        setMatPreco18(q.materialPrecoChapa18 ?? 380);
         setMatQtd6Override(null);
         setMatQtd15Override(null);
-        const savedOverrides: Record<string, { qtd6?: number; qtd15?: number }> = {};
+        const savedOverrides: Record<string, Record<number, number>> = {};
         for (const line of q.materialChapas ?? []) {
           const key = normalizeMaterialName(line.material);
-          savedOverrides[key] = {
-            ...(savedOverrides[key] ?? {}),
-            ...(line.espessura === 6 ? { qtd6: line.quantidade } : { qtd15: line.quantidade }),
-          };
+          savedOverrides[key] = { ...(savedOverrides[key] ?? {}), [line.espessura]: line.quantidade };
         }
         if (Object.keys(savedOverrides).length === 0 && (q.materialQtdChapa6 || q.materialQtdChapa15)) {
-          savedOverrides.MDF = { qtd6: q.materialQtdChapa6, qtd15: q.materialQtdChapa15 };
+          savedOverrides.MDF = {
+            ...(q.materialQtdChapa6 ? { 6: q.materialQtdChapa6 } : {}),
+            ...(q.materialQtdChapa15 ? { 15: q.materialQtdChapa15 } : {}),
+          };
         }
         setMatQtdOverrides(savedOverrides);
         return;
@@ -181,6 +184,7 @@ export function OrcamentoSimplesDialog({
     setIncluirMaterial(false);
     setMatPreco6(180);
     setMatPreco15(320);
+    setMatPreco18(380);
     setMatQtd6Override(null);
     setMatQtd15Override(null);
     setMatQtdOverrides({});
@@ -198,7 +202,7 @@ export function OrcamentoSimplesDialog({
     if (!open) { mountedRef.v = false; return; }
     if (!mountedRef.v) { mountedRef.v = true; return; }
     setDirty(true);
-  }, [pieces, layouts, observacoes, enderecoEntregaPadrao, status, descontoPct, imagemReferencia, incluirMaterial, matPreco6, matPreco15, matQtd6Override, matQtd15Override, matQtdOverrides, mountedRef, open]);
+  }, [pieces, layouts, observacoes, enderecoEntregaPadrao, status, descontoPct, imagemReferencia, incluirMaterial, matPreco6, matPreco15, matPreco18, matQtd6Override, matQtd15Override, matQtdOverrides, mountedRef, open]);
 
   // Bloqueia fechar a aba do navegador quando há orçamento não salvo
   useEffect(() => {
