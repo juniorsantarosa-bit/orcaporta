@@ -5,10 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { CuttingPiece } from "@/types/cutting";
-import { ImagePlus, Loader2, Sparkles, AlertTriangle, Trash2 } from "lucide-react";
+import { ImagePlus, Loader2, Sparkles, AlertTriangle, Trash2, Layers } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { normalizeMaterialName } from "@/lib/materialUtils";
+import { normalizeMaterialName, DOOR_TYPE_LABEL } from "@/lib/materialUtils";
+
+type DoorType = 'single18' | 'provencal' | 'triple6';
 
 interface Props {
   open: boolean;
@@ -50,12 +52,14 @@ export function ImportarImagemIADialog({ open, onOpenChange, onImport }: Props) 
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ExtractionResult | null>(null);
   const [pieces, setPieces] = useState<ExtractedPiece[]>([]);
+  const [doorType, setDoorType] = useState<DoorType>('provencal');
 
   const reset = useCallback(() => {
     setFile(null);
     setPreviewUrl(null);
     setResult(null);
     setPieces([]);
+    // mantém doorType para o próximo import
   }, []);
 
   const runExtraction = useCallback(async (dataUrl: string) => {
@@ -124,10 +128,11 @@ export function ImportarImagemIADialog({ open, onOpenChange, onImport }: Props) 
       bordaEsq: true,
       bordaDir: true,
       veio: false,
-      observacao: `IA · item ${p.item} · conf ${(p.confidence * 100).toFixed(0)}%`,
+      observacao: `IA · item ${p.item} · conf ${(p.confidence * 100).toFixed(0)}% · ${DOOR_TYPE_LABEL[doorType]}`,
       furosDobradica: p.furosDobradica || 0,
-      bordaDuplaProvencal: true,
-      provencal: true,
+      bordaDuplaProvencal: doorType === 'provencal',
+      doorType,
+      provencal: doorType === 'provencal',
       source: "manual",
     }));
     onImport(cuttingPieces);
