@@ -557,6 +557,7 @@ export function OrcamentoSimplesDialog({
       incluirMaterial,
       materialPrecoChapa6: matPreco6,
       materialPrecoChapa15: matPreco15,
+      materialPrecoChapa18: matPreco18,
       materialQtdChapa6: materialInfo.qtd6,
       materialQtdChapa15: materialInfo.qtd15,
       materialChapas: materialInfo.materialChapas,
