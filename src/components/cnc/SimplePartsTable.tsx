@@ -66,7 +66,7 @@ export function SimplePartsTable({ pieces, selectedId, onSelect, onUpdate, onDel
                 <th className="text-center px-1 py-1.5 w-8" title="Borda Esq">E</th>
                 <th className="text-center px-1 py-1.5 w-8" title="Borda Dir">D</th>
                 <th className="text-center px-1 py-1.5 w-10" title="Fita manual (recortes internos / curvos)">F.man</th>
-                <th className="text-center px-1 py-1.5 w-10" title="Porta provençal — consome 1 chapa 15mm + 1 chapa 6mm">Prov</th>
+                <th className="text-center px-1 py-1.5 w-24" title="Tipo de porta — define quantas chapas e espessuras serão orçadas">Tipo</th>
                 <th className="text-center px-1 py-1.5 w-12" title="Furos">Furos</th>
                 <th className="text-center px-1 py-1.5 w-8" title="Chapa">Ch</th>
                 <th className="text-center px-1 py-1.5 w-8" title="Excluir"></th>
@@ -408,10 +408,19 @@ export function SimplePartsTable({ pieces, selectedId, onSelect, onUpdate, onDel
                           </Popover>
                         </td>
                         <td className="px-1 py-1 text-center" onClick={(e) => e.stopPropagation()}>
-                          <Checkbox
-                            checked={!!piece.provencal}
-                            onCheckedChange={(v) => onUpdate(piece.id, { provencal: !!v })}
-                          />
+                          <select
+                            value={piece.doorType ?? (piece.provencal ? 'provencal' : 'single18')}
+                            onChange={(e) => {
+                              const v = e.target.value as 'single18' | 'provencal' | 'triple6';
+                              onUpdate(piece.id, { doorType: v, provencal: v === 'provencal' });
+                            }}
+                            className="h-6 text-[10px] px-1 rounded bg-background border border-border w-full"
+                            title="Tipo de porta"
+                          >
+                            <option value="single18">1× 18mm</option>
+                            <option value="provencal">15+6mm</option>
+                            <option value="triple6">3× 6mm</option>
+                          </select>
                         </td>
                       </>
                     )}
