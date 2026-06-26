@@ -303,44 +303,72 @@ export function OrcamentoSimplesDialog({
     return acc;
   }, [imageBudgets]);
 
-  /** Material para portas provençais: mínimo 1 chapa 6mm + 1 chapa 15mm por material/cor. */
+  /** Material — chapas por (cor/tipo, espessura) conforme o tipo de porta de cada peça. */
   const materialInfo = useMemo(() => {
     const SHEET_AREA_M2 = (1.84 * 2.75); // 5.06 m²
-    const provencalPieces = pieces.filter(p => p.provencal && p.source !== "aspire");
-    const grouped = new Map<string, { material: string; totalPortas: number; totalAreaM2: number }>();
-    for (const p of provencalPieces) {
+    const precoPorEspessura = (esp: number) =>
+      esp === 6 ? matPreco6 : esp === 15 ? matPreco15 : esp === 18 ? matPreco18 : 0;
+
+    // doorPieces = todas as peças que entram no cálculo de chapa (modo imagem/manual)
+    const doorPieces = pieces.filter(p => p.source !== "aspire");
+
+    // grouped: material -> { types: doorTypes presentes (display), perEsp: { espessura -> areaM2 } }
+    const grouped = new Map<string, {
+      material: string;
+      totalPortas: number;
+      perEsp: Map<number, number>; // espessura -> área m² acumulada
+      types: Set<'single18' | 'provencal' | 'triple6'>;
+    }>();
+
+    for (const p of doorPieces) {
       const material = normalizeMaterialName(p.material, p.descricao);
       const qty = Math.max(1, p.quantidade || 1);
-      const cur = grouped.get(material) ?? { material, totalPortas: 0, totalAreaM2: 0 };
+      const type = getDoorType(p);
+      const spec = doorTypeSheetSpec(type);
+      const areaUnit = (p.largura * p.altura) / 1_000_000;
+      const cur = grouped.get(material) ?? {
+        material, totalPortas: 0, perEsp: new Map<number, number>(), types: new Set(),
+      };
       cur.totalPortas += qty;
-      cur.totalAreaM2 += (p.largura * p.altura * qty) / 1_000_000;
+      cur.types.add(type);
+      for (const { espessura, mult } of spec) {
+        cur.perEsp.set(espessura, (cur.perEsp.get(espessura) ?? 0) + areaUnit * qty * mult);
+      }
       grouped.set(material, cur);
     }
 
     const groups = Array.from(grouped.values()).map((g) => {
-      const estimadoChapas = g.totalAreaM2 > 0 ? Math.max(1, Math.ceil(g.totalAreaM2 / SHEET_AREA_M2)) : 0;
-      const override = matQtdOverrides[g.material] ?? {};
-      const qtd6 = override.qtd6 ?? estimadoChapas;
-      const qtd15 = override.qtd15 ?? estimadoChapas;
-      const valor6 = qtd6 * (matPreco6 || 0);
-      const valor15 = qtd15 * (matPreco15 || 0);
-      return { ...g, estimadoChapas, qtd6, qtd15, valor6, valor15, total: valor6 + valor15 };
-    });
+      const overrides = matQtdOverrides[g.material] ?? {};
+      const rows = Array.from(g.perEsp.entries())
+        .sort((a, b) => b[0] - a[0]) // 18, 15, 6
+        .map(([espessura, area]) => {
+          const estimado = area > 0 ? Math.max(1, Math.ceil(area / SHEET_AREA_M2)) : 0;
+          const qtd = overrides[espessura] ?? estimado;
+          const preco = precoPorEspessura(espessura) || 0;
+          const valor = qtd * preco;
+          return { espessura, areaM2: area, estimado, qtd, preco, valor };
+        });
+      const totalAreaM2 = rows.reduce((a, r) => a + r.areaM2, 0);
+      const total = rows.reduce((a, r) => a + r.valor, 0);
+      const tiposLabel = Array.from(g.types).map(t => DOOR_TYPE_LABEL[t]).join(' · ');
+      return { material: g.material, totalPortas: g.totalPortas, totalAreaM2, rows, total, tiposLabel };
+    }).filter(g => g.rows.length > 0);
 
     const totalPortas = groups.reduce((a, g) => a + g.totalPortas, 0);
     const totalAreaM2 = groups.reduce((a, g) => a + g.totalAreaM2, 0);
-    const estimadoChapas = groups.reduce((a, g) => a + g.estimadoChapas, 0);
-    const qtd6 = groups.reduce((a, g) => a + g.qtd6, 0);
-    const qtd15 = groups.reduce((a, g) => a + g.qtd15, 0);
-    const valor6 = groups.reduce((a, g) => a + g.valor6, 0);
-    const valor15 = groups.reduce((a, g) => a + g.valor15, 0);
-    const total = valor6 + valor15;
-    const materialChapas = groups.flatMap(g => ([
-      { material: g.material, espessura: 6 as const, quantidade: g.qtd6, precoChapa: matPreco6 || 0, valorTotal: g.valor6 },
-      { material: g.material, espessura: 15 as const, quantidade: g.qtd15, precoChapa: matPreco15 || 0, valorTotal: g.valor15 },
-    ]));
-    return { groups, materialChapas, totalPortas, totalAreaM2, estimadoChapas, qtd6, qtd15, valor6, valor15, total };
-  }, [pieces, matPreco6, matPreco15, matQtdOverrides]);
+    const total = groups.reduce((a, g) => a + g.total, 0);
+    const materialChapas = groups.flatMap(g => g.rows.map(r => ({
+      material: g.material,
+      espessura: r.espessura,
+      quantidade: r.qtd,
+      precoChapa: r.preco,
+      valorTotal: r.valor,
+    })));
+    // back-compat: somatórios 6/15 totais
+    const qtd6 = materialChapas.filter(l => l.espessura === 6).reduce((a, l) => a + l.quantidade, 0);
+    const qtd15 = materialChapas.filter(l => l.espessura === 15).reduce((a, l) => a + l.quantidade, 0);
+    return { groups, materialChapas, totalPortas, totalAreaM2, qtd6, qtd15, total };
+  }, [pieces, matPreco6, matPreco15, matPreco18, matQtdOverrides]);
 
 
   const budgets = useMemo<SheetBudget[]>(() => {
