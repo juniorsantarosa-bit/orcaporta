@@ -66,21 +66,25 @@ Deno.serve(async (req) => {
     return Response.json({ error: "LOVABLE_API_KEY ausente" }, { status: 500, headers: CORS });
   }
 
-  let body: { imageDataUrl?: string };
+  let body: { imageDataUrl?: string; reviewMode?: boolean };
   try {
     body = await req.json();
   } catch {
     return Response.json({ error: "JSON inválido" }, { status: 400, headers: CORS });
   }
-  const { imageDataUrl } = body;
+  const { imageDataUrl, reviewMode } = body;
   if (!imageDataUrl || typeof imageDataUrl !== "string" || !imageDataUrl.startsWith("data:image/")) {
     return Response.json({ error: "imageDataUrl deve ser um data:image/...;base64,..." }, { status: 400, headers: CORS });
   }
 
+  const reviewSuffix = reviewMode
+    ? `\n\nMODO REVISÃO CRÍTICA: Uma primeira leitura teve baixa confiança. RELEIA a imagem com atenção redobrada. Compare CADA valor da tabela COM as cotas escritas no desenho. Se a tabela diz "313x675" mas o desenho mostra "314x675", ajuste para o valor CORRETO e liste a correção em "divergencias". Confidence só pode ser >=0.95 se você tiver certeza absoluta.`
+    : "";
+
   const payload = {
     model: "google/gemini-2.5-flash",
     messages: [
-      { role: "system", content: SYSTEM_PROMPT },
+      { role: "system", content: SYSTEM_PROMPT + reviewSuffix },
       {
         role: "user",
         content: [
