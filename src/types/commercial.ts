@@ -112,6 +112,10 @@ export interface SavedQuote {
   observacoes?: string;
   /** Desconto percentual aplicado no total (0-100) */
   descontoPct?: number;
+  /** Imposto percentual aplicado no total (0-100) */
+  impostoPct?: number;
+  /** Valor do imposto calculado sobre o total (R$) */
+  valorImposto?: number;
   /** Imagem de referência anexa (data URL) — mostrada no PDF */
   imagemReferencia?: string;
   /** Incluir material (chapas 6mm + 15mm provençal) no orçamento */
