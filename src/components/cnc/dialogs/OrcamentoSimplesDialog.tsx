@@ -524,7 +524,7 @@ export function OrcamentoSimplesDialog({
       impostoPct: impostoPctClamp, valorImposto, valorTotalSemImposto,
       valorTotal, valorSemFuros, valorFuros, materialTotal,
     };
-  }, [budgets, aspireBudgets, imageTotals, descontoPct, incluirMaterial, materialInfo]);
+  }, [budgets, aspireBudgets, imageTotals, descontoPct, impostoPct, incluirMaterial, materialInfo]);
 
   // -------- handlers --------
 
