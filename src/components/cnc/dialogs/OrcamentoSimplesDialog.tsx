@@ -115,6 +115,7 @@ export function OrcamentoSimplesDialog({
   const [status, setStatus] = useState<QuoteStatus>({ enviado: false, pago: false });
   const [pieceMeta, setPieceMeta] = useState<PieceMetaMap>({});
   const [descontoPct, setDescontoPct] = useState<number>(0);
+  const [impostoPct, setImpostoPct] = useState<number>(0);
   const [imagemReferencia, setImagemReferencia] = useState<string>("");
   // ---- Material (chapas 6mm/15mm/18mm conforme tipo de porta) ----
   const [incluirMaterial, setIncluirMaterial] = useState<boolean>(false);
