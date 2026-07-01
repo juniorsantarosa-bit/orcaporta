@@ -1472,6 +1472,26 @@ export function OrcamentoSimplesDialog({
                 </div>
               </div>
 
+              {/* Imposto */}
+              <div className="rounded border border-border bg-muted/30 p-3 flex items-center gap-4">
+                <div className="flex-1">
+                  <Label className="text-[10px] uppercase text-muted-foreground">Imposto (%)</Label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Input
+                      type="number" min={0} max={100} step="0.5"
+                      value={impostoPct}
+                      onChange={(e) => setImpostoPct(Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)))}
+                      className="h-8 w-24 text-xs"
+                    />
+                    <span className="text-xs text-muted-foreground">
+                      {totals.impostoPct > 0
+                        ? <>Total sem imposto: <b className="text-foreground">R$ {totals.valorTotalSemImposto.toFixed(2)}</b> · Imposto: <b className="text-amber-500">+ R$ {totals.valorImposto.toFixed(2)}</b></>
+                        : "Sem imposto"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
               <div className={budgets.length > 0 ? "grid grid-cols-2 gap-2" : ""}>
                 {budgets.length > 0 && (
                   <div className="rounded border border-border bg-muted/40 p-3 flex flex-col">
