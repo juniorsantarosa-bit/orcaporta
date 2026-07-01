@@ -40,6 +40,7 @@ interface PageSource {
   cotas?: number[];
   divergencias?: string[];
   count?: number;
+  reviewed?: boolean;
 }
 
 function fileToDataUrl(file: File): Promise<string> {
