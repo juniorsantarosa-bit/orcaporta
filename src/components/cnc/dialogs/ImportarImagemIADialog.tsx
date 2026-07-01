@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { CuttingPiece } from "@/types/cutting";
-import { ImagePlus, Loader2, Sparkles, AlertTriangle, Trash2, Layers } from "lucide-react";
+import { ImagePlus, Loader2, Sparkles, AlertTriangle, Trash2, Layers, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { normalizeMaterialName, DOOR_TYPE_LABEL } from "@/lib/materialUtils";
@@ -28,12 +28,18 @@ interface ExtractedPiece {
   quantidade: number;
   furosDobradica: number;
   confidence: number;
+  _sourceLabel?: string;
 }
 
-interface ExtractionResult {
-  pieces: ExtractedPiece[];
-  cotasNoDesenho: number[];
-  divergencias: string[];
+interface PageSource {
+  id: string;
+  label: string;      // e.g. "arquivo.pdf · p.2" ou "foto.jpg"
+  dataUrl: string;    // thumbnail / imagem enviada à IA
+  status: 'pending' | 'processing' | 'done' | 'error';
+  error?: string;
+  cotas?: number[];
+  divergencias?: string[];
+  count?: number;
 }
 
 function fileToDataUrl(file: File): Promise<string> {
@@ -45,60 +51,132 @@ function fileToDataUrl(file: File): Promise<string> {
   });
 }
 
+async function pdfPagesToDataUrls(file: File): Promise<string[]> {
+  // pdfjs-dist v6 — legacy build funciona bem em Vite/browser
+  const pdfjs: any = await import("pdfjs-dist/legacy/build/pdf.mjs");
+  // worker via CDN — evita configurar bundler
+  const workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/legacy/build/pdf.worker.min.mjs`;
+  pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
+
+  const buf = await file.arrayBuffer();
+  const doc = await pdfjs.getDocument({ data: buf }).promise;
+  const urls: string[] = [];
+  for (let i = 1; i <= doc.numPages; i++) {
+    const page = await doc.getPage(i);
+    // resolução: alvo ~2000px na maior aresta para leitura de tabela
+    const baseViewport = page.getViewport({ scale: 1 });
+    const target = 2000;
+    const scale = Math.min(3, target / Math.max(baseViewport.width, baseViewport.height));
+    const viewport = page.getViewport({ scale });
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.ceil(viewport.width);
+    canvas.height = Math.ceil(viewport.height);
+    const ctx = canvas.getContext("2d")!;
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    await page.render({ canvasContext: ctx, viewport, canvas }).promise;
+    urls.push(canvas.toDataURL("image/jpeg", 0.85));
+  }
+  return urls;
+}
+
 export function ImportarImagemIADialog({ open, onOpenChange, onImport }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
-  const [file, setFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<ExtractionResult | null>(null);
+  const [sources, setSources] = useState<PageSource[]>([]);
   const [pieces, setPieces] = useState<ExtractedPiece[]>([]);
+  const [loading, setLoading] = useState(false);
   const [doorType, setDoorType] = useState<DoorType>('provencal');
 
   const reset = useCallback(() => {
-    setFile(null);
-    setPreviewUrl(null);
-    setResult(null);
+    setSources([]);
     setPieces([]);
-    // mantém doorType para o próximo import
+    setLoading(false);
   }, []);
 
-  const runExtraction = useCallback(async (dataUrl: string) => {
-    setLoading(true);
+  const extractOne = useCallback(async (src: PageSource): Promise<ExtractedPiece[]> => {
+    setSources(prev => prev.map(s => s.id === src.id ? { ...s, status: 'processing' } : s));
     try {
       const { data, error } = await supabase.functions.invoke("extract-pieces-from-image", {
-        body: { imageDataUrl: dataUrl },
+        body: { imageDataUrl: src.dataUrl },
       });
-      if (error) {
-        toast.error(error.message || "Falha ao analisar imagem.");
-        return;
-      }
-      const r = data as ExtractionResult;
-      if (!r?.pieces || r.pieces.length === 0) {
-        toast.error("A IA não conseguiu identificar peças nesta imagem.");
-        return;
-      }
-      setResult(r);
-      setPieces(r.pieces.map(p => ({ ...p, material: normalizeMaterialName(p.material, p.descricao) })));
-      toast.success(`${r.pieces.length} peça(s) extraída(s).`);
-    } catch (e) {
-      console.error(e);
-      toast.error("Erro inesperado ao chamar a IA.");
-    } finally {
-      setLoading(false);
+      if (error) throw new Error(error.message);
+      const r = data as { pieces: ExtractedPiece[]; cotasNoDesenho: number[]; divergencias: string[] };
+      const list = (r?.pieces ?? []).map(p => ({
+        ...p,
+        material: normalizeMaterialName(p.material, p.descricao),
+        _sourceLabel: src.label,
+      }));
+      setSources(prev => prev.map(s => s.id === src.id
+        ? { ...s, status: 'done', cotas: r?.cotasNoDesenho ?? [], divergencias: r?.divergencias ?? [], count: list.length }
+        : s));
+      return list;
+    } catch (e: any) {
+      const msg = e?.message || "Falha na análise";
+      setSources(prev => prev.map(s => s.id === src.id ? { ...s, status: 'error', error: msg } : s));
+      toast.error(`${src.label}: ${msg}`);
+      return [];
     }
   }, []);
 
-  const handleFile = async (f: File) => {
-    setFile(f);
-    setResult(null);
-    setPieces([]);
-    const url = await fileToDataUrl(f);
-    setPreviewUrl(url);
-    // Auto-extração: assim que a imagem é carregada, dispara a IA.
-    runExtraction(url);
-  };
+  const handleFiles = useCallback(async (files: File[]) => {
+    if (files.length === 0) return;
+    setLoading(true);
 
-  // Limpa estado ao fechar
+    // 1) expandir arquivos em páginas/imagens
+    const expanded: PageSource[] = [];
+    for (const f of files) {
+      try {
+        if (f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf")) {
+          const urls = await pdfPagesToDataUrls(f);
+          urls.forEach((u, i) => expanded.push({
+            id: `${f.name}-${i}-${Date.now()}-${Math.random()}`,
+            label: `${f.name} · p.${i + 1}`,
+            dataUrl: u,
+            status: 'pending',
+          }));
+        } else if (f.type.startsWith("image/")) {
+          const u = await fileToDataUrl(f);
+          expanded.push({
+            id: `${f.name}-${Date.now()}-${Math.random()}`,
+            label: f.name,
+            dataUrl: u,
+            status: 'pending',
+          });
+        } else {
+          toast.error(`Formato não suportado: ${f.name}`);
+        }
+      } catch (e: any) {
+        toast.error(`Erro lendo ${f.name}: ${e?.message || e}`);
+      }
+    }
+
+    if (expanded.length === 0) {
+      setLoading(false);
+      return;
+    }
+    setSources(prev => [...prev, ...expanded]);
+
+    // 2) chamar a IA em paralelo (limite simples de 3 por vez p/ não estourar gateway)
+    const queue = [...expanded];
+    const collected: ExtractedPiece[] = [];
+    const CONCURRENCY = 3;
+    await Promise.all(
+      Array.from({ length: CONCURRENCY }).map(async () => {
+        while (queue.length) {
+          const s = queue.shift()!;
+          const res = await extractOne(s);
+          collected.push(...res);
+        }
+      })
+    );
+
+    if (collected.length) {
+      setPieces(prev => [...prev, ...collected]);
+      toast.success(`${collected.length} peça(s) extraída(s) de ${expanded.length} página(s).`);
+    }
+    setLoading(false);
+  }, [extractOne]);
+
   useEffect(() => { if (!open) reset(); }, [open, reset]);
 
   const updatePiece = (idx: number, patch: Partial<ExtractedPiece>) => {
@@ -115,7 +193,7 @@ export function ImportarImagemIADialog({ open, onOpenChange, onImport }: Props) 
     }
     const cuttingPieces: CuttingPiece[] = pieces.map((p, i) => ({
       id: Date.now() + i,
-      projeto: file?.name ?? "Imagem",
+      projeto: p._sourceLabel ?? "Imagem",
       cliente: "",
       descricao: p.descricao,
       largura: p.larguraMm,
@@ -128,7 +206,7 @@ export function ImportarImagemIADialog({ open, onOpenChange, onImport }: Props) 
       bordaEsq: true,
       bordaDir: true,
       veio: false,
-      observacao: `IA · item ${p.item} · conf ${(p.confidence * 100).toFixed(0)}% · ${DOOR_TYPE_LABEL[doorType]}`,
+      observacao: `IA · ${p._sourceLabel ?? ""} · item ${p.item} · conf ${(p.confidence * 100).toFixed(0)}% · ${DOOR_TYPE_LABEL[doorType]}`,
       furosDobradica: p.furosDobradica || 0,
       bordaDuplaProvencal: doorType === 'provencal',
       doorType,
@@ -149,19 +227,20 @@ export function ImportarImagemIADialog({ open, onOpenChange, onImport }: Props) 
   const confColor = (c: number) =>
     c >= 0.85 ? "text-emerald-500" : c >= 0.6 ? "text-amber-500" : "text-red-500";
 
+  const hasSources = sources.length > 0;
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-[1200px] h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="text-xl font-normal flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-primary" />
-            Importar Peças de Imagem (IA)
+            Importar Peças de Imagem/PDF (IA)
           </DialogTitle>
         </DialogHeader>
 
-        {!previewUrl ? (
+        {!hasSources ? (
           <div className="flex-1 flex flex-col gap-4">
-            {/* Seletor obrigatório de tipo de porta — antes da IA ler */}
             <div className="rounded-lg border border-border bg-muted/30 p-3">
               <div className="flex items-center gap-2 text-xs font-semibold mb-2">
                 <Layers className="h-4 w-4 text-primary" />
@@ -198,68 +277,99 @@ export function ImportarImagemIADialog({ open, onOpenChange, onImport }: Props) 
                 ref={fileRef}
                 type="file"
                 className="hidden"
-                accept="image/*"
+                accept="image/*,application/pdf"
+                multiple
                 onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) handleFile(f);
+                  const list = Array.from(e.target.files ?? []);
+                  if (list.length) handleFiles(list);
+                  // reset input para permitir reenviar o mesmo arquivo depois
+                  e.target.value = "";
                 }}
               />
-              <ImagePlus className="h-16 w-16 mx-auto text-muted-foreground mb-3" />
-              <p className="text-base text-muted-foreground">Clique para enviar uma imagem do projeto</p>
+              <div className="flex gap-3 mb-3">
+                <ImagePlus className="h-14 w-14 text-muted-foreground" />
+                <FileText className="h-14 w-14 text-muted-foreground" />
+              </div>
+              <p className="text-base text-muted-foreground">Clique para enviar imagens e/ou PDFs do projeto</p>
               <p className="text-xs text-muted-foreground mt-2">
-                A IA lê a tabela, conta furos de dobradiça e valida as cotas — automaticamente.
+                Você pode selecionar vários arquivos — a IA processa cada página/imagem automaticamente.
               </p>
-              <p className="text-[10px] text-muted-foreground mt-1">PNG, JPG, WEBP — até ~10 MB.</p>
+              <p className="text-[10px] text-muted-foreground mt-1">PNG, JPG, WEBP, PDF — até ~10 MB cada.</p>
             </div>
           </div>
         ) : (
-          <div className="flex-1 grid grid-cols-2 gap-3 overflow-hidden">
-            {/* Imagem */}
-            <div className="border border-border rounded-lg overflow-hidden bg-muted/30 flex flex-col">
-              <div className="px-3 py-2 border-b border-border flex items-center justify-between bg-card">
-                <span className="text-xs font-medium truncate">{file?.name}</span>
-                <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={reset}>
-                  Trocar
-                </Button>
-              </div>
-              <div className="flex-1 overflow-auto p-2 flex items-start justify-center">
-                <img src={previewUrl} alt="Projeto" className="max-w-full h-auto" />
-              </div>
-            </div>
-
-            {/* Resultado */}
+          <div className="flex-1 grid grid-cols-[280px_1fr] gap-3 overflow-hidden">
+            {/* Lista de páginas/imagens */}
             <div className="border border-border rounded-lg flex flex-col overflow-hidden">
               <div className="px-3 py-2 border-b border-border bg-card flex items-center justify-between">
-                <span className="text-xs font-medium">Peças extraídas</span>
-                {result && (
-                  <Badge variant="outline" className="text-[10px]">{pieces.length} peça(s)</Badge>
-                )}
+                <span className="text-xs font-medium">Origens ({sources.length})</span>
+                <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={() => fileRef.current?.click()}>
+                  + Adicionar
+                </Button>
+                <input
+                  ref={fileRef}
+                  type="file"
+                  className="hidden"
+                  accept="image/*,application/pdf"
+                  multiple
+                  onChange={(e) => {
+                    const list = Array.from(e.target.files ?? []);
+                    if (list.length) handleFiles(list);
+                    e.target.value = "";
+                  }}
+                />
+              </div>
+              <ScrollArea className="flex-1">
+                <div className="p-2 space-y-2">
+                  {sources.map(s => (
+                    <div key={s.id} className="rounded border border-border bg-muted/20 p-2 space-y-1">
+                      <div className="aspect-video bg-black/30 rounded overflow-hidden flex items-center justify-center">
+                        <img src={s.dataUrl} alt={s.label} className="max-w-full max-h-full object-contain" />
+                      </div>
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="text-[10px] truncate flex-1" title={s.label}>{s.label}</span>
+                        {s.status === 'processing' && <Loader2 className="h-3 w-3 animate-spin text-primary" />}
+                        {s.status === 'done' && (
+                          <Badge variant="secondary" className="text-[9px] px-1 py-0">{s.count ?? 0}</Badge>
+                        )}
+                        {s.status === 'error' && (
+                          <AlertTriangle className="h-3 w-3 text-red-500" />
+                        )}
+                        {s.status === 'pending' && (
+                          <span className="text-[9px] text-muted-foreground">aguardando</span>
+                        )}
+                      </div>
+                      {s.divergencias && s.divergencias.length > 0 && (
+                        <div className="text-[9px] text-amber-500">⚠ {s.divergencias.length} divergência(s)</div>
+                      )}
+                      {s.error && <div className="text-[9px] text-red-500">{s.error}</div>}
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            </div>
+
+            {/* Tabela agregada */}
+            <div className="border border-border rounded-lg flex flex-col overflow-hidden">
+              <div className="px-3 py-2 border-b border-border bg-card flex items-center justify-between">
+                <span className="text-xs font-medium">Peças extraídas (todas as origens)</span>
+                <Badge variant="outline" className="text-[10px]">{pieces.length} peça(s)</Badge>
               </div>
 
-              {loading && (
+              {loading && pieces.length === 0 && (
                 <div className="flex-1 flex flex-col items-center justify-center gap-2 text-xs text-muted-foreground">
                   <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                  <span>Lendo a imagem com IA… (~10–30 s)</span>
+                  <span>Processando arquivos com IA…</span>
                 </div>
               )}
 
-              {!loading && result && (
+              {pieces.length > 0 && (
                 <ScrollArea className="flex-1">
-                  <div className="p-2 space-y-2">
-                    {result.divergencias.length > 0 && (
-                      <div className="rounded border border-amber-500/40 bg-amber-500/10 p-2 text-[11px] space-y-1">
-                        <div className="flex items-center gap-1 text-amber-500 font-semibold">
-                          <AlertTriangle className="h-3 w-3" /> Divergências entre tabela e cotas
-                        </div>
-                        {result.divergencias.map((d, i) => (
-                          <div key={i} className="text-muted-foreground">• {d}</div>
-                        ))}
-                      </div>
-                    )}
-
+                  <div className="p-2">
                     <table className="w-full text-[11px]">
-                      <thead className="text-muted-foreground">
+                      <thead className="text-muted-foreground sticky top-0 bg-card">
                         <tr className="border-b border-border">
+                          <th className="text-left py-1 px-1 w-24">Origem</th>
                           <th className="text-left py-1 px-1 w-8">#</th>
                           <th className="text-left py-1 px-1">Descrição</th>
                           <th className="text-left py-1 px-1 w-28">Material</th>
@@ -275,6 +385,9 @@ export function ImportarImagemIADialog({ open, onOpenChange, onImport }: Props) 
                       <tbody>
                         {pieces.map((p, i) => (
                           <tr key={i} className="border-b border-border/50">
+                            <td className="py-1 px-1 text-[9px] text-muted-foreground truncate max-w-24" title={p._sourceLabel}>
+                              {p._sourceLabel}
+                            </td>
                             <td className="py-1 px-1">
                               <Input type="number" value={p.item}
                                 onChange={(e) => updatePiece(i, { item: parseInt(e.target.value) || 0 })}
@@ -327,19 +440,6 @@ export function ImportarImagemIADialog({ open, onOpenChange, onImport }: Props) 
                         ))}
                       </tbody>
                     </table>
-
-                    {result.cotasNoDesenho.length > 0 && (
-                      <div className="pt-2 border-t border-border/50">
-                        <div className="text-[10px] text-muted-foreground mb-1">
-                          Cotas detectadas no desenho (referência):
-                        </div>
-                        <div className="flex flex-wrap gap-1">
-                          {result.cotasNoDesenho.map((c, i) => (
-                            <Badge key={i} variant="secondary" className="text-[10px] font-mono">{c}</Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </ScrollArea>
               )}
@@ -350,7 +450,7 @@ export function ImportarImagemIADialog({ open, onOpenChange, onImport }: Props) 
         <DialogFooter className="mt-2">
           <Button variant="outline" onClick={() => handleClose(false)}>Cancelar</Button>
           <Button onClick={handleConfirm} disabled={pieces.length === 0 || loading}>
-            Importar {pieces.length > 0 ? `(${pieces.length})` : ""}
+            {loading ? <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> Processando…</> : `Importar ${pieces.length > 0 ? `(${pieces.length})` : ""}`}
           </Button>
         </DialogFooter>
       </DialogContent>
