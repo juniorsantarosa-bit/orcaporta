@@ -116,7 +116,7 @@ export function OrcamentoSimplesDialog({
   const [pieceMeta, setPieceMeta] = useState<PieceMetaMap>({});
   const [descontoPct, setDescontoPct] = useState<number>(0);
   const [impostoPct, setImpostoPct] = useState<number>(0);
-  const [imagemReferencia, setImagemReferencia] = useState<string>("");
+  const [imagensReferencia, setImagensReferencia] = useState<string[]>([]);
   // ---- Material (chapas 6mm/15mm/18mm conforme tipo de porta) ----
   const [incluirMaterial, setIncluirMaterial] = useState<boolean>(false);
   const [matPreco6, setMatPreco6] = useState<number>(180);
@@ -154,7 +154,7 @@ export function OrcamentoSimplesDialog({
         setPieceMeta(q.pieceMeta ?? {});
         setDescontoPct(q.descontoPct ?? 0);
         setImpostoPct(q.impostoPct ?? 0);
-        setImagemReferencia(q.imagemReferencia ?? "");
+        setImagensReferencia(q.imagensReferencia ?? (q.imagemReferencia ? [q.imagemReferencia] : []));
         setIncluirMaterial(q.incluirMaterial ?? false);
         setMatPreco6(q.materialPrecoChapa6 ?? 180);
         setMatPreco15(q.materialPrecoChapa15 ?? 320);
@@ -183,7 +183,7 @@ export function OrcamentoSimplesDialog({
     setPieceMeta({});
     setDescontoPct(0);
     setImpostoPct(0);
-    setImagemReferencia("");
+    setImagensReferencia([]);
     setIncluirMaterial(false);
     setMatPreco6(180);
     setMatPreco15(320);
@@ -205,7 +205,7 @@ export function OrcamentoSimplesDialog({
     if (!open) { mountedRef.v = false; return; }
     if (!mountedRef.v) { mountedRef.v = true; return; }
     setDirty(true);
-  }, [pieces, layouts, observacoes, enderecoEntregaPadrao, status, descontoPct, impostoPct, imagemReferencia, incluirMaterial, matPreco6, matPreco15, matPreco18, matQtd6Override, matQtd15Override, matQtdOverrides, mountedRef, open]);
+  }, [pieces, layouts, observacoes, enderecoEntregaPadrao, status, descontoPct, impostoPct, imagensReferencia, incluirMaterial, matPreco6, matPreco15, matPreco18, matQtd6Override, matQtd15Override, matQtdOverrides, mountedRef, open]);
 
   // Bloqueia fechar a aba do navegador quando há orçamento não salvo
   useEffect(() => {
@@ -562,7 +562,7 @@ export function OrcamentoSimplesDialog({
       descontoPct: totals.descontoPct,
       impostoPct: totals.impostoPct,
       valorImposto: totals.valorImposto,
-      imagemReferencia: imagemReferencia || undefined,
+      imagensReferencia: imagensReferencia.length ? imagensReferencia : undefined,
       incluirMaterial,
       materialPrecoChapa6: matPreco6,
       materialPrecoChapa15: matPreco15,
@@ -855,11 +855,11 @@ export function OrcamentoSimplesDialog({
       </table>` : ""}
 
 
-      ${imagemReferencia ? `
+      ${imagensReferencia.length > 0 ? `
         <div style="margin-top:12px;page-break-inside:avoid">
-          <h2>Imagem de Referência</h2>
-          <div style="text-align:center;padding:8px;border:1px solid #ddd;border-radius:4px;background:#fafafa">
-            <img src="${imagemReferencia}" alt="Referência" style="max-width:100%;max-height:340px;object-fit:contain" />
+          <h2>Imagens de Referência</h2>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;padding:8px;border:1px solid #ddd;border-radius:4px;background:#fafafa">
+            ${imagensReferencia.map((src, i) => `<img src="${src}" alt="Referência ${i+1}" style="max-width:48%;max-height:280px;object-fit:contain;border:1px solid #eee;background:#fff" />`).join("")}
           </div>
         </div>` : ""}
 
@@ -1408,37 +1408,57 @@ export function OrcamentoSimplesDialog({
               </div>
 
 
-              {/* Imagem de referência */}
+              {/* Imagens de referência (múltiplas) */}
               <div className="rounded border border-border bg-muted/30 p-3">
                 <div className="flex items-center justify-between mb-2">
                   <Label className="text-[10px] uppercase text-muted-foreground">
-                    Imagem de referência (sai no PDF)
+                    Imagens de referência (saem no PDF) — {imagensReferencia.length}
                   </Label>
-                  {imagemReferencia && (
+                  {imagensReferencia.length > 0 && (
                     <Button variant="ghost" size="sm" className="h-6 text-[10px] gap-1 text-destructive"
-                      onClick={() => setImagemReferencia("")}>
-                      <Trash2 className="h-3 w-3" /> Remover
+                      onClick={() => setImagensReferencia([])}>
+                      <Trash2 className="h-3 w-3" /> Remover todas
                     </Button>
                   )}
                 </div>
-                {imagemReferencia ? (
-                  <img src={imagemReferencia} alt="Referência"
-                    className="max-h-48 max-w-full rounded border border-border object-contain bg-white" />
-                ) : (
-                  <label className="flex items-center justify-center gap-2 h-20 border-2 border-dashed border-border rounded cursor-pointer hover:bg-muted/50 text-xs text-muted-foreground">
-                    <ImagePlus className="h-4 w-4" />
-                    Anexar imagem (PNG/JPG, máx 3 MB)
-                    <input type="file" accept="image/*" className="hidden"
-                      onChange={(e) => {
-                        const f = e.target.files?.[0];
-                        if (!f) return;
-                        if (f.size > 3 * 1024 * 1024) { toast.error("Imagem maior que 3 MB."); return; }
-                        const r = new FileReader();
-                        r.onload = (ev) => setImagemReferencia(String(ev.target?.result ?? ""));
-                        r.readAsDataURL(f);
-                      }} />
-                  </label>
+                {imagensReferencia.length > 0 && (
+                  <div className="grid grid-cols-3 gap-2 mb-2">
+                    {imagensReferencia.map((src, i) => (
+                      <div key={i} className="relative group border border-border rounded overflow-hidden bg-white">
+                        <img src={src} alt={`Referência ${i+1}`} className="h-24 w-full object-contain" />
+                        <button
+                          type="button"
+                          onClick={() => setImagensReferencia(prev => prev.filter((_, idx) => idx !== i))}
+                          className="absolute top-1 right-1 h-6 w-6 rounded-full bg-destructive/90 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          title="Remover"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 )}
+                <label className="flex items-center justify-center gap-2 h-16 border-2 border-dashed border-border rounded cursor-pointer hover:bg-muted/50 text-xs text-muted-foreground">
+                  <ImagePlus className="h-4 w-4" />
+                  {imagensReferencia.length === 0 ? "Anexar imagens (PNG/JPG, máx 3 MB cada)" : "Adicionar mais imagens"}
+                  <input type="file" accept="image/*" multiple className="hidden"
+                    onChange={(e) => {
+                      const files = Array.from(e.target.files ?? []);
+                      e.currentTarget.value = "";
+                      files.forEach(f => {
+                        if (f.size > 3 * 1024 * 1024) {
+                          toast.error(`${f.name}: maior que 3 MB`);
+                          return;
+                        }
+                        const r = new FileReader();
+                        r.onload = (ev) => {
+                          const url = String(ev.target?.result ?? "");
+                          if (url) setImagensReferencia(prev => [...prev, url]);
+                        };
+                        r.readAsDataURL(f);
+                      });
+                    }} />
+                </label>
               </div>
 
               {/* Observações */}

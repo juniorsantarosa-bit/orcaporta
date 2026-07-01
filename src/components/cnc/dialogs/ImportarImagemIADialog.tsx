@@ -40,6 +40,7 @@ interface PageSource {
   cotas?: number[];
   divergencias?: string[];
   count?: number;
+  reviewed?: boolean;
 }
 
 function fileToDataUrl(file: File): Promise<string> {
@@ -93,21 +94,40 @@ export function ImportarImagemIADialog({ open, onOpenChange, onImport }: Props) 
     setLoading(false);
   }, []);
 
+  const CONFIDENCE_THRESHOLD = 0.95;
+
+  const callExtract = async (dataUrl: string, reviewMode: boolean) => {
+    const { data, error } = await supabase.functions.invoke("extract-pieces-from-image", {
+      body: { imageDataUrl: dataUrl, reviewMode },
+    });
+    if (error) throw new Error(error.message);
+    return data as { pieces: ExtractedPiece[]; cotasNoDesenho: number[]; divergencias: string[] };
+  };
+
   const extractOne = useCallback(async (src: PageSource): Promise<ExtractedPiece[]> => {
     setSources(prev => prev.map(s => s.id === src.id ? { ...s, status: 'processing' } : s));
     try {
-      const { data, error } = await supabase.functions.invoke("extract-pieces-from-image", {
-        body: { imageDataUrl: src.dataUrl },
-      });
-      if (error) throw new Error(error.message);
-      const r = data as { pieces: ExtractedPiece[]; cotasNoDesenho: number[]; divergencias: string[] };
+      let r = await callExtract(src.dataUrl, false);
+      const lowConf = (r?.pieces ?? []).some(p => (p.confidence ?? 0) < CONFIDENCE_THRESHOLD);
+      const hasDivergence = (r?.divergencias ?? []).length > 0;
+      let reviewed = false;
+      if (lowConf || hasDivergence) {
+        // 2ª passada crítica — substitui resultado
+        try {
+          const r2 = await callExtract(src.dataUrl, true);
+          if (r2?.pieces?.length) {
+            r = r2;
+            reviewed = true;
+          }
+        } catch {/* mantém 1ª leitura */}
+      }
       const list = (r?.pieces ?? []).map(p => ({
         ...p,
         material: normalizeMaterialName(p.material, p.descricao),
         _sourceLabel: src.label,
       }));
       setSources(prev => prev.map(s => s.id === src.id
-        ? { ...s, status: 'done', cotas: r?.cotasNoDesenho ?? [], divergencias: r?.divergencias ?? [], count: list.length }
+        ? { ...s, status: 'done', cotas: r?.cotasNoDesenho ?? [], divergencias: r?.divergencias ?? [], count: list.length, reviewed }
         : s));
       return list;
     } catch (e: any) {
@@ -353,13 +373,40 @@ export function ImportarImagemIADialog({ open, onOpenChange, onImport }: Props) 
             <div className="border border-border rounded-lg flex flex-col overflow-hidden">
               <div className="px-3 py-2 border-b border-border bg-card flex items-center justify-between">
                 <span className="text-xs font-medium">Peças extraídas (todas as origens)</span>
-                <Badge variant="outline" className="text-[10px]">{pieces.length} peça(s)</Badge>
+                <div className="flex items-center gap-2">
+                  {sources.some(s => s.reviewed) && (
+                    <Badge variant="outline" className="text-[10px] border-amber-500 text-amber-600">
+                      Revisão IA aplicada
+                    </Badge>
+                  )}
+                  <Badge variant="outline" className="text-[10px]">{pieces.length} peça(s)</Badge>
+                </div>
               </div>
+
+              {/* Banner de divergências agregadas */}
+              {(() => {
+                const allDiv = sources.flatMap(s => (s.divergencias ?? []).map(d => ({ src: s.label, d })));
+                if (allDiv.length === 0) return null;
+                return (
+                  <div className="mx-2 mt-2 rounded border border-amber-500/50 bg-amber-500/10 p-2 text-[11px]">
+                    <div className="flex items-center gap-1 font-semibold text-amber-700 dark:text-amber-400 mb-1">
+                      <AlertTriangle className="h-3.5 w-3.5" />
+                      {allDiv.length} divergência(s) tabela × desenho — revise antes de importar
+                    </div>
+                    <ul className="space-y-0.5 list-disc pl-5 text-amber-900 dark:text-amber-200">
+                      {allDiv.slice(0, 8).map((x, i) => (
+                        <li key={i}><span className="opacity-70">[{x.src}]</span> {x.d}</li>
+                      ))}
+                      {allDiv.length > 8 && <li className="opacity-70">…e mais {allDiv.length - 8}</li>}
+                    </ul>
+                  </div>
+                );
+              })()}
 
               {loading && pieces.length === 0 && (
                 <div className="flex-1 flex flex-col items-center justify-center gap-2 text-xs text-muted-foreground">
                   <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                  <span>Processando arquivos com IA…</span>
+                  <span>Processando arquivos com IA (com revisão automática)…</span>
                 </div>
               )}
 
