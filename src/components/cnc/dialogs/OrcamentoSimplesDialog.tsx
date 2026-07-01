@@ -153,6 +153,7 @@ export function OrcamentoSimplesDialog({
         setStatus(q.status);
         setPieceMeta(q.pieceMeta ?? {});
         setDescontoPct(q.descontoPct ?? 0);
+        setImpostoPct(q.impostoPct ?? 0);
         setImagemReferencia(q.imagemReferencia ?? "");
         setIncluirMaterial(q.incluirMaterial ?? false);
         setMatPreco6(q.materialPrecoChapa6 ?? 180);
