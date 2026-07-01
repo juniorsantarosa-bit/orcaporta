@@ -116,8 +116,10 @@ export interface SavedQuote {
   impostoPct?: number;
   /** Valor do imposto calculado sobre o total (R$) */
   valorImposto?: number;
-  /** Imagem de referência anexa (data URL) — mostrada no PDF */
+  /** Imagem de referência anexa (data URL) — mostrada no PDF (legado, uma imagem) */
   imagemReferencia?: string;
+  /** Imagens de referência anexas (data URLs) — mostradas no PDF */
+  imagensReferencia?: string[];
   /** Incluir material (chapas 6mm + 15mm provençal) no orçamento */
   incluirMaterial?: boolean;
   /** Preço por chapa de 6mm (R$) — usado no cálculo de material */
