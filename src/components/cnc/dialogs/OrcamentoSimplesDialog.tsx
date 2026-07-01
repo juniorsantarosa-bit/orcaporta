@@ -560,6 +560,8 @@ export function OrcamentoSimplesDialog({
       totalCalculado: totals.valorTotal,
       observacoes,
       descontoPct: totals.descontoPct,
+      impostoPct: totals.impostoPct,
+      valorImposto: totals.valorImposto,
       imagemReferencia: imagemReferencia || undefined,
       incluirMaterial,
       materialPrecoChapa6: matPreco6,
