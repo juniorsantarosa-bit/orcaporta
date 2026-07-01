@@ -115,6 +115,7 @@ export function OrcamentoSimplesDialog({
   const [status, setStatus] = useState<QuoteStatus>({ enviado: false, pago: false });
   const [pieceMeta, setPieceMeta] = useState<PieceMetaMap>({});
   const [descontoPct, setDescontoPct] = useState<number>(0);
+  const [impostoPct, setImpostoPct] = useState<number>(0);
   const [imagemReferencia, setImagemReferencia] = useState<string>("");
   // ---- Material (chapas 6mm/15mm/18mm conforme tipo de porta) ----
   const [incluirMaterial, setIncluirMaterial] = useState<boolean>(false);
@@ -152,6 +153,7 @@ export function OrcamentoSimplesDialog({
         setStatus(q.status);
         setPieceMeta(q.pieceMeta ?? {});
         setDescontoPct(q.descontoPct ?? 0);
+        setImpostoPct(q.impostoPct ?? 0);
         setImagemReferencia(q.imagemReferencia ?? "");
         setIncluirMaterial(q.incluirMaterial ?? false);
         setMatPreco6(q.materialPrecoChapa6 ?? 180);
@@ -180,6 +182,7 @@ export function OrcamentoSimplesDialog({
     setStatus({ enviado: false, pago: false });
     setPieceMeta({});
     setDescontoPct(0);
+    setImpostoPct(0);
     setImagemReferencia("");
     setIncluirMaterial(false);
     setMatPreco6(180);
@@ -202,7 +205,7 @@ export function OrcamentoSimplesDialog({
     if (!open) { mountedRef.v = false; return; }
     if (!mountedRef.v) { mountedRef.v = true; return; }
     setDirty(true);
-  }, [pieces, layouts, observacoes, enderecoEntregaPadrao, status, descontoPct, imagemReferencia, incluirMaterial, matPreco6, matPreco15, matPreco18, matQtd6Override, matQtd15Override, matQtdOverrides, mountedRef, open]);
+  }, [pieces, layouts, observacoes, enderecoEntregaPadrao, status, descontoPct, impostoPct, imagemReferencia, incluirMaterial, matPreco6, matPreco15, matPreco18, matQtd6Override, matQtd15Override, matQtdOverrides, mountedRef, open]);
 
   // Bloqueia fechar a aba do navegador quando há orçamento não salvo
   useEffect(() => {
@@ -507,17 +510,21 @@ export function OrcamentoSimplesDialog({
       + imageTotals.total + materialTotal;
     const descontoPctClamp = Math.max(0, Math.min(100, descontoPct || 0));
     const valorDesconto = subtotalBruto * (descontoPctClamp / 100);
-    const valorTotal = subtotalBruto - valorDesconto;
-    const valorSemFuros = valorTotal - valorFuros * (1 - descontoPctClamp / 100);
+    const valorTotalSemImposto = subtotalBruto - valorDesconto;
+    const impostoPctClamp = Math.max(0, Math.min(100, impostoPct || 0));
+    const valorImposto = valorTotalSemImposto * (impostoPctClamp / 100);
+    const valorTotal = valorTotalSemImposto + valorImposto;
+    const valorSemFuros = valorTotalSemImposto - valorFuros * (1 - descontoPctClamp / 100);
 
     return {
       sawCortes, sawFita, sawFitaManual, sawFuros,
       sawValorCortes, sawValorFita, sawValorFitaManual, sawValorFuros,
       aspValorFresa, aspValorSerra, aspValorCortes, aspValorFita, aspValorFitaManual,
       subtotalBruto, valorDesconto, descontoPct: descontoPctClamp,
+      impostoPct: impostoPctClamp, valorImposto, valorTotalSemImposto,
       valorTotal, valorSemFuros, valorFuros, materialTotal,
     };
-  }, [budgets, aspireBudgets, imageTotals, descontoPct, incluirMaterial, materialInfo]);
+  }, [budgets, aspireBudgets, imageTotals, descontoPct, impostoPct, incluirMaterial, materialInfo]);
 
   // -------- handlers --------
 
@@ -553,6 +560,8 @@ export function OrcamentoSimplesDialog({
       totalCalculado: totals.valorTotal,
       observacoes,
       descontoPct: totals.descontoPct,
+      impostoPct: totals.impostoPct,
+      valorImposto: totals.valorImposto,
       imagemReferencia: imagemReferencia || undefined,
       incluirMaterial,
       materialPrecoChapa6: matPreco6,
@@ -854,13 +863,21 @@ export function OrcamentoSimplesDialog({
           </div>
         </div>` : ""}
 
-      ${totals.descontoPct > 0 ? `
-        <div style="margin-top:12px;padding:8px 12px;border:1px solid #ccc;border-radius:4px;display:flex;justify-content:space-between;font-size:12px">
+      ${(totals.descontoPct > 0 || totals.impostoPct > 0) ? `
+        <div style="margin-top:12px;padding:8px 12px;border:1px solid #ccc;border-radius:4px 4px 0 0;display:flex;justify-content:space-between;font-size:12px">
           <span>Subtotal</span><span>R$ ${totals.subtotalBruto.toFixed(2)}</span>
         </div>
-        <div style="padding:8px 12px;border:1px solid #ccc;border-top:none;border-radius:0;display:flex;justify-content:space-between;font-size:12px;color:#059669">
+        ${totals.descontoPct > 0 ? `
+        <div style="padding:8px 12px;border:1px solid #ccc;border-top:none;display:flex;justify-content:space-between;font-size:12px;color:#059669">
           <span>Desconto (${totals.descontoPct.toFixed(1)}%)</span><span>− R$ ${totals.valorDesconto.toFixed(2)}</span>
+        </div>` : ""}
+        <div style="padding:8px 12px;border:1px solid #ccc;border-top:none;display:flex;justify-content:space-between;font-size:12px;color:#444">
+          <span>Total sem imposto</span><span>R$ ${totals.valorTotalSemImposto.toFixed(2)}</span>
         </div>
+        ${totals.impostoPct > 0 ? `
+        <div style="padding:8px 12px;border:1px solid #ccc;border-top:none;border-radius:0;display:flex;justify-content:space-between;font-size:12px;color:#b45309">
+          <span>Imposto (${totals.impostoPct.toFixed(1)}%)</span><span>+ R$ ${totals.valorImposto.toFixed(2)}</span>
+        </div>` : ""}
       ` : ""}
       <div class="grand">
         <span style="font-size:13px;font-weight:600;color:#555">${budgets.length > 0 ? `Total sem furos: R$ ${totals.valorSemFuros.toFixed(2)}` : ""}</span>
@@ -1455,6 +1472,26 @@ export function OrcamentoSimplesDialog({
                 </div>
               </div>
 
+              {/* Imposto */}
+              <div className="rounded border border-border bg-muted/30 p-3 flex items-center gap-4">
+                <div className="flex-1">
+                  <Label className="text-[10px] uppercase text-muted-foreground">Imposto (%)</Label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Input
+                      type="number" min={0} max={100} step="0.5"
+                      value={impostoPct}
+                      onChange={(e) => setImpostoPct(Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)))}
+                      className="h-8 w-24 text-xs"
+                    />
+                    <span className="text-xs text-muted-foreground">
+                      {totals.impostoPct > 0
+                        ? <>Total sem imposto: <b className="text-foreground">R$ {totals.valorTotalSemImposto.toFixed(2)}</b> · Imposto: <b className="text-amber-500">+ R$ {totals.valorImposto.toFixed(2)}</b></>
+                        : "Sem imposto"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
               <div className={budgets.length > 0 ? "grid grid-cols-2 gap-2" : ""}>
                 {budgets.length > 0 && (
                   <div className="rounded border border-border bg-muted/40 p-3 flex flex-col">
@@ -1468,6 +1505,11 @@ export function OrcamentoSimplesDialog({
                     {totals.descontoPct > 0 ? ` (após ${totals.descontoPct.toFixed(1)}% desc.)` : ""}
                   </span>
                   <span className="text-lg font-bold text-primary">R$ {totals.valorTotal.toFixed(2)}</span>
+                  {totals.impostoPct > 0 && (
+                    <span className="text-[10px] text-amber-500">
+                      Inclui imposto {totals.impostoPct.toFixed(1)}%: + R$ {totals.valorImposto.toFixed(2)}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
