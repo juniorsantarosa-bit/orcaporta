@@ -93,21 +93,40 @@ export function ImportarImagemIADialog({ open, onOpenChange, onImport }: Props) 
     setLoading(false);
   }, []);
 
+  const CONFIDENCE_THRESHOLD = 0.95;
+
+  const callExtract = async (dataUrl: string, reviewMode: boolean) => {
+    const { data, error } = await supabase.functions.invoke("extract-pieces-from-image", {
+      body: { imageDataUrl: dataUrl, reviewMode },
+    });
+    if (error) throw new Error(error.message);
+    return data as { pieces: ExtractedPiece[]; cotasNoDesenho: number[]; divergencias: string[] };
+  };
+
   const extractOne = useCallback(async (src: PageSource): Promise<ExtractedPiece[]> => {
     setSources(prev => prev.map(s => s.id === src.id ? { ...s, status: 'processing' } : s));
     try {
-      const { data, error } = await supabase.functions.invoke("extract-pieces-from-image", {
-        body: { imageDataUrl: src.dataUrl },
-      });
-      if (error) throw new Error(error.message);
-      const r = data as { pieces: ExtractedPiece[]; cotasNoDesenho: number[]; divergencias: string[] };
+      let r = await callExtract(src.dataUrl, false);
+      const lowConf = (r?.pieces ?? []).some(p => (p.confidence ?? 0) < CONFIDENCE_THRESHOLD);
+      const hasDivergence = (r?.divergencias ?? []).length > 0;
+      let reviewed = false;
+      if (lowConf || hasDivergence) {
+        // 2ª passada crítica — substitui resultado
+        try {
+          const r2 = await callExtract(src.dataUrl, true);
+          if (r2?.pieces?.length) {
+            r = r2;
+            reviewed = true;
+          }
+        } catch {/* mantém 1ª leitura */}
+      }
       const list = (r?.pieces ?? []).map(p => ({
         ...p,
         material: normalizeMaterialName(p.material, p.descricao),
         _sourceLabel: src.label,
       }));
       setSources(prev => prev.map(s => s.id === src.id
-        ? { ...s, status: 'done', cotas: r?.cotasNoDesenho ?? [], divergencias: r?.divergencias ?? [], count: list.length }
+        ? { ...s, status: 'done', cotas: r?.cotasNoDesenho ?? [], divergencias: r?.divergencias ?? [], count: list.length, reviewed }
         : s));
       return list;
     } catch (e: any) {
