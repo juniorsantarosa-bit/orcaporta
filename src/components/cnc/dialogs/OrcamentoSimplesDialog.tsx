@@ -508,18 +508,21 @@ export function OrcamentoSimplesDialog({
     const subtotalBruto = sawValorCortes + sawValorFita + sawValorFitaManual + sawValorFuros
       + aspValorFresa + aspValorSerra + aspValorCortes + aspValorFita + aspValorFitaManual
       + imageTotals.total + materialTotal;
+    const descontoPctClamp = Math.max(0, Math.min(100, descontoPct || 0));
+    const valorDesconto = subtotalBruto * (descontoPctClamp / 100);
+    const valorTotalSemImposto = subtotalBruto - valorDesconto;
     const impostoPctClamp = Math.max(0, Math.min(100, impostoPct || 0));
-    const valorImposto = valorTotal * (impostoPctClamp / 100);
-    const valorFinal = valorTotal + valorImposto;
-    const valorSemFuros = valorTotal - valorFuros * (1 - descontoPctClamp / 100);
+    const valorImposto = valorTotalSemImposto * (impostoPctClamp / 100);
+    const valorTotal = valorTotalSemImposto + valorImposto;
+    const valorSemFuros = valorTotalSemImposto - valorFuros * (1 - descontoPctClamp / 100);
 
     return {
       sawCortes, sawFita, sawFitaManual, sawFuros,
       sawValorCortes, sawValorFita, sawValorFitaManual, sawValorFuros,
       aspValorFresa, aspValorSerra, aspValorCortes, aspValorFita, aspValorFitaManual,
       subtotalBruto, valorDesconto, descontoPct: descontoPctClamp,
-      impostoPct: impostoPctClamp, valorImposto, valorTotalSemImposto: valorTotal,
-      valorTotal: valorFinal, valorSemFuros, valorFuros, materialTotal,
+      impostoPct: impostoPctClamp, valorImposto, valorTotalSemImposto,
+      valorTotal, valorSemFuros, valorFuros, materialTotal,
     };
   }, [budgets, aspireBudgets, imageTotals, descontoPct, incluirMaterial, materialInfo]);
 
