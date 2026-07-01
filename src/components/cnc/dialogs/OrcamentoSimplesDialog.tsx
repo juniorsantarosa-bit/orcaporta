@@ -1440,23 +1440,58 @@ export function OrcamentoSimplesDialog({
                 )}
                 <label className="flex items-center justify-center gap-2 h-16 border-2 border-dashed border-border rounded cursor-pointer hover:bg-muted/50 text-xs text-muted-foreground">
                   <ImagePlus className="h-4 w-4" />
-                  {imagensReferencia.length === 0 ? "Anexar imagens (PNG/JPG, máx 3 MB cada)" : "Adicionar mais imagens"}
-                  <input type="file" accept="image/*" multiple className="hidden"
-                    onChange={(e) => {
+                  {imagensReferencia.length === 0 ? "Anexar imagens ou PDF (PDF vira 1 imagem por página)" : "Adicionar mais imagens/PDF"}
+                  <input type="file" accept="image/*,application/pdf" multiple className="hidden"
+                    onChange={async (e) => {
                       const files = Array.from(e.target.files ?? []);
                       e.currentTarget.value = "";
-                      files.forEach(f => {
-                        if (f.size > 3 * 1024 * 1024) {
-                          toast.error(`${f.name}: maior que 3 MB`);
-                          return;
+                      for (const f of files) {
+                        const isPdf = f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf");
+                        if (isPdf) {
+                          try {
+                            const pdfjs: any = await import("pdfjs-dist/legacy/build/pdf.mjs");
+                            pdfjs.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/legacy/build/pdf.worker.min.mjs`;
+                            const buf = await f.arrayBuffer();
+                            const doc = await pdfjs.getDocument({ data: buf }).promise;
+                            const urls: string[] = [];
+                            for (let i = 1; i <= doc.numPages; i++) {
+                              const page = await doc.getPage(i);
+                              const base = page.getViewport({ scale: 1 });
+                              const scale = Math.min(2.5, 1600 / Math.max(base.width, base.height));
+                              const viewport = page.getViewport({ scale });
+                              const canvas = document.createElement("canvas");
+                              canvas.width = Math.ceil(viewport.width);
+                              canvas.height = Math.ceil(viewport.height);
+                              const ctx = canvas.getContext("2d")!;
+                              ctx.fillStyle = "#fff";
+                              ctx.fillRect(0, 0, canvas.width, canvas.height);
+                              await page.render({ canvasContext: ctx, viewport, canvas }).promise;
+                              urls.push(canvas.toDataURL("image/jpeg", 0.82));
+                            }
+                            if (urls.length) {
+                              setImagensReferencia(prev => [...prev, ...urls]);
+                              toast.success(`${f.name}: ${urls.length} página(s) anexada(s)`);
+                            }
+                          } catch (err: any) {
+                            toast.error(`${f.name}: falha ao ler PDF (${err?.message || err})`);
+                          }
+                        } else {
+                          if (f.size > 5 * 1024 * 1024) {
+                            toast.error(`${f.name}: maior que 5 MB`);
+                            continue;
+                          }
+                          await new Promise<void>((resolve) => {
+                            const r = new FileReader();
+                            r.onload = (ev) => {
+                              const url = String(ev.target?.result ?? "");
+                              if (url) setImagensReferencia(prev => [...prev, url]);
+                              resolve();
+                            };
+                            r.onerror = () => resolve();
+                            r.readAsDataURL(f);
+                          });
                         }
-                        const r = new FileReader();
-                        r.onload = (ev) => {
-                          const url = String(ev.target?.result ?? "");
-                          if (url) setImagensReferencia(prev => [...prev, url]);
-                        };
-                        r.readAsDataURL(f);
-                      });
+                      }
                     }} />
                 </label>
               </div>
