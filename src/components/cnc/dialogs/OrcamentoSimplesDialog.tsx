@@ -863,13 +863,21 @@ export function OrcamentoSimplesDialog({
           </div>
         </div>` : ""}
 
-      ${totals.descontoPct > 0 ? `
-        <div style="margin-top:12px;padding:8px 12px;border:1px solid #ccc;border-radius:4px;display:flex;justify-content:space-between;font-size:12px">
+      ${(totals.descontoPct > 0 || totals.impostoPct > 0) ? `
+        <div style="margin-top:12px;padding:8px 12px;border:1px solid #ccc;border-radius:4px 4px 0 0;display:flex;justify-content:space-between;font-size:12px">
           <span>Subtotal</span><span>R$ ${totals.subtotalBruto.toFixed(2)}</span>
         </div>
-        <div style="padding:8px 12px;border:1px solid #ccc;border-top:none;border-radius:0;display:flex;justify-content:space-between;font-size:12px;color:#059669">
+        ${totals.descontoPct > 0 ? `
+        <div style="padding:8px 12px;border:1px solid #ccc;border-top:none;display:flex;justify-content:space-between;font-size:12px;color:#059669">
           <span>Desconto (${totals.descontoPct.toFixed(1)}%)</span><span>− R$ ${totals.valorDesconto.toFixed(2)}</span>
+        </div>` : ""}
+        <div style="padding:8px 12px;border:1px solid #ccc;border-top:none;display:flex;justify-content:space-between;font-size:12px;color:#444">
+          <span>Total sem imposto</span><span>R$ ${totals.valorTotalSemImposto.toFixed(2)}</span>
         </div>
+        ${totals.impostoPct > 0 ? `
+        <div style="padding:8px 12px;border:1px solid #ccc;border-top:none;border-radius:0;display:flex;justify-content:space-between;font-size:12px;color:#b45309">
+          <span>Imposto (${totals.impostoPct.toFixed(1)}%)</span><span>+ R$ ${totals.valorImposto.toFixed(2)}</span>
+        </div>` : ""}
       ` : ""}
       <div class="grand">
         <span style="font-size:13px;font-weight:600;color:#555">${budgets.length > 0 ? `Total sem furos: R$ ${totals.valorSemFuros.toFixed(2)}` : ""}</span>
