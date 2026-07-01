@@ -182,6 +182,7 @@ export function OrcamentoSimplesDialog({
     setStatus({ enviado: false, pago: false });
     setPieceMeta({});
     setDescontoPct(0);
+    setImpostoPct(0);
     setImagemReferencia("");
     setIncluirMaterial(false);
     setMatPreco6(180);
