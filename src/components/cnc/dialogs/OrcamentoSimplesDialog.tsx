@@ -1505,6 +1505,11 @@ export function OrcamentoSimplesDialog({
                     {totals.descontoPct > 0 ? ` (após ${totals.descontoPct.toFixed(1)}% desc.)` : ""}
                   </span>
                   <span className="text-lg font-bold text-primary">R$ {totals.valorTotal.toFixed(2)}</span>
+                  {totals.impostoPct > 0 && (
+                    <span className="text-[10px] text-amber-500">
+                      Inclui imposto {totals.impostoPct.toFixed(1)}%: + R$ {totals.valorImposto.toFixed(2)}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
