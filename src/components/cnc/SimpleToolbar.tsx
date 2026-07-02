@@ -76,6 +76,10 @@ export function SimpleToolbar({
       <Separator orientation="vertical" className="h-10 mx-1" />
       <TBtn icon={FolderOpen} label="Orçamentos" onClick={onOrcamentosSalvos} />
       <TBtn icon={BarChart3} label="Relatórios" onClick={onRelatorios} />
+      <Separator orientation="vertical" className="h-10 mx-1" />
+      <Link to="/ordens-servico">
+        <TBtn icon={Mail} label="Ordens Serv." sublabel="Gmail" />
+      </Link>
 
       <div className="flex-1" />
       <span className="text-[10px] text-muted-foreground uppercase tracking-wider mr-2">
