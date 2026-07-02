@@ -1,4 +1,5 @@
-import { FileUp, Scissors, Calculator, Loader2, FilePlus, Users, FolderOpen, BarChart3, Building2 } from "lucide-react";
+import { FileUp, Scissors, Calculator, Loader2, FilePlus, Users, FolderOpen, BarChart3, Building2, Mail } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
