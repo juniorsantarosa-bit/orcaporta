@@ -199,6 +199,31 @@ export function ImportarImagemIADialog({ open, onOpenChange, onImport }: Props) 
 
   useEffect(() => { if (!open) reset(); }, [open, reset]);
 
+  // Carrega anexos vindos de uma Ordem de Serviço (Gmail)
+  useEffect(() => {
+    if (!open) return;
+    const raw = sessionStorage.getItem("maxcut.pendingOrderAttachments");
+    if (!raw) return;
+    try {
+      const payload = JSON.parse(raw) as { attachments: Array<{ name: string; mime: string; dataUrl: string }> };
+      sessionStorage.removeItem("maxcut.pendingOrderAttachments");
+      const files: File[] = payload.attachments.map(a => {
+        const b64 = a.dataUrl.split(",")[1] || "";
+        const bin = atob(b64);
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        return new File([bytes], a.name, { type: a.mime });
+      });
+      if (files.length) {
+        toast.info(`Carregando ${files.length} anexo(s) da ordem de serviço…`);
+        handleFiles(files);
+      }
+    } catch (e) {
+      console.error("Falha ao carregar anexos da ordem:", e);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
   const updatePiece = (idx: number, patch: Partial<ExtractedPiece>) => {
     setPieces(prev => prev.map((p, i) => (i === idx ? { ...p, ...patch } : p)));
   };

@@ -14,7 +14,93 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      gmail_sync_config: {
+        Row: {
+          id: number
+          keywords: Json
+          last_history_id: string | null
+          last_synced_at: string | null
+          only_known_clients: boolean
+          require_attachment: boolean
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          keywords?: Json
+          last_history_id?: string | null
+          last_synced_at?: string | null
+          only_known_clients?: boolean
+          require_attachment?: boolean
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          keywords?: Json
+          last_history_id?: string | null
+          last_synced_at?: string | null
+          only_known_clients?: boolean
+          require_attachment?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      service_orders: {
+        Row: {
+          attachments: Json
+          created_at: string
+          from_email: string
+          from_name: string | null
+          gmail_message_id: string
+          gmail_thread_id: string | null
+          id: string
+          matched_client_id: string | null
+          matched_reason: string | null
+          notes: string | null
+          quote_id: string | null
+          received_at: string
+          snippet: string | null
+          status: string
+          subject: string | null
+          updated_at: string
+        }
+        Insert: {
+          attachments?: Json
+          created_at?: string
+          from_email: string
+          from_name?: string | null
+          gmail_message_id: string
+          gmail_thread_id?: string | null
+          id?: string
+          matched_client_id?: string | null
+          matched_reason?: string | null
+          notes?: string | null
+          quote_id?: string | null
+          received_at: string
+          snippet?: string | null
+          status?: string
+          subject?: string | null
+          updated_at?: string
+        }
+        Update: {
+          attachments?: Json
+          created_at?: string
+          from_email?: string
+          from_name?: string | null
+          gmail_message_id?: string
+          gmail_thread_id?: string | null
+          id?: string
+          matched_client_id?: string | null
+          matched_reason?: string | null
+          notes?: string | null
+          quote_id?: string | null
+          received_at?: string
+          snippet?: string | null
+          status?: string
+          subject?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

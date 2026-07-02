@@ -1,4 +1,5 @@
-import { FileUp, Scissors, Calculator, Loader2, FilePlus, Users, FolderOpen, BarChart3, Building2 } from "lucide-react";
+import { FileUp, Scissors, Calculator, Loader2, FilePlus, Users, FolderOpen, BarChart3, Building2, Mail } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -75,6 +76,10 @@ export function SimpleToolbar({
       <Separator orientation="vertical" className="h-10 mx-1" />
       <TBtn icon={FolderOpen} label="Orçamentos" onClick={onOrcamentosSalvos} />
       <TBtn icon={BarChart3} label="Relatórios" onClick={onRelatorios} />
+      <Separator orientation="vertical" className="h-10 mx-1" />
+      <Link to="/ordens-servico">
+        <TBtn icon={Mail} label="Ordens Serv." sublabel="Gmail" />
+      </Link>
 
       <div className="flex-1" />
       <span className="text-[10px] text-muted-foreground uppercase tracking-wider mr-2">
