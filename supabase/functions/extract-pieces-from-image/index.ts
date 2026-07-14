@@ -13,10 +13,18 @@ A imagem contém um desenho técnico com peças identificadas por um NÚMERO GRA
 
 ⚠️ ATENÇÃO CRÍTICA — evite os erros mais comuns:
 1) Os números pequenos nos CANTOS das portas (geralmente "1") são MARCADORES DE DOBRADIÇA (hardware), NÃO são peças. Se o item 1 da tabela for uma ferragem (ex: "Dobradiça Ecco", "Puxador", "Corrediça"), NÃO crie uma peça para ele — apenas conte esses marcadores nos cantos para preencher "furosDobradica" da peça correspondente.
-2) A QUANTIDADE de cada peça vem de CONTAR quantas vezes o badge central com aquele número aparece no desenho (a mesma peça pode aparecer 2, 3, 4+ vezes em posições diferentes). Se houver coluna Qtd na tabela, use-a; senão, conte no desenho. NUNCA assuma quantidade=1 sem contar de fato.
-3) Antes de responder, some as quantidades de todas as peças (excluindo ferragens) e escreva em "divergencias" como "Total de peças contadas: N". Esse total DEVE bater com o número de badges centrais no desenho.
 
-QUANDO HOUVER TABELA: descrição/dimensões vêm ESTRITAMENTE da tabela (linha do item correspondente), mas a quantidade vem da contagem no desenho (a menos que a tabela tenha coluna Qtd explícita).
+2) PROCESSO OBRIGATÓRIO DE CONTAGEM (siga passo a passo, não pule):
+   a) PRIMEIRO, varra o desenho e liste TODOS os badges amarelos GRANDES CENTRAIS visíveis, um por um, anotando o número de cada. Ex: [2, 2, 2, 3, 3, 3, 4, 5, 5, 5, 5, ...]. Ignore os badges pequenos dos cantos (dobradiças).
+   b) Escreva essa lista completa em "divergencias" como "Badges centrais encontrados: [lista]".
+   c) Agrupe por número: item 2 apareceu 3×, item 3 apareceu 3×, item 5 apareceu 4×, etc.
+   d) Cada grupo vira UMA linha em "pieces" com quantidade = nº de ocorrências. NUNCA crie linhas duplicadas para o mesmo item.
+   e) Se houver coluna Qtd EXPLÍCITA na tabela, prefira-a e valide contra a contagem visual (divergência = aviso).
+   f) O total (soma das quantidades em "pieces") DEVE bater com o comprimento da lista de badges do passo (a). Se não bater, você errou — refaça antes de responder.
+
+3) NUNCA responda quantidade=1 sem antes executar o passo (a). É proibido "chutar" quantidade.
+
+QUANDO HOUVER TABELA: descrição/dimensões/material vêm ESTRITAMENTE da tabela (linha do item correspondente). Só a quantidade pode vir da contagem visual (se a tabela não tiver coluna Qtd).
 QUANDO NÃO HOUVER TABELA: extraia usando apenas as cotas do desenho e adicione o aviso "Sem tabela de referência no desenho — leitura baseada apenas nas cotas do desenho." em "divergencias".
 
 Campos por peça:
@@ -30,7 +38,11 @@ Campos por peça:
 
 Leia também as COTAS soltas do desenho em "cotasNoDesenho" (só o que estiver visível, sem inventar).
 
-Em "divergencias" liste: (a) "Total de peças contadas: N", (b) inconsistências entre tabela e desenho, (c) aviso de ausência de tabela se aplicável.
+Em "divergencias" liste OBRIGATORIAMENTE, nesta ordem:
+  (a) "Badges centrais encontrados: [n1, n2, n3, ...]" — a lista bruta do passo 2(a)
+  (b) "Total de peças contadas: N" — igual ao comprimento da lista (a) E à soma das quantidades em "pieces"
+  (c) Inconsistências entre tabela e desenho, se houver
+  (d) Aviso de ausência de tabela, se aplicável
 
 Responda APENAS JSON válido no schema solicitado, sem markdown, sem comentários.`;
 
@@ -86,11 +98,10 @@ Deno.serve(async (req) => {
   }
 
   const reviewSuffix = reviewMode
-    ? `\n\nMODO REVISÃO CRÍTICA: Uma primeira leitura teve baixa confiança. RELEIA a imagem com atenção redobrada. Compare CADA valor da tabela COM as cotas escritas no desenho. Se a tabela diz "313x675" mas o desenho mostra "314x675", ajuste para o valor CORRETO e liste a correção em "divergencias". Confidence só pode ser >=0.95 se você tiver certeza absoluta.`
+    ? `\n\nMODO REVISÃO CRÍTICA: A primeira leitura teve baixa confiança ou o total contado não bateu com a soma das quantidades. RELEIA a imagem — refaça o passo 2(a) do zero, listando cada badge central visto, e valide que soma(quantidades em pieces) === comprimento(lista de badges). Se ainda divergir, ajuste as quantidades para bater. Confidence só pode ser >=0.95 se você tiver certeza absoluta.`
     : "";
-
   const payload = {
-    model: "google/gemini-2.5-flash",
+    model: "google/gemini-2.5-pro",
     messages: [
       { role: "system", content: SYSTEM_PROMPT + reviewSuffix },
       {
