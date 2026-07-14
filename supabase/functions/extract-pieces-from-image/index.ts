@@ -100,12 +100,8 @@ Deno.serve(async (req) => {
   const reviewSuffix = reviewMode
     ? `\n\nMODO REVISÃO CRÍTICA: A primeira leitura teve baixa confiança ou o total contado não bateu com a soma das quantidades. RELEIA a imagem — refaça o passo 2(a) do zero, listando cada badge central visto, e valide que soma(quantidades em pieces) === comprimento(lista de badges). Se ainda divergir, ajuste as quantidades para bater. Confidence só pode ser >=0.95 se você tiver certeza absoluta.`
     : "";
-
   const payload = {
     model: "google/gemini-2.5-pro",
-
-  const payload = {
-    model: "google/gemini-2.5-flash",
     messages: [
       { role: "system", content: SYSTEM_PROMPT + reviewSuffix },
       {
