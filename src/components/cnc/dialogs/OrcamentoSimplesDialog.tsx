@@ -130,6 +130,8 @@ export function OrcamentoSimplesDialog({
   const [matQtd15Override, setMatQtd15Override] = useState<number | null>(null);
   /** Overrides por (material, espessura) — chave externa = material, chave interna = espessura. */
   const [matQtdOverrides, setMatQtdOverrides] = useState<Record<string, Record<number, number>>>({});
+  /** Tipos de produto detectados nas peças mas ainda não cadastrados no cliente */
+  const [novosTipos, setNovosTipos] = useState<string[]>([]);
 
   /** Marca quando há mudanças não salvas no orçamento atual. */
   const [dirty, setDirty] = useState(false);
