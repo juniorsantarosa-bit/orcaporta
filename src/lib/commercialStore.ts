@@ -22,6 +22,8 @@ export const DEFAULT_PRICE_TABLE: ClientPriceTable = {
   precoM2: 180.0,
   precoFitaMetro: 6.0,
   precoFuroDobradica: 4.0,
+  tiposProduto: [],
+  usarMesmoPrecoM2: true,
 };
 
 function safeParse<T>(raw: string | null, fallback: T): T {
