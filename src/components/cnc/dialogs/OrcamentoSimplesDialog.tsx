@@ -261,7 +261,7 @@ export function OrcamentoSimplesDialog({
         : perimM * (dupla ? 2 : 1);
       const furosUnit = p.furosDobradica ?? 0;
 
-      const precoM2 = prices.precoM2 ?? DEFAULT_PRICE_TABLE.precoM2!;
+      const precoM2 = precoM2ForPiece(p, prices);
       const precoFitaM = prices.precoFitaMetro ?? DEFAULT_PRICE_TABLE.precoFitaMetro!;
       const precoFuro = prices.precoFuroDobradica ?? DEFAULT_PRICE_TABLE.precoFuroDobradica!;
 
