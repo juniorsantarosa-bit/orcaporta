@@ -257,6 +257,7 @@ export function ImportarImagemIADialog({ open, onOpenChange, onImport }: Props) 
       bordaDuplaProvencal: doorType === 'provencal',
       doorType,
       provencal: doorType === 'provencal',
+      tipoProduto: (p.tipoProduto ?? "").trim() || undefined,
       source: "manual",
     }));
     onImport(cuttingPieces);
