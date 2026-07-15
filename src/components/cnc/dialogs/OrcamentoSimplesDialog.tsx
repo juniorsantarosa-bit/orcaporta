@@ -224,6 +224,12 @@ export function OrcamentoSimplesDialog({
     return () => window.removeEventListener("beforeunload", handler);
   }, [open, dirty]);
 
+  // Detecta tipos de produto novos (não cadastrados no cliente)
+  useEffect(() => {
+    if (!open || !client) { setNovosTipos([]); return; }
+    setNovosTipos(missingProductTypes(pieces, prices));
+  }, [open, client, pieces, prices]);
+
   const persistPrices = (p: ClientPriceTable) => {
     setPrices(p);
     setDirty(true);
