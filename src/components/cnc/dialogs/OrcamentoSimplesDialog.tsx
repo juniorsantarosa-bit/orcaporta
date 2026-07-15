@@ -1588,14 +1588,58 @@ export function OrcamentoSimplesDialog({
           {!isEmpty && (
             <>
               <Button variant="secondary" onClick={handleSaveQuote}>
-                <Save className="h-4 w-4 mr-1" /> {editingQuoteId ? "Atualizar orçamento" : "Salvar orçamento"}
+                <Save className="h-4 w-4 mr-1" /> {editingQuoteId ? "Atualizar" : "Salvar"}
+              </Button>
+              <Button variant="secondary" onClick={async () => {
+                try {
+                  await exportOrcamentoDocx({
+                    company, client, prices, observacoes,
+                    imageBudgets: imageBudgets.map(b => ({
+                      descricao: b.descricao, largura: b.largura, altura: b.altura,
+                      espessura: b.espessura, quantidade: b.quantidade,
+                      areaM2Unit: b.areaM2Unit, areaM2Total: b.areaM2Total,
+                      fitaMUnit: b.fitaMUnit, fitaMTotal: b.fitaMTotal,
+                      furosUnit: b.furosUnit, furosTotal: b.furosTotal,
+                      totalAll: b.totalAll,
+                      tipoProduto: pieces.find(p => p.id === b.pieceId)?.tipoProduto,
+                    })),
+                    imageTotals: {
+                      qtd: imageTotals.qtd, area: imageTotals.area,
+                      fita: imageTotals.fita, furos: imageTotals.furos,
+                      total: imageTotals.total,
+                    },
+                    totals,
+                    imagensReferencia,
+                  });
+                  toast.success("Word exportado");
+                } catch (e: any) {
+                  toast.error(`Falha ao exportar Word: ${e?.message ?? e}`);
+                }
+              }}>
+                <FileText className="h-4 w-4 mr-1" /> Word
               </Button>
               <Button onClick={handlePrintWithCheck}>
-                <Printer className="h-4 w-4 mr-1" /> Imprimir / PDF
+                <Printer className="h-4 w-4 mr-1" /> PDF
               </Button>
             </>
           )}
         </DialogFooter>
+
+        {client && (
+          <NovoTipoProdutoDialog
+            open={novosTipos.length > 0}
+            clientName={client.nome}
+            types={novosTipos}
+            suggestedPrice={prices.precoM2 ?? 180}
+            onSkip={() => setNovosTipos([])}
+            onSave={(entries) => {
+              const updated = addProductTypesToClient(client, entries);
+              setPrices(updated.precos);
+              setNovosTipos([]);
+              toast.success(`${entries.length} tipo(s) adicionado(s) ao cliente`);
+            }}
+          />
+        )}
       </DialogContent>
     </Dialog>
   );
