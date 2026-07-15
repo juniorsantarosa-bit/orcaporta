@@ -15,6 +15,10 @@ import { toast } from "sonner";
 import { DEFAULT_PRICE_TABLE, getQuote, saveQuote } from "@/lib/commercialStore";
 import { loadCompany, CompanyInfo } from "@/lib/companyStore";
 import { normalizeMaterialName, getDoorType, doorTypeSheetSpec, DOOR_TYPE_LABEL } from "@/lib/materialUtils";
+import { precoM2ForPiece, missingProductTypes, addProductTypesToClient } from "@/lib/pricingUtils";
+import { NovoTipoProdutoDialog } from "./NovoTipoProdutoDialog";
+import { exportOrcamentoDocx } from "@/lib/orcamentoDocxExport";
+import { FileText, FilePlus2 } from "lucide-react";
 
 interface Props {
   open: boolean;
