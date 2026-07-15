@@ -474,6 +474,12 @@ export function ImportarImagemIADialog({ open, onOpenChange, onImport }: Props) 
                                 className="h-6 text-[11px] px-1" />
                             </td>
                             <td className="py-1 px-1">
+                              <Input value={p.tipoProduto ?? ""}
+                                onChange={(e) => updatePiece(i, { tipoProduto: e.target.value })}
+                                placeholder="—"
+                                className="h-6 text-[11px] px-1" />
+                            </td>
+                            <td className="py-1 px-1">
                               <Input value={p.material ?? ""}
                                 onChange={(e) => updatePiece(i, { material: e.target.value })}
                                 className="h-6 text-[11px] px-1" />
