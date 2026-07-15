@@ -13,7 +13,8 @@ import {
   listClients,
   saveClient,
 } from "@/lib/commercialStore";
-import type { Client, ClientPriceTable } from "@/types/commercial";
+import type { Client, ClientPriceTable, ProductTypePrice } from "@/types/commercial";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface Props {
   open: boolean;
