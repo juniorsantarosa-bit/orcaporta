@@ -34,6 +34,15 @@ Campos por peça:
 - larguraMm, alturaMm, espessuraMm: dimensões em mm (LxAxE, ex "496x671x18,5" → 496, 671, 18.5). Vírgula é decimal. Se espessura não informada, use 18.
 - quantidade: nº de badges centrais com este item no desenho (ou coluna Qtd se existir).
 - furosDobradica: nº de marcadores de dobradiça (badges pequenos nos cantos) visíveis por peça. 0 se não houver.
+- tipoProduto: classifique a peça em UMA destas categorias com base na descrição/desenho (use exatamente estas strings quando aplicável):
+  • "Porta clássica" — porta com moldura provençal simples, sem vazado nem vidro
+  • "Porta clássica vazada" — porta com recorte central aberto (sem vidro)
+  • "Porta clássica c/ vidro incolor" — porta com vazado + vidro liso
+  • "Porta clássica c/ vidro canelado" — porta com vazado + vidro canelado/estriado
+  • "Porta lisa" — porta sem moldura/friso
+  • "Painel" — peça retangular decorativa sem função de porta
+  • "Gaveta" — frente de gaveta
+  Se a descrição indicar outro tipo específico (ex: "Porta pivotante"), use essa descrição curta. Se totalmente indefinido, use "".
 - confidence: 0.0–1.0.
 
 Leia também as COTAS soltas do desenho em "cotasNoDesenho" (só o que estiver visível, sem inventar).
@@ -62,9 +71,10 @@ const SCHEMA = {
           espessuraMm: { type: "number" },
           quantidade: { type: "integer" },
           furosDobradica: { type: "integer" },
+          tipoProduto: { type: "string" },
           confidence: { type: "number" },
         },
-        required: ["item", "descricao", "material", "larguraMm", "alturaMm", "espessuraMm", "quantidade", "furosDobradica", "confidence"],
+        required: ["item", "descricao", "material", "larguraMm", "alturaMm", "espessuraMm", "quantidade", "furosDobradica", "tipoProduto", "confidence"],
         additionalProperties: false,
       },
     },
