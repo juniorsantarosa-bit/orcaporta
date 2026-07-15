@@ -27,6 +27,7 @@ interface ExtractedPiece {
   material?: string;
   quantidade: number;
   furosDobradica: number;
+  tipoProduto?: string;
   confidence: number;
   _sourceLabel?: string;
 }
