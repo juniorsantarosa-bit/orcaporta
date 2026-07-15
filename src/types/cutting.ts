@@ -114,6 +114,13 @@ export interface CuttingPiece {
    *  - 'triple6'   → 3 chapas 6mm coladas (forma 18mm)
    */
   doorType?: 'single18' | 'provencal' | 'triple6';
+  /**
+   * Tipo de produto para pricing por categoria (ex: "Porta clássica",
+   * "Painel", "Clássica c/ vidro canelado"). Extraído pela IA ou definido
+   * manualmente. Quando presente e o cliente tiver esse tipo cadastrado
+   * em `precos.tiposProduto`, esse preço/m² sobrepõe o global.
+   */
+  tipoProduto?: string;
 }
 
 export interface SheetLayout {
