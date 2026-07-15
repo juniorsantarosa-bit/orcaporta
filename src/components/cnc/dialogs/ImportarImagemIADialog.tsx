@@ -446,6 +446,7 @@ export function ImportarImagemIADialog({ open, onOpenChange, onImport }: Props) 
                           <th className="text-left py-1 px-1 w-24">Origem</th>
                           <th className="text-left py-1 px-1 w-8">#</th>
                           <th className="text-left py-1 px-1">Descrição</th>
+                          <th className="text-left py-1 px-1 w-32" title="Tipo de produto (define preço por m²)">Tipo produto</th>
                           <th className="text-left py-1 px-1 w-28">Material</th>
                           <th className="text-left py-1 px-1 w-14">L</th>
                           <th className="text-left py-1 px-1 w-14">A</th>
