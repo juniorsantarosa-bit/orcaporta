@@ -27,6 +27,7 @@ interface ExtractedPiece {
   material?: string;
   quantidade: number;
   furosDobradica: number;
+  tipoProduto?: string;
   confidence: number;
   _sourceLabel?: string;
 }
@@ -256,6 +257,7 @@ export function ImportarImagemIADialog({ open, onOpenChange, onImport }: Props) 
       bordaDuplaProvencal: doorType === 'provencal',
       doorType,
       provencal: doorType === 'provencal',
+      tipoProduto: (p.tipoProduto ?? "").trim() || undefined,
       source: "manual",
     }));
     onImport(cuttingPieces);
@@ -444,6 +446,7 @@ export function ImportarImagemIADialog({ open, onOpenChange, onImport }: Props) 
                           <th className="text-left py-1 px-1 w-24">Origem</th>
                           <th className="text-left py-1 px-1 w-8">#</th>
                           <th className="text-left py-1 px-1">Descrição</th>
+                          <th className="text-left py-1 px-1 w-32" title="Tipo de produto (define preço por m²)">Tipo produto</th>
                           <th className="text-left py-1 px-1 w-28">Material</th>
                           <th className="text-left py-1 px-1 w-14">L</th>
                           <th className="text-left py-1 px-1 w-14">A</th>
@@ -468,6 +471,12 @@ export function ImportarImagemIADialog({ open, onOpenChange, onImport }: Props) 
                             <td className="py-1 px-1">
                               <Input value={p.descricao}
                                 onChange={(e) => updatePiece(i, { descricao: e.target.value })}
+                                className="h-6 text-[11px] px-1" />
+                            </td>
+                            <td className="py-1 px-1">
+                              <Input value={p.tipoProduto ?? ""}
+                                onChange={(e) => updatePiece(i, { tipoProduto: e.target.value })}
+                                placeholder="—"
                                 className="h-6 text-[11px] px-1" />
                             </td>
                             <td className="py-1 px-1">

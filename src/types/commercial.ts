@@ -6,6 +6,13 @@
 import type { CuttingPiece } from "./cutting";
 import type { NestingSheet } from "./promob";
 
+export interface ProductTypePrice {
+  /** Ex: "Porta clássica", "Painel", "Clássica c/ vidro canelado" */
+  nome: string;
+  /** R$/m² aplicado a peças deste tipo */
+  precoM2: number;
+}
+
 export interface ClientPriceTable {
   /** R$ por corte de serra (chapa inteira) */
   corte: number;
@@ -26,12 +33,24 @@ export interface ClientPriceTable {
   serraMetro: number;
   /** R$ por m² de chapa (opcional, informativo) */
   chapaM2?: number;
-  /** R$ por m² de peça acabada (modo orçamento por imagem) */
+  /** R$ por m² de peça acabada — valor GLOBAL (fallback) */
   precoM2?: number;
   /** R$ por metro linear de fita de borda (modo orçamento por imagem) */
   precoFitaMetro?: number;
   /** R$ por furo de dobradiça (modo orçamento por imagem) */
   precoFuroDobradica?: number;
+  /**
+   * Preços de m² diferenciados por TIPO de produto (porta clássica, painel,
+   * porta vazada, com vidro canelado, etc). Quando `usarMesmoPrecoM2` = true
+   * essa tabela é ignorada e o `precoM2` global vale para todos os tipos.
+   */
+  tiposProduto?: ProductTypePrice[];
+  /**
+   * Quando true (default), usa `precoM2` global para todos os tipos.
+   * Quando false, cada peça é cobrada pelo `precoM2` do seu `tipoProduto`
+   * — caindo em `precoM2` se o tipo não estiver cadastrado.
+   */
+  usarMesmoPrecoM2?: boolean;
 }
 
 export interface Client {

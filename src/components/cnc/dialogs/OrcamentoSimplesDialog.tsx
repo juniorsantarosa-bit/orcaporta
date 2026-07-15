@@ -15,6 +15,10 @@ import { toast } from "sonner";
 import { DEFAULT_PRICE_TABLE, getQuote, saveQuote } from "@/lib/commercialStore";
 import { loadCompany, CompanyInfo } from "@/lib/companyStore";
 import { normalizeMaterialName, getDoorType, doorTypeSheetSpec, DOOR_TYPE_LABEL } from "@/lib/materialUtils";
+import { precoM2ForPiece, missingProductTypes, addProductTypesToClient } from "@/lib/pricingUtils";
+import { NovoTipoProdutoDialog } from "./NovoTipoProdutoDialog";
+import { exportOrcamentoDocx } from "@/lib/orcamentoDocxExport";
+import { FileText, FilePlus2 } from "lucide-react";
 
 interface Props {
   open: boolean;
@@ -126,6 +130,8 @@ export function OrcamentoSimplesDialog({
   const [matQtd15Override, setMatQtd15Override] = useState<number | null>(null);
   /** Overrides por (material, espessura) — chave externa = material, chave interna = espessura. */
   const [matQtdOverrides, setMatQtdOverrides] = useState<Record<string, Record<number, number>>>({});
+  /** Tipos de produto detectados nas peças mas ainda não cadastrados no cliente */
+  const [novosTipos, setNovosTipos] = useState<string[]>([]);
 
   /** Marca quando há mudanças não salvas no orçamento atual. */
   const [dirty, setDirty] = useState(false);
@@ -218,6 +224,12 @@ export function OrcamentoSimplesDialog({
     return () => window.removeEventListener("beforeunload", handler);
   }, [open, dirty]);
 
+  // Detecta tipos de produto novos (não cadastrados no cliente)
+  useEffect(() => {
+    if (!open || !client) { setNovosTipos([]); return; }
+    setNovosTipos(missingProductTypes(pieces, prices));
+  }, [open, client, pieces, prices]);
+
   const persistPrices = (p: ClientPriceTable) => {
     setPrices(p);
     setDirty(true);
@@ -257,7 +269,7 @@ export function OrcamentoSimplesDialog({
         : perimM * (dupla ? 2 : 1);
       const furosUnit = p.furosDobradica ?? 0;
 
-      const precoM2 = prices.precoM2 ?? DEFAULT_PRICE_TABLE.precoM2!;
+      const precoM2 = precoM2ForPiece(p, prices);
       const precoFitaM = prices.precoFitaMetro ?? DEFAULT_PRICE_TABLE.precoFitaMetro!;
       const precoFuro = prices.precoFuroDobradica ?? DEFAULT_PRICE_TABLE.precoFuroDobradica!;
 
@@ -1576,14 +1588,58 @@ export function OrcamentoSimplesDialog({
           {!isEmpty && (
             <>
               <Button variant="secondary" onClick={handleSaveQuote}>
-                <Save className="h-4 w-4 mr-1" /> {editingQuoteId ? "Atualizar orçamento" : "Salvar orçamento"}
+                <Save className="h-4 w-4 mr-1" /> {editingQuoteId ? "Atualizar" : "Salvar"}
+              </Button>
+              <Button variant="secondary" onClick={async () => {
+                try {
+                  await exportOrcamentoDocx({
+                    company, client, prices, observacoes,
+                    imageBudgets: imageBudgets.map(b => ({
+                      descricao: b.descricao, largura: b.largura, altura: b.altura,
+                      espessura: b.espessura, quantidade: b.quantidade,
+                      areaM2Unit: b.areaM2Unit, areaM2Total: b.areaM2Total,
+                      fitaMUnit: b.fitaMUnit, fitaMTotal: b.fitaMTotal,
+                      furosUnit: b.furosUnit, furosTotal: b.furosTotal,
+                      totalAll: b.totalAll,
+                      tipoProduto: pieces.find(p => p.id === b.pieceId)?.tipoProduto,
+                    })),
+                    imageTotals: {
+                      qtd: imageTotals.qtd, area: imageTotals.area,
+                      fita: imageTotals.fita, furos: imageTotals.furos,
+                      total: imageTotals.total,
+                    },
+                    totals,
+                    imagensReferencia,
+                  });
+                  toast.success("Word exportado");
+                } catch (e: any) {
+                  toast.error(`Falha ao exportar Word: ${e?.message ?? e}`);
+                }
+              }}>
+                <FileText className="h-4 w-4 mr-1" /> Word
               </Button>
               <Button onClick={handlePrintWithCheck}>
-                <Printer className="h-4 w-4 mr-1" /> Imprimir / PDF
+                <Printer className="h-4 w-4 mr-1" /> PDF
               </Button>
             </>
           )}
         </DialogFooter>
+
+        {client && (
+          <NovoTipoProdutoDialog
+            open={novosTipos.length > 0}
+            clientName={client.nome}
+            types={novosTipos}
+            suggestedPrice={prices.precoM2 ?? 180}
+            onSkip={() => setNovosTipos([])}
+            onSave={(entries) => {
+              const updated = addProductTypesToClient(client, entries);
+              setPrices(updated.precos);
+              setNovosTipos([]);
+              toast.success(`${entries.length} tipo(s) adicionado(s) ao cliente`);
+            }}
+          />
+        )}
       </DialogContent>
     </Dialog>
   );

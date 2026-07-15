@@ -13,7 +13,8 @@ import {
   listClients,
   saveClient,
 } from "@/lib/commercialStore";
-import type { Client, ClientPriceTable } from "@/types/commercial";
+import type { Client, ClientPriceTable, ProductTypePrice } from "@/types/commercial";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface Props {
   open: boolean;
@@ -244,6 +245,92 @@ export function ClientesDialog({ open, onOpenChange, selectedClientId, onSelect 
                       Fita dupla (provençal): cobra externa + interna automaticamente (2 × perímetro).
                     </p>
                   </div>
+
+                  {/* Preços por TIPO de produto */}
+                  <div className="border-t border-border pt-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="text-xs font-semibold uppercase text-primary">
+                        Preços por tipo de produto (R$/m²)
+                      </div>
+                      <label className="flex items-center gap-2 text-[11px] cursor-pointer">
+                        <Checkbox
+                          checked={editing.precos.usarMesmoPrecoM2 !== false}
+                          onCheckedChange={(v) => {
+                            const usar = !!v;
+                            setEditing({
+                              ...editing,
+                              precos: {
+                                ...editing.precos,
+                                usarMesmoPrecoM2: usar,
+                                // Ao marcar de novo, reseta todos os preços ao valor global
+                                tiposProduto: usar
+                                  ? (editing.precos.tiposProduto ?? []).map(t => ({
+                                      ...t, precoM2: editing.precos.precoM2 ?? 0,
+                                    }))
+                                  : (editing.precos.tiposProduto ?? []),
+                              },
+                            });
+                          }}
+                        />
+                        <span>Usar mesmo R$/m² para todos os tipos</span>
+                      </label>
+                    </div>
+                    <div className="space-y-1.5">
+                      {(editing.precos.tiposProduto ?? []).map((t, idx) => (
+                        <div key={idx} className="grid grid-cols-[1fr_120px_32px] gap-2 items-center">
+                          <Input
+                            value={t.nome}
+                            placeholder="Ex: Porta clássica"
+                            className="h-8 text-xs"
+                            onChange={(e) => {
+                              const next = [...(editing.precos.tiposProduto ?? [])];
+                              next[idx] = { ...next[idx], nome: e.target.value };
+                              setEditing({ ...editing, precos: { ...editing.precos, tiposProduto: next } });
+                            }}
+                          />
+                          <Input
+                            type="number" step="0.01" min={0}
+                            value={t.precoM2}
+                            disabled={editing.precos.usarMesmoPrecoM2 !== false ? false : false}
+                            className="h-8 text-xs"
+                            onChange={(e) => {
+                              const next = [...(editing.precos.tiposProduto ?? [])];
+                              next[idx] = { ...next[idx], precoM2: parseFloat(e.target.value) || 0 };
+                              setEditing({ ...editing, precos: { ...editing.precos, tiposProduto: next } });
+                            }}
+                          />
+                          <Button
+                            variant="ghost" size="sm"
+                            className="h-8 w-8 p-0 text-destructive"
+                            onClick={() => {
+                              const next = (editing.precos.tiposProduto ?? []).filter((_, i) => i !== idx);
+                              setEditing({ ...editing, precos: { ...editing.precos, tiposProduto: next } });
+                            }}
+                          ><Trash2 className="h-3 w-3" /></Button>
+                        </div>
+                      ))}
+                      <Button
+                        variant="outline" size="sm" className="h-7 text-[11px] gap-1"
+                        onClick={() => {
+                          const cur = editing.precos.tiposProduto ?? [];
+                          setEditing({
+                            ...editing,
+                            precos: {
+                              ...editing.precos,
+                              tiposProduto: [...cur, { nome: "", precoM2: editing.precos.precoM2 ?? 0 }],
+                            },
+                          });
+                        }}
+                      >
+                        <Plus className="h-3 w-3" /> Adicionar tipo
+                      </Button>
+                      <p className="text-[10px] text-muted-foreground">
+                        Quando desmarcar "usar mesmo R$/m²", cada peça é cobrada pelo preço do seu tipo.
+                        Ao importar uma imagem, novos tipos detectados serão sugeridos automaticamente.
+                      </p>
+                    </div>
+                  </div>
+
 
                   <details className="border-t border-border pt-3">
                     <summary className="text-xs font-semibold uppercase text-muted-foreground mb-2 cursor-pointer hover:text-foreground">
