@@ -6,7 +6,6 @@ import {
 import { saveAs } from "file-saver";
 import type { CompanyInfo } from "./companyStore";
 import type { Client, ClientPriceTable } from "@/types/commercial";
-import type { CuttingPiece } from "@/types/cutting";
 
 interface ImageBudgetLine {
   descricao: string;
