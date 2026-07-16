@@ -49,6 +49,7 @@ export default function OrdensServico() {
   const [statusFilter, setStatusFilter] = useState<string>("pendente");
   const [showConfig, setShowConfig] = useState(false);
   const [keywords, setKeywords] = useState<string>("");
+  const [senderEmails, setSenderEmails] = useState<string>("");
   const [requireAttachment, setRequireAttachment] = useState(true);
   const [onlyKnown, setOnlyKnown] = useState(false);
   const [lastSync, setLastSync] = useState<string | null>(null);
@@ -69,6 +70,7 @@ export default function OrdensServico() {
     const { data } = await supabase.from("gmail_sync_config").select("*").eq("id", 1).single();
     if (data) {
       setKeywords((Array.isArray(data.keywords) ? data.keywords as string[] : []).join(", "));
+      setSenderEmails((Array.isArray((data as any).sender_emails) ? (data as any).sender_emails as string[] : []).join("\n"));
       setRequireAttachment(data.require_attachment);
       setOnlyKnown(data.only_known_clients);
       setLastSync(data.last_synced_at);
@@ -98,9 +100,10 @@ export default function OrdensServico() {
 
   const saveConfig = async () => {
     const kw = keywords.split(",").map(s => s.trim()).filter(Boolean);
+    const senders = senderEmails.split(/[\n,;]/).map(s => s.trim().toLowerCase()).filter(s => s.includes("@"));
     const { error } = await supabase
       .from("gmail_sync_config")
-      .update({ keywords: kw, require_attachment: requireAttachment, only_known_clients: onlyKnown })
+      .update({ keywords: kw, sender_emails: senders, require_attachment: requireAttachment, only_known_clients: onlyKnown } as any)
       .eq("id", 1);
     if (error) toast.error(error.message);
     else { toast.success("Configuração salva"); setShowConfig(false); }
@@ -171,6 +174,17 @@ export default function OrdensServico() {
             <Label className="text-xs">Palavras-chave no assunto (separadas por vírgula)</Label>
             <Input value={keywords} onChange={e => setKeywords(e.target.value)}
               placeholder="orçamento, pedido, porta, projeto" className="mt-1" />
+          </div>
+          <div>
+            <Label className="text-xs">Remetentes permitidos (1 email por linha) — quando preenchido, apenas estes emails são importados</Label>
+            <textarea
+              value={senderEmails}
+              onChange={e => setSenderEmails(e.target.value)}
+              placeholder="cliente1@exemplo.com&#10;cliente2@exemplo.com"
+              rows={4}
+              className="mt-1 w-full text-xs rounded-md border border-input bg-background px-3 py-2 font-mono"
+            />
+            <p className="text-[10px] text-muted-foreground mt-1">Deixe vazio para usar palavras-chave e clientes cadastrados.</p>
           </div>
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-2">

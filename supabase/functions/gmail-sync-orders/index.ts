@@ -84,7 +84,10 @@ Deno.serve(async (req) => {
     const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
 
     const { data: cfg } = await supabase.from("gmail_sync_config").select("*").eq("id", 1).single();
-    const keywords: string[] = cfg?.keywords ?? [];
+    const keywords: string[] = Array.isArray(cfg?.keywords) ? cfg!.keywords : [];
+    const senderEmails: string[] = Array.isArray(cfg?.sender_emails)
+      ? cfg!.sender_emails.map((e: string) => e.toLowerCase().trim()).filter(Boolean)
+      : [];
     const requireAttachment: boolean = cfg?.require_attachment ?? true;
     const onlyKnown: boolean = cfg?.only_known_clients ?? false;
     const lastSync: string | null = cfg?.last_synced_at ?? null;
@@ -95,6 +98,10 @@ Deno.serve(async (req) => {
       : 30;
     const qParts = [`newer_than:${days}d`, "-in:trash", "-in:spam"];
     if (requireAttachment) qParts.push("has:attachment");
+    // Filtrar direto no Gmail por remetentes (mais eficiente)
+    if (senderEmails.length > 0) {
+      qParts.push(`(${senderEmails.map(e => `from:${e}`).join(" OR ")})`);
+    }
     const q = encodeURIComponent(qParts.join(" "));
     const list = await gw(`/users/me/messages?maxResults=${MAX_MESSAGES}&q=${q}`);
     const messages: Array<{ id: string; threadId: string }> = list.messages || [];
@@ -124,13 +131,16 @@ Deno.serve(async (req) => {
         const subjLower = (subject || "").toLowerCase();
         const kwHit = keywords.find(k => subjLower.includes(k.toLowerCase()));
         const clientHit = clientEmails.includes(from.email);
+        const senderHit = senderEmails.length > 0 && senderEmails.includes(from.email);
 
         const parts: any[] = [];
         collectAttachmentParts(msg.payload, parts);
 
+        // Se lista de remetentes configurada, aceitar SOMENTE emails desses remetentes
+        if (senderEmails.length > 0 && !senderHit) { results.skipped++; continue; }
         if (onlyKnown && !clientHit) { results.skipped++; continue; }
         if (requireAttachment && parts.length === 0) { results.skipped++; continue; }
-        if (!clientHit && !kwHit && !parts.length) { results.skipped++; continue; }
+        if (senderEmails.length === 0 && !clientHit && !kwHit && !parts.length) { results.skipped++; continue; }
 
         // Baixa anexos (limite de tamanho)
         const attachmentsOut: any[] = [];
@@ -153,7 +163,8 @@ Deno.serve(async (req) => {
           }
         }
 
-        const reason = clientHit ? `Cliente cadastrado: ${from.email}`
+        const reason = senderHit ? `Remetente permitido: ${from.email}`
+          : clientHit ? `Cliente cadastrado: ${from.email}`
           : kwHit ? `Assunto contém "${kwHit}"`
           : "Email com anexo";
 

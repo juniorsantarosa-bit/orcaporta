@@ -1,0 +1,1 @@
+ALTER TABLE public.gmail_sync_config ADD COLUMN IF NOT EXISTS sender_emails jsonb NOT NULL DEFAULT '[]'::jsonb; UPDATE public.gmail_sync_config SET keywords='["orçamento","orcamento","pedido","porta","projeto"]'::jsonb WHERE id=1;
