@@ -163,7 +163,8 @@ Deno.serve(async (req) => {
           }
         }
 
-        const reason = clientHit ? `Cliente cadastrado: ${from.email}`
+        const reason = senderHit ? `Remetente permitido: ${from.email}`
+          : clientHit ? `Cliente cadastrado: ${from.email}`
           : kwHit ? `Assunto contém "${kwHit}"`
           : "Email com anexo";
 
