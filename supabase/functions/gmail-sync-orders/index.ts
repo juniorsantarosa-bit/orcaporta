@@ -131,13 +131,16 @@ Deno.serve(async (req) => {
         const subjLower = (subject || "").toLowerCase();
         const kwHit = keywords.find(k => subjLower.includes(k.toLowerCase()));
         const clientHit = clientEmails.includes(from.email);
+        const senderHit = senderEmails.length > 0 && senderEmails.includes(from.email);
 
         const parts: any[] = [];
         collectAttachmentParts(msg.payload, parts);
 
+        // Se lista de remetentes configurada, aceitar SOMENTE emails desses remetentes
+        if (senderEmails.length > 0 && !senderHit) { results.skipped++; continue; }
         if (onlyKnown && !clientHit) { results.skipped++; continue; }
         if (requireAttachment && parts.length === 0) { results.skipped++; continue; }
-        if (!clientHit && !kwHit && !parts.length) { results.skipped++; continue; }
+        if (senderEmails.length === 0 && !clientHit && !kwHit && !parts.length) { results.skipped++; continue; }
 
         // Baixa anexos (limite de tamanho)
         const attachmentsOut: any[] = [];
