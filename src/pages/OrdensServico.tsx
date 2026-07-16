@@ -175,6 +175,17 @@ export default function OrdensServico() {
             <Input value={keywords} onChange={e => setKeywords(e.target.value)}
               placeholder="orçamento, pedido, porta, projeto" className="mt-1" />
           </div>
+          <div>
+            <Label className="text-xs">Remetentes permitidos (1 email por linha) — quando preenchido, apenas estes emails são importados</Label>
+            <textarea
+              value={senderEmails}
+              onChange={e => setSenderEmails(e.target.value)}
+              placeholder="cliente1@exemplo.com&#10;cliente2@exemplo.com"
+              rows={4}
+              className="mt-1 w-full text-xs rounded-md border border-input bg-background px-3 py-2 font-mono"
+            />
+            <p className="text-[10px] text-muted-foreground mt-1">Deixe vazio para usar palavras-chave e clientes cadastrados.</p>
+          </div>
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-2">
               <Switch checked={requireAttachment} onCheckedChange={setRequireAttachment} />
