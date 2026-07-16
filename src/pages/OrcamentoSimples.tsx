@@ -53,6 +53,14 @@ export default function OrcamentoSimples() {
     }
   }, []);
 
+  // Abre automaticamente o diálogo de importação quando há anexos vindos
+  // de uma Ordem de Serviço (Gmail → "Criar orçamento")
+  useEffect(() => {
+    if (sessionStorage.getItem("maxcut.pendingOrderAttachments")) {
+      setShowImport(true);
+    }
+  }, []);
+
   /** Build one full 1840×2750 sheet per Aspire piece unit. (mesma lógica) */
   const buildAspireSheets = useCallback((aspirePieces: CuttingPiece[], startId = 1, startLabel = 1): NestingSheet[] => {
     const out: NestingSheet[] = [];
