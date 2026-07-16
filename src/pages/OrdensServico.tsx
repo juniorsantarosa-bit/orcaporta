@@ -49,6 +49,7 @@ export default function OrdensServico() {
   const [statusFilter, setStatusFilter] = useState<string>("pendente");
   const [showConfig, setShowConfig] = useState(false);
   const [keywords, setKeywords] = useState<string>("");
+  const [senderEmails, setSenderEmails] = useState<string>("");
   const [requireAttachment, setRequireAttachment] = useState(true);
   const [onlyKnown, setOnlyKnown] = useState(false);
   const [lastSync, setLastSync] = useState<string | null>(null);
