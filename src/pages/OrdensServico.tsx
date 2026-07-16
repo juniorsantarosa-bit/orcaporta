@@ -70,6 +70,7 @@ export default function OrdensServico() {
     const { data } = await supabase.from("gmail_sync_config").select("*").eq("id", 1).single();
     if (data) {
       setKeywords((Array.isArray(data.keywords) ? data.keywords as string[] : []).join(", "));
+      setSenderEmails((Array.isArray((data as any).sender_emails) ? (data as any).sender_emails as string[] : []).join("\n"));
       setRequireAttachment(data.require_attachment);
       setOnlyKnown(data.only_known_clients);
       setLastSync(data.last_synced_at);
