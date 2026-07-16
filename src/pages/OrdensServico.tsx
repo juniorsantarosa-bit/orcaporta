@@ -100,9 +100,10 @@ export default function OrdensServico() {
 
   const saveConfig = async () => {
     const kw = keywords.split(",").map(s => s.trim()).filter(Boolean);
+    const senders = senderEmails.split(/[\n,;]/).map(s => s.trim().toLowerCase()).filter(s => s.includes("@"));
     const { error } = await supabase
       .from("gmail_sync_config")
-      .update({ keywords: kw, require_attachment: requireAttachment, only_known_clients: onlyKnown })
+      .update({ keywords: kw, sender_emails: senders, require_attachment: requireAttachment, only_known_clients: onlyKnown } as any)
       .eq("id", 1);
     if (error) toast.error(error.message);
     else { toast.success("Configuração salva"); setShowConfig(false); }
