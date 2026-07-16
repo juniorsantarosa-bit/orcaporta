@@ -22,6 +22,7 @@ export type Database = {
           last_synced_at: string | null
           only_known_clients: boolean
           require_attachment: boolean
+          sender_emails: Json
           updated_at: string
         }
         Insert: {
@@ -31,6 +32,7 @@ export type Database = {
           last_synced_at?: string | null
           only_known_clients?: boolean
           require_attachment?: boolean
+          sender_emails?: Json
           updated_at?: string
         }
         Update: {
@@ -40,6 +42,7 @@ export type Database = {
           last_synced_at?: string | null
           only_known_clients?: boolean
           require_attachment?: boolean
+          sender_emails?: Json
           updated_at?: string
         }
         Relationships: []
