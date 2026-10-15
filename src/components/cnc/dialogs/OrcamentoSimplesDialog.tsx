@@ -920,7 +920,14 @@ export function OrcamentoSimplesDialog({
   };
 
   const handleClose = () => confirmSaveBeforeAction(() => onOpenChange(false), "fechar");
-  const handlePrintWithCheck = () => confirmSaveBeforeAction(handlePrint, "imprimir");
+  // Gera o PDF direto (sem perguntar). Se houver alterações, salva no histórico
+  // automaticamente antes — sem diálogo, para não perder a permissão de popup.
+  const handlePrintWithCheck = () => {
+    if (dirty && pieces.length > 0) {
+      try { handleSaveQuote(); } catch (e) { console.error("Falha ao salvar antes de imprimir", e); }
+    }
+    handlePrint();
+  };
 
   return (
     <Dialog open={open} onOpenChange={(v) => {
